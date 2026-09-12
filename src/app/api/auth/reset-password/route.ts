@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     }
 
     const cleanEmail = email.trim().toLowerCase();
-    const matchingUsers = db.findMany<any>('users', u => u.email?.toLowerCase() === cleanEmail);
+    const matchingUsers = await db.findManyAsync<any>('users', (u: any) => u.email?.toLowerCase() === cleanEmail);
     if (!matchingUsers || matchingUsers.length === 0) {
       return NextResponse.json({ success: false, error: 'ব্যবহারকারী খুঁজে পাওয়া যায়নি।' }, { status: 404 });
     }
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     // Hash new password and update all accounts with this email
     const newPasswordHash = hashPassword(newPassword.trim());
     for (const u of matchingUsers) {
-      db.update('users', u.id, { passwordHash: newPasswordHash });
+      await db.updateAsync('users', u.id, { passwordHash: newPasswordHash });
     }
 
     console.log(`✅ [PASSWORD RESET SUCCESS] For ${matchingUsers.length} account(s) under: ${cleanEmail}`);

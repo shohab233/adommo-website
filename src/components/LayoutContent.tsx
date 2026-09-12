@@ -10,7 +10,7 @@ export default function LayoutContent({ children }: { children: React.ReactNode 
   const isStandaloneStudio = pathname.startsWith('/teacher') || pathname.startsWith('/admin') || pathname.startsWith('/tools');
 
   return (
-    <div className={`flex-1 ${isStandaloneStudio ? 'pt-0' : 'pt-[108px]'}`}>
+    <div className={`flex-1 ${isStandaloneStudio ? 'pt-0' : 'pt-[96px] sm:pt-[108px]'}`}>
       {children}
     </div>
   );

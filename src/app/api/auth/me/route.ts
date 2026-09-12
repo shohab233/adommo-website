@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
       return res;
     }
 
-    const user = db.findOne<any>('users', (u) => u.id === payload.id);
+    const user = await db.findOneAsync<any>('users', (u: any) => u.id === payload.id);
     if (!user) {
       const res = NextResponse.json({ success: false, authenticated: false, user: null });
       res.cookies.set('adommo_auth_token', '', { path: '/', maxAge: 0, expires: new Date(0) });

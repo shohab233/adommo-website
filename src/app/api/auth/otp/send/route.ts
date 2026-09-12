@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     // If forgot password, ensure user actually exists
     let userName = '';
     if (purpose === 'forgot_password') {
-      const user = db.findOne<any>('users', u => u.email?.toLowerCase() === cleanEmail);
+      const user = await db.findOneAsync<any>('users', (u: any) => u.email?.toLowerCase() === cleanEmail);
       if (!user) {
         return NextResponse.json({ success: false, error: 'এই ইমেইল দিয়ে কোনো অ্যাকাউন্ট খুঁজে পাওয়া যায়নি।' }, { status: 404 });
       }
@@ -27,8 +27,8 @@ export async function POST(req: NextRequest) {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = Date.now() + (5 * 60 * 1000); // 5 minutes
 
-    // Store in data/otps.json
-    db.create('otps', {
+    // Store in MongoDB Atlas & await persistence
+    await db.createAsync('otps', {
       email: cleanEmail,
       otp,
       purpose,

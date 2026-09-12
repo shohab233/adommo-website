@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
-import { MongoClient } from 'mongodb';
+import { MongoClient, Db } from 'mongodb';
 
 // Data storage directory in project root
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -24,7 +24,7 @@ function readCollection<T>(collection: string): T[] {
     }
     const data = fs.readFileSync(filePath, 'utf8').replace(/^\uFEFF/, '');
     return JSON.parse(data) || [];
-  } catch (err) {
+  } catch {
     return [];
   }
 }
@@ -33,55 +33,65 @@ function writeCollection<T>(collection: string, items: T[]): void {
   const filePath = getFilePath(collection);
   try {
     fs.writeFileSync(filePath, JSON.stringify(items, null, 2), 'utf8');
-  } catch (err) {
+  } catch {
     // In read-only serverless environments like Vercel, filesystem writing might be disabled
   }
 }
 
 // ============================================================================
-// MONGODB ATLAS CLOUD SYNC ENGINE
+// MONGODB ATLAS CLOUD CONNECTION & SINGLETON ENGINE
 // ============================================================================
 const MONGODB_URI = process.env.MONGODB_URI || '';
 const MONGODB_DB = process.env.MONGODB_DB || 'adommo_edtech';
 
-let mongoClientPromise: Promise<MongoClient> | null = null;
-
-function getMongoClient(): Promise<MongoClient> | null {
+export function getMongoClient(): Promise<MongoClient> | null {
   if (!MONGODB_URI) return null;
-  if (!mongoClientPromise) {
+
+  const globalWithMongo = global as typeof globalThis & {
+    _mongoClientPromise?: Promise<MongoClient>;
+  };
+
+  if (!globalWithMongo._mongoClientPromise) {
     const client = new MongoClient(MONGODB_URI, {
       maxPoolSize: 10,
       serverSelectionTimeoutMS: 5000,
     });
-    mongoClientPromise = client.connect().catch((err) => {
-      console.warn('MongoDB Atlas connection warning:', err.message);
-      mongoClientPromise = null;
+    globalWithMongo._mongoClientPromise = client.connect().catch((err) => {
+      console.warn('MongoDB Atlas connection error:', err.message);
+      globalWithMongo._mongoClientPromise = undefined;
       throw err;
     });
   }
-  return mongoClientPromise;
+  return globalWithMongo._mongoClientPromise;
 }
 
-// Asynchronously sync data mutation to MongoDB Atlas in background
-function syncToAtlas(action: 'upsert' | 'delete', collection: string, itemOrId: any) {
+export async function getAtlasDb(): Promise<Db | null> {
   const clientP = getMongoClient();
-  if (!clientP) return;
+  if (!clientP) return null;
+  try {
+    const client = await clientP;
+    return client.db(MONGODB_DB);
+  } catch (err: any) {
+    console.warn('MongoDB Atlas getAtlasDb error:', err.message);
+    return null;
+  }
+}
 
-  clientP.then(async (client) => {
-    try {
-      const db = client.db(MONGODB_DB);
-      const col = db.collection(collection);
-
-      if (action === 'upsert') {
-        const query = { id: itemOrId.id };
-        await col.replaceOne(query, itemOrId, { upsert: true });
-      } else if (action === 'delete') {
-        await col.deleteOne({ id: itemOrId });
-      }
-    } catch (err: any) {
-      console.warn(`Atlas sync (${collection}) warning:`, err.message);
+// Asynchronously sync data mutation to MongoDB Atlas
+async function syncToAtlas(action: 'upsert' | 'delete', collection: string, itemOrId: any) {
+  try {
+    const atlas = await getAtlasDb();
+    if (!atlas) return;
+    const col = atlas.collection(collection);
+    if (action === 'upsert') {
+      const query = { id: itemOrId.id };
+      await col.replaceOne(query, itemOrId, { upsert: true });
+    } else if (action === 'delete') {
+      await col.deleteOne({ id: itemOrId });
     }
-  }).catch(() => {});
+  } catch (err: any) {
+    console.warn(`Atlas sync (${collection}) warning:`, err.message);
+  }
 }
 
 // ============================================================================
@@ -179,5 +189,106 @@ export const db = {
     syncToAtlas('delete', collection, id);
 
     return true;
+  },
+
+  // ==========================================================================
+  // ASYNC CLOUD-AWARE CRUD METHODS (MONGODB ATLAS PRIMARY, LOCAL FALLBACK)
+  // ==========================================================================
+  findOneAsync: async <T = any>(collection: string, queryOrFilter: any): Promise<T | null> => {
+    try {
+      const atlas = await getAtlasDb();
+      if (atlas) {
+        const col = atlas.collection(collection);
+        if (typeof queryOrFilter === 'function') {
+          const all = await col.find({}).toArray();
+          const match = (all as any[]).find(queryOrFilter);
+          return (match as unknown as T) || null;
+        } else if (queryOrFilter && typeof queryOrFilter === 'object') {
+          const item = await col.findOne(queryOrFilter);
+          return (item as unknown as T) || null;
+        }
+      }
+    } catch (err: any) {
+      console.warn(`findOneAsync(${collection}) Atlas warning:`, err.message);
+    }
+    // Local JSON fallback
+    if (typeof queryOrFilter === 'function') {
+      return db.findOne<T>(collection, queryOrFilter);
+    }
+    return null;
+  },
+
+  findManyAsync: async <T = any>(collection: string, queryOrFilter?: any): Promise<T[]> => {
+    try {
+      const atlas = await getAtlasDb();
+      if (atlas) {
+        const col = atlas.collection(collection);
+        if (typeof queryOrFilter === 'function') {
+          const all = await col.find({}).toArray();
+          return (all as any[]).filter(queryOrFilter) as unknown as T[];
+        } else if (queryOrFilter && typeof queryOrFilter === 'object') {
+          const results = await col.find(queryOrFilter).toArray();
+          return results as unknown as T[];
+        } else {
+          const results = await col.find({}).toArray();
+          return results as unknown as T[];
+        }
+      }
+    } catch (err: any) {
+      console.warn(`findManyAsync(${collection}) Atlas warning:`, err.message);
+    }
+    return db.findMany<T>(collection, typeof queryOrFilter === 'function' ? queryOrFilter : undefined);
+  },
+
+  createAsync: async <T extends Record<string, any> = any>(collection: string, item: T): Promise<T & { id: string }> => {
+    const newItem = {
+      id: item.id || `id_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      createdAt: item.createdAt || new Date().toISOString(),
+      ...item,
+    };
+
+    try {
+      const atlas = await getAtlasDb();
+      if (atlas) {
+        await atlas.collection(collection).replaceOne({ id: newItem.id }, newItem, { upsert: true });
+      }
+    } catch (err: any) {
+      console.warn(`createAsync(${collection}) Atlas warning:`, err.message);
+    }
+
+    try {
+      const items = readCollection<any>(collection);
+      items.unshift(newItem);
+      writeCollection(collection, items);
+    } catch {}
+
+    return newItem as T & { id: string };
+  },
+
+  updateAsync: async <T extends Record<string, any> = any>(collection: string, id: string, data: Partial<T>): Promise<T | null> => {
+    try {
+      const atlas = await getAtlasDb();
+      if (atlas) {
+        const updateData = { ...data, updatedAt: new Date().toISOString() };
+        await atlas.collection(collection).updateOne({ id }, { $set: updateData });
+        const updated = await atlas.collection(collection).findOne({ id });
+        return (updated as unknown as T) || null;
+      }
+    } catch (err: any) {
+      console.warn(`updateAsync(${collection}) Atlas warning:`, err.message);
+    }
+    return db.update(collection, id, data);
+  },
+
+  deleteAsync: async (collection: string, id: string): Promise<boolean> => {
+    try {
+      const atlas = await getAtlasDb();
+      if (atlas) {
+        await atlas.collection(collection).deleteOne({ id });
+      }
+    } catch (err: any) {
+      console.warn(`deleteAsync(${collection}) Atlas warning:`, err.message);
+    }
+    return db.delete(collection, id);
   }
 };

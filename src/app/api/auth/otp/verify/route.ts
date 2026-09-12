@@ -13,11 +13,11 @@ export async function POST(req: NextRequest) {
     const cleanEmail = email.trim().toLowerCase();
     const cleanOtp = otp.toString().trim();
 
-    const validRecord = db.findOne<any>('otps', o => 
+    const validRecord = await db.findOneAsync<any>('otps', (o: any) => 
       o.email?.toLowerCase() === cleanEmail && 
       o.purpose === purpose &&
-      o.otp === cleanOtp &&
-      o.expiresAt > Date.now()
+      o.otp?.toString().trim() === cleanOtp &&
+      Number(o.expiresAt) > Date.now()
     );
 
     if (!validRecord) {
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Delete verified OTP so it cannot be reused
-    db.delete('otps', validRecord.id);
+    await db.deleteAsync('otps', validRecord.id);
 
     // Generate verified reset token valid for 15 minutes
     const resetToken = signToken({ email: cleanEmail, purpose: 'verified_reset', verifiedAt: Date.now() }, 0.25);

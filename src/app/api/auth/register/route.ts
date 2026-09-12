@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     // A student can also open a teacher account with the same phone/email,
     // and a teacher can also open a student account with the same phone/email.
     // Duplicate accounts of the SAME role are blocked.
-    const existingSameRole = db.findOne<any>('users', (u) => 
+    const existingSameRole = await db.findOneAsync<any>('users', (u: any) => 
       u.role === cleanRole && (
         u.phone === cleanPhone || 
         (cleanEmail && u.email?.toLowerCase() === cleanEmail)
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     }
 
     const passwordHash = hashPassword(password);
-    const newUser = db.create('users', {
+    const newUser = await db.createAsync('users', {
       name: name?.trim() || (cleanRole === 'teacher' ? 'শিক্ষক' : 'শিক্ষার্থী'),
       phone: cleanPhone,
       email: cleanEmail,

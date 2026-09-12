@@ -57,17 +57,26 @@ body {
 }
 
 .ph-modern-navbar {
-  height: 64px;
+  height: 54px;
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 0 12px 0 18px;
-  border-radius: 20px;
+  gap: 8px;
+  padding: 0 10px 0 12px;
+  border-radius: 16px;
   background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.9);
   box-shadow: 0 8px 35px rgba(30, 40, 70, 0.08);
+}
+
+@media (min-width: 640px) {
+  .ph-modern-navbar {
+    height: 64px;
+    gap: 16px;
+    padding: 0 12px 0 18px;
+    border-radius: 20px;
+  }
 }
 
 .ph-modern-login {

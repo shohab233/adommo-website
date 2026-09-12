@@ -97,13 +97,13 @@ export default function Navbar() {
       </div>
 
       {/* 2. Floating PhyHunt-Style Pill Navbar */}
-      <div className="pt-2 px-3 sm:px-6 pointer-events-none">
+      <div className="pt-1.5 sm:pt-2 px-2 sm:px-6 pointer-events-none">
         <div className="ph-modern-header-wrap pointer-events-auto">
           <nav className="ph-modern-navbar shadow-lg shadow-pink-500/5 backdrop-blur-xl bg-white/95 border border-slate-200/90">
             
             {/* ADOMMO Brand Logo */}
-            <Link href="/" className="flex items-center shrink-0 pr-2 transition-transform hover:scale-[1.02]">
-              <AdommoLogo />
+            <Link href="/" className="flex items-center shrink-0 pr-1 sm:pr-2 transition-transform hover:scale-[1.02]">
+              <AdommoLogo className="scale-[0.85] sm:scale-100 origin-left" />
             </Link>
 
             {/* Desktop Navigation */}
@@ -174,7 +174,7 @@ export default function Navbar() {
             </div>
 
             {/* Right Actions */}
-            <div className="flex items-center gap-2.5 ml-auto lg:ml-4">
+            <div className="flex items-center gap-1.5 sm:gap-2.5 ml-auto lg:ml-4">
               
               {/* Hotline Box */}
               <a
@@ -192,10 +192,10 @@ export default function Navbar() {
                 </div>
               </a>
 
-              {/* Messages / Academic Doubt Link with Badge */}
+              {/* Messages / Academic Doubt Link with Badge (Hidden on mobile to save space, accessible in drawer) */}
               <Link
                 href="/messages"
-                className="relative w-9 h-9 rounded-xl flex items-center justify-center bg-white text-slate-600 border border-slate-200 hover:text-[#ed347d] hover:bg-pink-50 hover:border-pink-200 shadow-xs transition-all cursor-pointer"
+                className="hidden md:flex relative w-9 h-9 rounded-xl items-center justify-center bg-white text-slate-600 border border-slate-200 hover:text-[#ed347d] hover:bg-pink-50 hover:border-pink-200 shadow-xs transition-all cursor-pointer"
                 title="মেসেজ ও ডাউট সমাধান"
               >
                 <MessageSquare className="w-4 h-4" />
@@ -217,7 +217,7 @@ export default function Navbar() {
                     setNotifDropdownOpen(!notifDropdownOpen);
                     setUserDropdownOpen(false);
                   }}
-                  className={`relative w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
+                  className={`relative w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
                     notifDropdownOpen
                       ? 'bg-pink-50 text-[#ed347d] border border-pink-300 shadow-xs'
                       : 'bg-white text-slate-600 border border-slate-200 hover:text-[#ed347d] hover:bg-pink-50 hover:border-pink-200 shadow-xs'
@@ -394,9 +394,9 @@ export default function Navbar() {
               {isGuest ? (
                 <Link
                   href="/auth/login"
-                  className="ph-modern-login"
+                  className="ph-modern-login h-8 px-3 text-xs sm:h-[38px] sm:px-5 sm:text-[13px]"
                 >
-                  <LogIn className="w-3.5 h-3.5 mr-1" />
+                  <LogIn className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1" />
                   <span>লগইন</span>
                 </Link>
               ) : (
@@ -404,9 +404,9 @@ export default function Navbar() {
                   <button
                     type="button"
                     onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                    className="ph-modern-login"
+                    className="ph-modern-login h-8 px-3 text-xs sm:h-[38px] sm:px-5 sm:text-[13px]"
                   >
-                    <UserIcon className="w-3.5 h-3.5 mr-1" />
+                    <UserIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1" />
                     <span>{currentUser.name.split(' ')[0]}</span>
                     <ChevronDown className="w-3 h-3 ml-1" />
                   </button>
@@ -466,7 +466,7 @@ export default function Navbar() {
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="lg:hidden p-2 rounded-xl bg-slate-100 text-slate-700 hover:text-[#ed347d]"
+                className="lg:hidden p-1.5 sm:p-2 rounded-xl bg-slate-100 text-slate-700 hover:text-[#ed347d]"
               >
                 {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
@@ -520,12 +520,6 @@ export default function Navbar() {
                 </Link>
                 <Link href="/#about" onClick={() => setMobileMenuOpen(false)} className="p-2 rounded-lg hover:bg-pink-50 hover:text-[#ed347d]">
                   আমাদের সম্পর্কে
-                </Link>
-                <Link href="/teacher" onClick={() => setMobileMenuOpen(false)} className="p-2 rounded-lg text-purple-600">
-                  শিক্ষক স্টুডিও
-                </Link>
-                <Link href="/admin" onClick={() => setMobileMenuOpen(false)} className="p-2 rounded-lg text-rose-600">
-                  সুপার অ্যাডমিন
                 </Link>
                 
                 <div className="border-t border-slate-200 pt-2 flex flex-col gap-1.5">
