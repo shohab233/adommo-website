@@ -62,19 +62,19 @@ export default function Navbar() {
   const userEnrollmentsCount = enrollments?.length || 0;
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 pointer-events-none w-full max-w-[100vw] overflow-x-hidden">
+    <header className="fixed top-0 left-0 right-0 z-50 pointer-events-none w-full">
       
       {/* 1. Top Live Notice Bar (100% visible, sits at very top, never covered) */}
       <div className="pointer-events-auto bg-gradient-to-r from-[#fff0f5] via-[#fff5f8] to-[#fff0f5] border-b border-[#ffd2e2] py-2 px-4 text-xs shadow-xs">
-        <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
+        <div className="max-w-7xl 2xl:max-w-[1400px] mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-2 font-medium overflow-hidden whitespace-nowrap">
             {hasActiveLive ? (
               <Link 
                 href="/my-courses"
                 className="flex items-center gap-1.5 bg-rose-600 text-white px-2.5 py-0.5 rounded-full text-[11px] font-black shadow-xs animate-pulse"
               >
-                <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                🔴 লাইভ ক্লাস চলছে
+                <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                লাইভ ক্লাস চলছে
               </Link>
             ) : (
               <span className="flex items-center gap-1.5 bg-[#ed347d] text-white px-2.5 py-0.5 rounded-full text-[11px] font-bold shadow-xs">
@@ -107,28 +107,28 @@ export default function Navbar() {
             </Link>
 
             {/* Desktop Navigation */}
-            <div className="hidden lg:flex items-center gap-1 ml-auto">
+            <div className="hidden lg:flex items-center gap-1.5 ml-auto">
               <Link
                 href="/"
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                className={`flex items-center gap-1.5 px-3.5 lg:px-4 py-2 rounded-xl text-xs lg:text-[13px] font-bold transition-all ${
                   pathname === '/'
                     ? 'text-[#ed347d] bg-[#fff2f7] border-b-2 border-[#ed347d] shadow-xs'
                     : 'text-slate-600 hover:text-[#ed347d] hover:bg-[#fff3f7]'
                 }`}
               >
-                <Home className="w-3.5 h-3.5" />
+                <Home className="w-4 h-4" />
                 <span>হোম</span>
               </Link>
 
               <Link
                 href="/courses"
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                className={`flex items-center gap-1.5 px-3.5 lg:px-4 py-2 rounded-xl text-xs lg:text-[13px] font-bold transition-all ${
                   pathname === '/courses'
                     ? 'text-[#ed347d] bg-[#fff2f7] border-b-2 border-[#ed347d] shadow-xs'
                     : 'text-slate-600 hover:text-[#ed347d] hover:bg-[#fff3f7]'
                 }`}
               >
-                <BookOpen className="w-3.5 h-3.5" />
+                <BookOpen className="w-4 h-4" />
                 <span>সব কোর্সসমূহ</span>
               </Link>
 
@@ -136,13 +136,13 @@ export default function Navbar() {
               {!isGuest && (
                 <Link
                   href="/my-courses"
-                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                  className={`flex items-center gap-1.5 px-3.5 lg:px-4 py-2 rounded-xl text-xs lg:text-[13px] font-bold transition-all ${
                     pathname === '/my-courses'
                       ? 'text-[#ed347d] bg-[#fff2f7] border-b-2 border-[#ed347d] shadow-xs'
                       : 'text-slate-700 hover:text-[#ed347d] hover:bg-[#fff3f7]'
                   }`}
                 >
-                  <GraduationCap className="w-3.5 h-3.5 text-[#ed347d]" />
+                  <GraduationCap className="w-4 h-4 text-[#ed347d]" />
                   <span>আমার কোর্স</span>
                   {userEnrollmentsCount > 0 && (
                     <span className="ml-0.5 px-1.5 py-0.2 rounded-full bg-pink-100 text-[#ed347d] text-[10px] font-black">
@@ -154,21 +154,21 @@ export default function Navbar() {
 
               <Link
                 href="/exam"
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                className={`flex items-center gap-1.5 px-3.5 lg:px-4 py-2 rounded-xl text-xs lg:text-[13px] font-bold transition-all ${
                   pathname.startsWith('/exam')
                     ? 'text-amber-600 bg-amber-50 border-b-2 border-amber-500 shadow-xs'
                     : 'text-amber-600 hover:text-amber-700 hover:bg-amber-50'
                 }`}
               >
-                <Flame className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                <Flame className="w-4 h-4 text-amber-500 fill-amber-500" />
                 <span>অনলাইন পরীক্ষা</span>
               </Link>
 
               <Link
                 href="/#about"
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-[#ed347d] hover:bg-[#fff3f7] transition-all"
+                className="flex items-center gap-1.5 px-3.5 lg:px-4 py-2 rounded-xl text-xs lg:text-[13px] font-bold text-slate-600 hover:text-[#ed347d] hover:bg-[#fff3f7] transition-all"
               >
-                <Info className="w-3.5 h-3.5" />
+                <Info className="w-4 h-4" />
                 <span>আমাদের সম্পর্কে</span>
               </Link>
             </div>
