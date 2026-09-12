@@ -73,12 +73,12 @@ export default function HeroSection({
     <div className="w-full max-w-full bg-white pt-6 pb-8 space-y-12 overflow-hidden">
       
       {/* 1. Exact PhyHunt Hero Carousel with ambient glow */}
-      <div className="max-w-7xl 2xl:max-w-[1400px] mx-auto px-4 sm:px-6 relative overflow-hidden">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 relative overflow-hidden">
         {/* Subtle Ambient Glow Behind Carousel */}
         <div className="absolute -top-10 left-1/4 w-96 h-64 bg-pink-400/15 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-10 right-1/4 w-96 h-64 bg-amber-400/15 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative w-full aspect-[16/9] sm:aspect-[16/6.5] lg:aspect-[21/8.5] min-h-[340px] sm:min-h-[440px] lg:min-h-[500px] rounded-3xl overflow-hidden bg-slate-900 shadow-2xl group border border-slate-800/60">
+        <div className="relative w-full aspect-[16/8] sm:aspect-[16/6.5] rounded-3xl overflow-hidden bg-slate-900 shadow-2xl group border border-slate-800/60">
           
           {slides.map((slide, index) => (
             <div
@@ -92,33 +92,33 @@ export default function HeroSection({
                 alt={slide.title}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex flex-col justify-end p-6 sm:p-10 lg:p-14 text-white">
-                <div className="flex items-center gap-2 mb-2 sm:mb-3 flex-wrap">
-                  <span className="text-[11px] sm:text-xs font-extrabold text-[#f53278] bg-white/95 backdrop-blur-md px-3 sm:px-3.5 py-1 rounded-full shadow-md flex items-center gap-1.5">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex flex-col justify-end p-6 sm:p-12 text-white">
+                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                  <span className="text-[11px] font-extrabold text-[#f53278] bg-white/95 backdrop-blur-md px-3 py-1 rounded-full shadow-md flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
                     ADOMMO অফিশিয়াল ব্যাচ
                   </span>
-                  <span className="text-[11px] sm:text-xs font-bold text-amber-300 bg-black/50 backdrop-blur-md px-3 sm:px-3.5 py-1 rounded-full border border-amber-400/30">
+                  <span className="text-[11px] font-bold text-amber-300 bg-black/50 backdrop-blur-md px-3 py-1 rounded-full border border-amber-400/30">
                     ⭐ ৪.৯ স্টার রেটেড
                   </span>
                 </div>
-                <h2 className="text-xl sm:text-3xl lg:text-4xl xl:text-5xl font-black tracking-tight drop-shadow-sm max-w-4xl">
+                <h2 className="text-xl sm:text-3xl lg:text-4xl font-black tracking-tight drop-shadow-sm">
                   {slide.title}
                 </h2>
-                <p className="text-xs sm:text-sm lg:text-base text-slate-200 mt-2 sm:mt-3 max-w-3xl line-clamp-2 leading-relaxed font-medium">
+                <p className="text-xs sm:text-sm text-slate-200 mt-2 max-w-2xl line-clamp-2 leading-relaxed font-medium">
                   {slide.subtitle}
                 </p>
-                <div className="pt-4 sm:pt-6 flex items-center gap-3">
+                <div className="pt-5 flex items-center gap-3">
                   <Link
                     href={slide.link}
-                    className="inline-flex items-center gap-2 px-6 sm:px-8 py-2.5 sm:py-3.5 rounded-full text-xs sm:text-sm font-bold text-white ph-btn-pink shadow-lg shadow-pink-500/25 hover:scale-105 transition-all"
+                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-xs sm:text-sm font-bold text-white ph-btn-pink shadow-lg shadow-pink-500/25 hover:scale-105 transition-all"
                   >
                     <span>বিস্তারিত দেখুন</span>
                     <span className="font-bold">→</span>
                   </Link>
                   <a
                     href="#courses"
-                    className="inline-flex items-center gap-2 px-5 sm:px-7 py-2.5 sm:py-3.5 rounded-full text-xs sm:text-sm font-bold text-slate-900 bg-white/95 hover:bg-white hover:text-[#ed347d] transition-all shadow-lg"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold text-slate-900 bg-white/95 hover:bg-white hover:text-[#ed347d] transition-all shadow-lg"
                   >
                     <span>সকল কোর্সসমূহ</span>
                   </a>
@@ -160,44 +160,44 @@ export default function HeroSection({
         </div>
 
         {/* Floating Trust Proof Counters below Hero Banner */}
-        <div className="mt-6 sm:mt-8 grid grid-cols-2 md:grid-cols-4 gap-3.5 sm:gap-5">
-          <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center gap-3.5 hover:shadow-md transition-shadow">
-            <div className="w-11 sm:w-12 h-11 sm:h-12 rounded-xl bg-pink-50 text-[#ed347d] flex items-center justify-center font-bold text-xl shrink-0">
+        <div className="mt-5 grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="p-3.5 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-pink-50 text-[#ed347d] flex items-center justify-center font-bold text-lg shrink-0">
               🎓
             </div>
             <div>
-              <div className="text-base sm:text-xl font-black text-slate-800">৫০,০০০+</div>
-              <div className="text-[11px] sm:text-xs text-slate-500 font-medium">সক্রিয় শিক্ষার্থী</div>
+              <div className="text-base font-black text-slate-800">৫০,০০০+</div>
+              <div className="text-[11px] text-slate-500 font-medium">সক্রিয় শিক্ষার্থী</div>
             </div>
           </div>
 
-          <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center gap-3.5 hover:shadow-md transition-shadow">
-            <div className="w-11 sm:w-12 h-11 sm:h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-xl shrink-0">
+          <div className="p-3.5 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-lg shrink-0">
               ⭐
             </div>
             <div>
-              <div className="text-base sm:text-xl font-black text-slate-800">৪.৯ / ৫.০</div>
-              <div className="text-[11px] sm:text-xs text-slate-500 font-medium">শিক্ষার্থী সন্তুষ্টি</div>
+              <div className="text-base font-black text-slate-800">৪.৯ / ৫.০</div>
+              <div className="text-[11px] text-slate-500 font-medium">শিক্ষার্থী সন্তুষ্টি</div>
             </div>
           </div>
 
-          <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center gap-3.5 hover:shadow-md transition-shadow">
-            <div className="w-11 sm:w-12 h-11 sm:h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-xl shrink-0">
+          <div className="p-3.5 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-lg shrink-0">
               🔴
             </div>
             <div>
-              <div className="text-base sm:text-xl font-black text-slate-800">১০০% লাইভ</div>
-              <div className="text-[11px] sm:text-xs text-slate-500 font-medium">ডুয়াল টিচার ইন্টারঅ্যাক্টিভ</div>
+              <div className="text-base font-black text-slate-800">১০০% লাইভ</div>
+              <div className="text-[11px] text-slate-500 font-medium">ডুয়াল টিচার ইন্টারঅ্যাক্টিভ</div>
             </div>
           </div>
 
-          <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center gap-3.5 hover:shadow-md transition-shadow">
-            <div className="w-11 sm:w-12 h-11 sm:h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xl shrink-0">
+          <div className="p-3.5 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-lg shrink-0">
               ⚡
             </div>
             <div>
-              <div className="text-base sm:text-xl font-black text-slate-800">লাইভ ওএমআর</div>
-              <div className="text-[11px] sm:text-xs text-slate-500 font-medium">মেধা তালিকা ও ব্যাখ্যা</div>
+              <div className="text-base font-black text-slate-800">লাইভ ওএমআর</div>
+              <div className="text-[11px] text-slate-500 font-medium">মেধা তালিকা ও ব্যাখ্যা</div>
             </div>
           </div>
         </div>
@@ -205,7 +205,7 @@ export default function HeroSection({
       </div>
 
       {/* Course Search Bar Box with Popular Search Chips */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-3">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 space-y-3">
         <div className="p-2.5 sm:p-3.5 rounded-3xl bg-white border border-slate-200 shadow-xl shadow-slate-100/80 flex flex-col sm:flex-row items-center gap-2.5">
           <div className="w-full flex-1 flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200/80 focus-within:border-pink-300 focus-within:bg-white transition-all">
             <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">

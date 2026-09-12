@@ -66,7 +66,7 @@ export default function MyCoursesPage() {
       
       {/* Header Banner */}
       <div className="bg-white border-b border-slate-200 py-10 shadow-sm">
-        <div className="max-w-7xl 2xl:max-w-[1400px] mx-auto px-4 sm:px-6">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-[#fff0f5] text-[#ed347d] border border-[#fecdd3] mb-3">
@@ -97,7 +97,7 @@ export default function MyCoursesPage() {
       </div>
 
       {/* Main Course Grid */}
-      <div className="max-w-7xl 2xl:max-w-[1400px] mx-auto px-4 sm:px-6">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
         {enrolledCourses.length > 0 ? (
           <div className="space-y-6">
             <div className="flex items-center justify-between">

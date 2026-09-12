@@ -56,7 +56,7 @@ export default function AllCoursesPage() {
       
       {/* Top Banner Header */}
       <div className="bg-gradient-to-b from-[#fff5f8] to-white border-b border-slate-100 py-10 px-4 sm:px-6">
-        <div className="max-w-7xl 2xl:max-w-[1400px] mx-auto space-y-4">
+        <div className="max-w-6xl mx-auto space-y-4">
           
           <Link
             href="/"
@@ -89,7 +89,7 @@ export default function AllCoursesPage() {
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="max-w-7xl 2xl:max-w-[1400px] mx-auto px-4 sm:px-6 pt-8 space-y-6">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-8 space-y-6">
         
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200/80 shadow-xs">
           

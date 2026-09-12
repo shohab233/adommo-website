@@ -98,7 +98,7 @@ export default function HomePage() {
       />
 
       {/* 2. "কোর্স সমূহ" Section (Exact PhyHunt Layout) */}
-      <section id="courses" className="max-w-7xl 2xl:max-w-[1400px] mx-auto px-4 sm:px-6 space-y-8 scroll-mt-24">
+      <section id="courses" className="max-w-6xl mx-auto px-4 sm:px-6 space-y-8 scroll-mt-24">
         
         <div className="text-center space-y-2">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#fff0f5] text-[#ed347d]">
@@ -166,7 +166,7 @@ export default function HomePage() {
       </section>
 
       {/* 3. Live Examination & Model Test Banner */}
-      <section className="max-w-7xl 2xl:max-w-[1400px] mx-auto px-4 sm:px-6">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="relative rounded-3xl bg-gradient-to-r from-[#fff0f5] via-white to-[#fff5f8] border border-[#fecdd3] p-8 sm:p-10 shadow-sm overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="space-y-3 text-center md:text-left relative z-10">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800">
@@ -205,7 +205,7 @@ export default function HomePage() {
       </section>
 
       {/* 4. Why ADOMMO Leads (Learning Experience 4-Pillar Grid) */}
-      <section className="max-w-7xl 2xl:max-w-[1400px] mx-auto px-4 sm:px-6 space-y-8">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 space-y-8">
         <div className="text-center space-y-2">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-pink-50 text-[#ed347d]">
             <Award className="w-3.5 h-3.5" />
@@ -265,7 +265,7 @@ export default function HomePage() {
       </section>
 
       {/* 5. Student Testimonials (Success Stories) */}
-      <section className="max-w-7xl 2xl:max-w-[1400px] mx-auto px-4 sm:px-6 space-y-8">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 space-y-8">
         <div className="text-center space-y-2">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700">
             <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
@@ -345,7 +345,7 @@ export default function HomePage() {
       </section>
 
       {/* 6. FAQ Accordion Section */}
-      <section className="max-w-5xl 2xl:max-w-6xl mx-auto px-4 sm:px-6 space-y-6">
+      <section className="max-w-4xl mx-auto px-4 sm:px-6 space-y-6">
         <div className="text-center space-y-2">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700">
             <HelpCircle className="w-3.5 h-3.5 text-[#ed347d]" />
@@ -394,7 +394,7 @@ export default function HomePage() {
       </section>
 
       {/* 7. "আমাদের সম্পর্কে" (About ADOMMO) Section */}
-      <section id="about" className="max-w-7xl 2xl:max-w-[1400px] mx-auto px-4 sm:px-6 pt-4 scroll-mt-24">
+      <section id="about" className="max-w-6xl mx-auto px-4 sm:px-6 pt-4 scroll-mt-24">
         <div className="rounded-3xl bg-slate-50 border border-slate-200/80 p-8 sm:p-12 space-y-6">
           <div className="max-w-3xl space-y-3">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-[#fff0f5] text-[#ed347d]">

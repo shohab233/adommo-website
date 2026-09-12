@@ -23,7 +23,7 @@ export default function Footer() {
 
   return (
     <footer className="bg-[#111625] text-slate-300 pt-14 pb-10 border-t border-slate-800 font-sans">
-      <div className="max-w-7xl 2xl:max-w-[1400px] mx-auto px-4 sm:px-6 space-y-10">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-10">
         
         {/* Top: Logo & Tagline */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-8 border-b border-slate-800">
