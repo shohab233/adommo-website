@@ -238,10 +238,10 @@ export default function TeacherKycScreen({
   // =========================================================================
   if (kycStatus === 'pending') {
     return (
-      <div className="min-h-[calc(100vh-108px)] bg-gradient-to-br from-[#fff4f8] via-[#fafbfc] to-[#f4f3ff] flex items-center justify-center py-10 px-4 sm:px-6 relative overflow-hidden">
+      <div className="min-h-screen bg-gradient-to-br from-[#fff4f8] via-[#fafbfc] to-[#f4f3ff] flex items-center justify-center py-10 px-4 sm:px-6 relative overflow-hidden">
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[520px] h-[520px] bg-gradient-to-tr from-pink-300/30 via-indigo-300/20 to-purple-300/25 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="w-full max-w-[560px] relative z-10 space-y-4 animate-fade-in">
+        <div className="w-full max-w-[620px] relative z-10 space-y-4 animate-fade-in">
           <div className="flex items-center justify-between px-2">
             <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
               <ShieldCheck className="w-4 h-4 text-[#ed347d]" />
@@ -416,12 +416,12 @@ export default function TeacherKycScreen({
   // VIEW 3: COMPACT & ELEGANT 4-STEP WIZARD (MATCHING REGISTRATION SIZING)
   // =========================================================================
   return (
-    <div className="min-h-[calc(100vh-108px)] bg-gradient-to-br from-[#fff4f8] via-[#fafbfc] to-[#f4f3ff] flex items-center justify-center py-10 px-4 sm:px-6 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-[#fff4f8] via-[#fafbfc] to-[#f4f3ff] flex items-center justify-center py-10 px-4 sm:px-6 relative overflow-hidden">
       
       {/* Ambient Glow */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[520px] h-[520px] bg-gradient-to-tr from-pink-300/30 via-indigo-300/20 to-purple-300/25 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="w-full max-w-[540px] relative z-10 space-y-4 animate-fade-in">
+      <div className="w-full max-w-[620px] relative z-10 space-y-4 animate-fade-in">
         
         {/* Top bar */}
         <div className="flex items-center justify-between px-2">

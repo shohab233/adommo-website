@@ -1776,12 +1776,12 @@ export default function TeacherDashboardPage() {
   // ==================== IF NOT AUTHENTICATED AS TEACHER -> SHOW TEACHER AUTH GATE ====================
   if (currentRole !== 'teacher' || currentUser?.role !== 'teacher') {
     return (
-      <div className="min-h-[calc(100vh-108px)] bg-gradient-to-br from-[#fff4f8] via-[#fafbfc] to-[#f4f3ff] flex items-center justify-center py-12 px-4 sm:px-6 relative overflow-hidden">
+      <div className="min-h-screen bg-gradient-to-br from-[#fff4f8] via-[#fafbfc] to-[#f4f3ff] flex items-center justify-center py-12 px-4 sm:px-6 relative overflow-hidden">
         
         {/* Ambient Glow Background Orbs */}
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[520px] h-[520px] bg-gradient-to-tr from-pink-300/30 via-indigo-300/20 to-purple-300/25 rounded-full blur-3xl pointer-events-none" />
         
-        <div className="w-full max-w-[530px] relative z-10 space-y-4 animate-fade-in">
+        <div className="w-full max-w-[580px] relative z-10 space-y-4 animate-fade-in">
           
           {/* Top navigation & Badge */}
           <div className="flex items-center justify-between px-2">
