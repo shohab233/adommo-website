@@ -608,11 +608,11 @@ export async function processCourseImport(rawData: any) {
     // Save to real database (data/courses.json)
     try {
       const { db } = await import('@/lib/db');
-      const existing = db.findOne<Course>('courses', (c) => c.id === newCourseObj.id);
+      const existing = await db.findOneAsync<any>('courses', (c: any) => c.id === newCourseObj.id);
       if (existing) {
-        db.update('courses', newCourseObj.id, newCourseObj);
+        await db.updateAsync('courses', newCourseObj.id, newCourseObj);
       } else {
-        db.create('courses', newCourseObj);
+        await db.createAsync('courses', newCourseObj);
       }
     } catch (dbErr) {
       console.warn('DB save warning in course import:', dbErr);

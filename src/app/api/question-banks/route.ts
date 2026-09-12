@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 
 export async function GET(req: NextRequest) {
   try {
-    const list = db.findMany<any>('question_banks') || [];
+    const list = await db.findManyAsync<any>('question_banks') || [];
     return NextResponse.json({ success: true, questionBanks: list });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const newItem = db.create('question_banks', {
+    const newItem = await db.createAsync('question_banks', {
       ...body,
       createdAt: body.createdAt || new Date().toISOString(),
       downloadCount: body.downloadCount || 0,
@@ -31,7 +31,7 @@ export async function PUT(req: NextRequest) {
     if (!id) {
       return NextResponse.json({ success: false, error: 'আইডি আবশ্যক।' }, { status: 400 });
     }
-    const updated = db.update('question_banks', id, updates);
+    const updated = await db.updateAsync('question_banks', id, updates);
     return NextResponse.json({ success: true, item: updated });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -45,7 +45,7 @@ export async function DELETE(req: NextRequest) {
     if (!id) {
       return NextResponse.json({ success: false, error: 'আইডি আবশ্যক।' }, { status: 400 });
     }
-    db.delete('question_banks', id);
+    await db.deleteAsync('question_banks', id);
     return NextResponse.json({ success: true, message: 'প্রশ্নব্যাংক মুছে ফেলা হয়েছে।' });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });

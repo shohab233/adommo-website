@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'পরীক্ষা ও শিক্ষার্থীর আইডি আবশ্যক।' }, { status: 400 });
     }
 
-    const exam = db.findOne<any>('exams', e => e.id === examId);
+    const exam = await db.findOneAsync<any>('exams', (e: any) => e.id === examId);
     let finalScore = 0;
     let correct = 0;
     let wrong = 0;
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
       finalScore = Math.max(0, Number(rawScore.toFixed(2)));
     }
 
-    const submission = db.create('submissions', {
+    const submission = await db.createAsync('submissions', {
       examId,
       studentId,
       studentName: studentName || 'শিক্ষার্থী',
@@ -48,8 +48,8 @@ export async function POST(req: NextRequest) {
       submittedAt: 'এইমাত্র',
     });
 
-    // Auto calculate Leaderboard rank
-    const leaderboardEntry = db.create('leaderboard', {
+    // Auto calculate Leaderboard rank in MongoDB Atlas
+    const leaderboardEntry = await db.createAsync('leaderboard', {
       examId,
       studentName: studentName || 'শিক্ষার্থী',
       college: college || 'কলেজ',
@@ -67,8 +67,8 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
-    const submissions = db.findMany<any>('submissions') || [];
-    const leaderboard = db.findMany<any>('leaderboard') || [];
+    const submissions = await db.findManyAsync<any>('submissions') || [];
+    const leaderboard = await db.findManyAsync<any>('leaderboard') || [];
     return NextResponse.json({ success: true, submissions, leaderboard });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -81,26 +81,26 @@ export async function PATCH(req: NextRequest) {
     const { action, submissionId, cqMarksAwarded, teacherFeedback, partMarks, publishImmediately, examId } = body;
 
     if (action === 'publish_batch') {
-      const all = db.findMany<any>('submissions');
+      const all = await db.findManyAsync<any>('submissions');
       let count = 0;
-      all.forEach((s) => {
+      for (const s of all) {
         if (!examId || examId === 'all' || s.examId === examId) {
           if (s.status === 'evaluated' || s.status === 'pending_evaluation') {
-            db.update('submissions', s.id, { status: 'published' });
+            await db.updateAsync('submissions', s.id, { status: 'published' });
             count++;
           }
         }
-      });
+      }
       return NextResponse.json({ success: true, countPublished: count });
     }
 
     if (submissionId) {
-      const target = db.findOne<any>('submissions', s => s.id === submissionId);
+      const target = await db.findOneAsync<any>('submissions', (s: any) => s.id === submissionId);
       if (target) {
         const mcq = target.mcqScore || target.score || 0;
         const cq = Number(cqMarksAwarded) || 0;
         const total = mcq + cq;
-        const updated = db.update('submissions', submissionId, {
+        const updated = await db.updateAsync('submissions', submissionId, {
           cqScore: cq,
           score: total,
           teacherFeedback: teacherFeedback || target.teacherFeedback,

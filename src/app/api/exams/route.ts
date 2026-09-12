@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 
 export async function GET(req: NextRequest) {
   try {
-    const exams = db.findMany<any>('exams') || [];
+    const exams = await db.findManyAsync<any>('exams') || [];
     return NextResponse.json({ success: true, exams });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const examData = await req.json();
-    const newExam = db.create('exams', {
+    const newExam = await db.createAsync('exams', {
       ...examData,
       status: examData.status || 'live',
     });
@@ -28,7 +28,7 @@ export async function PUT(req: NextRequest) {
     const body = await req.json();
     const { id, ...updates } = body;
     if (!id) return NextResponse.json({ success: false, error: 'পরীক্ষা আইডি আবশ্যক' }, { status: 400 });
-    const updated = db.update('exams', id, updates);
+    const updated = await db.updateAsync('exams', id, updates);
     return NextResponse.json({ success: true, exam: updated });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -40,7 +40,7 @@ export async function DELETE(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
     if (!id) return NextResponse.json({ success: false, error: 'পরীক্ষা আইডি আবশ্যক' }, { status: 400 });
-    const success = db.delete('exams', id);
+    const success = await db.deleteAsync('exams', id);
     return NextResponse.json({ success });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });

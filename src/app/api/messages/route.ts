@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 
 export async function GET(req: NextRequest) {
   try {
-    const conversations = db.findMany<any>('conversations') || [];
+    const conversations = await db.findManyAsync<any>('conversations') || [];
     return NextResponse.json({ success: true, conversations });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -16,18 +16,18 @@ export async function POST(req: NextRequest) {
     const { action, threadId, message, newThread } = body;
 
     if (action === 'create_thread' && newThread) {
-      const existing = db.findOne<any>('conversations', c => c.id === newThread.id);
+      const existing = await db.findOneAsync<any>('conversations', (c: any) => c.id === newThread.id);
       if (existing) {
         return NextResponse.json({ success: true, thread: existing });
       }
-      const created = db.create('conversations', newThread);
+      const created = await db.createAsync('conversations', newThread);
       return NextResponse.json({ success: true, thread: created });
     }
 
     if (action === 'send_message' && threadId && message) {
-      let thread = db.findOne<any>('conversations', c => c.id === threadId);
+      let thread = await db.findOneAsync<any>('conversations', (c: any) => c.id === threadId);
       if (!thread) {
-        thread = db.create('conversations', {
+        thread = await db.createAsync('conversations', {
           id: threadId,
           type: threadId.startsWith('thread_batch') ? 'batch_group' : (threadId.startsWith('thread_direct') ? 'direct' : 'doubt'),
           studentName: message.senderName || 'ব্যবহারকারী',
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
       }
 
       const updatedMessages = [...(thread.messages || []), message];
-      const updatedThread = db.update('conversations', thread.id, {
+      const updatedThread = await db.updateAsync('conversations', thread.id, {
         messages: updatedMessages,
         lastMessageText: message.text || 'ছবি সংযুক্ত করা হয়েছে',
         lastMessageTime: 'এইমাত্র',
@@ -50,10 +50,10 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'mark_read' && threadId) {
-      const thread = db.findOne<any>('conversations', c => c.id === threadId);
+      const thread = await db.findOneAsync<any>('conversations', (c: any) => c.id === threadId);
       if (thread) {
         const role = body.role || 'student';
-        const updatedThread = db.update('conversations', thread.id, {
+        const updatedThread = await db.updateAsync('conversations', thread.id, {
           unreadCountTeacher: role === 'teacher' ? 0 : thread.unreadCountTeacher,
           unreadCountStudent: role === 'student' ? 0 : thread.unreadCountStudent,
           messages: (thread.messages || []).map((m: any) => ({ ...m, isRead: true }))
@@ -63,10 +63,10 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'toggle_status' && threadId) {
-      const thread = db.findOne<any>('conversations', c => c.id === threadId);
+      const thread = await db.findOneAsync<any>('conversations', (c: any) => c.id === threadId);
       if (thread) {
         const nextStatus = thread.status === 'solved' ? 'pending' : 'solved';
-        const updatedThread = db.update('conversations', thread.id, {
+        const updatedThread = await db.updateAsync('conversations', thread.id, {
           status: nextStatus,
         });
         return NextResponse.json({ success: true, thread: updatedThread });

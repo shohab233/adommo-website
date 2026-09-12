@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 
 export async function GET(req: NextRequest) {
   try {
-    const list = db.findMany<any>('notifications') || [];
+    const list = await db.findManyAsync<any>('notifications') || [];
     return NextResponse.json({ success: true, notifications: list });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const newNotification = db.create('notifications', {
+    const newNotification = await db.createAsync('notifications', {
       ...body,
       createdAt: body.createdAt || new Date().toISOString(),
       readBy: body.readBy || [],
@@ -35,29 +35,29 @@ export async function PATCH(req: NextRequest) {
     }
 
     if (action === 'mark_read' && id && userId) {
-      const target = db.findOne<any>('notifications', n => n.id === id);
+      const target = await db.findOneAsync<any>('notifications', (n: any) => n.id === id);
       if (target) {
         const readBy = new Set(target.readBy || []);
         readBy.add(userId);
-        const updated = db.update('notifications', id, { readBy: Array.from(readBy) });
+        const updated = await db.updateAsync('notifications', id, { readBy: Array.from(readBy) });
         return NextResponse.json({ success: true, notification: updated });
       }
     }
 
     if (action === 'mark_all_read' && userId) {
-      const all = db.findMany<any>('notifications');
-      all.forEach(n => {
+      const all = await db.findManyAsync<any>('notifications');
+      for (const n of all) {
         const readBy = new Set(n.readBy || []);
         readBy.add(userId);
-        db.update('notifications', n.id, { readBy: Array.from(readBy) });
-      });
+        await db.updateAsync('notifications', n.id, { readBy: Array.from(readBy) });
+      }
       return NextResponse.json({ success: true });
     }
 
     if (action === 'toggle_pin' && id) {
-      const target = db.findOne<any>('notifications', n => n.id === id);
+      const target = await db.findOneAsync<any>('notifications', (n: any) => n.id === id);
       if (target) {
-        const updated = db.update('notifications', id, { isPinned: isPinned !== undefined ? isPinned : !target.isPinned });
+        const updated = await db.updateAsync('notifications', id, { isPinned: isPinned !== undefined ? isPinned : !target.isPinned });
         return NextResponse.json({ success: true, notification: updated });
       }
     }
@@ -75,7 +75,7 @@ export async function DELETE(req: NextRequest) {
     if (!id) {
       return NextResponse.json({ success: false, error: 'আইডি আবশ্যক।' }, { status: 400 });
     }
-    db.delete('notifications', id);
+    await db.deleteAsync('notifications', id);
     return NextResponse.json({ success: true, message: 'নোটিফিকেশন মুছে ফেলা হয়েছে।' });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
