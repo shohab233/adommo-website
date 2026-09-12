@@ -70,7 +70,7 @@ export default function HeroSection({
   };
 
   return (
-    <div className="w-full max-w-full bg-white pt-6 pb-8 space-y-12 overflow-hidden">
+    <div className="w-full bg-white pt-6 pb-8 space-y-12">
       
       {/* 1. Exact PhyHunt Hero Carousel with ambient glow */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 relative overflow-hidden">

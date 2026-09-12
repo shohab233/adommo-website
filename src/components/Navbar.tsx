@@ -63,7 +63,7 @@ export default function Navbar() {
   const userEnrollmentsCount = enrollments?.length || 0;
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 pointer-events-none w-full max-w-[100vw] overflow-x-hidden">
+    <header className="fixed top-0 left-0 right-0 z-50 pointer-events-none">
       
       {/* 1. Top Live Notice Bar (100% visible, sits at very top, never covered) */}
       <div className="pointer-events-auto bg-gradient-to-r from-[#fff0f5] via-[#fff5f8] to-[#fff0f5] border-b border-[#ffd2e2] py-2 px-4 text-xs shadow-xs">
@@ -98,13 +98,13 @@ export default function Navbar() {
       </div>
 
       {/* 2. Floating PhyHunt-Style Pill Navbar */}
-      <div className="pt-1.5 sm:pt-2 px-2 sm:px-6 pointer-events-none">
+      <div className="pt-2 px-3 sm:px-6 pointer-events-none">
         <div className="ph-modern-header-wrap pointer-events-auto">
           <nav className="ph-modern-navbar shadow-lg shadow-pink-500/5 backdrop-blur-xl bg-white/95 border border-slate-200/90">
             
             {/* ADOMMO Brand Logo */}
-            <Link href="/" className="flex items-center shrink min-w-0 pr-1 sm:pr-2 transition-transform hover:scale-[1.02]">
-              <AdommoLogo className="scale-[0.85] sm:scale-100 origin-left" />
+            <Link href="/" className="flex items-center shrink-0 pr-2 transition-transform hover:scale-[1.02]">
+              <AdommoLogo />
             </Link>
 
             {/* Desktop Navigation */}
@@ -175,7 +175,7 @@ export default function Navbar() {
             </div>
 
             {/* Right Actions */}
-            <div className="flex items-center gap-1.5 sm:gap-2.5 ml-auto lg:ml-4 shrink-0">
+            <div className="flex items-center gap-2.5 ml-auto lg:ml-4">
               
               {/* Hotline Box */}
               <a
@@ -218,7 +218,7 @@ export default function Navbar() {
                     setNotifDropdownOpen(!notifDropdownOpen);
                     setUserDropdownOpen(false);
                   }}
-                  className={`relative w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
+                  className={`relative w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
                     notifDropdownOpen
                       ? 'bg-pink-50 text-[#ed347d] border border-pink-300 shadow-xs'
                       : 'bg-white text-slate-600 border border-slate-200 hover:text-[#ed347d] hover:bg-pink-50 hover:border-pink-200 shadow-xs'
@@ -402,9 +402,9 @@ export default function Navbar() {
               {isGuest ? (
                 <Link
                   href="/auth/login"
-                  className="ph-modern-login h-8 px-3 text-xs sm:h-[38px] sm:px-5 sm:text-[13px]"
+                  className="ph-modern-login"
                 >
-                  <LogIn className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1" />
+                  <LogIn className="w-3.5 h-3.5 mr-1" />
                   <span>লগইন</span>
                 </Link>
               ) : (
@@ -412,9 +412,9 @@ export default function Navbar() {
                   <button
                     type="button"
                     onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                    className="ph-modern-login h-8 px-3 text-xs sm:h-[38px] sm:px-5 sm:text-[13px]"
+                    className="ph-modern-login"
                   >
-                    <UserIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5 mr-1" />
+                    <UserIcon className="w-3.5 h-3.5 mr-1" />
                     <span>{currentUser.name.split(' ')[0]}</span>
                     <ChevronDown className="w-3 h-3 ml-1" />
                   </button>
@@ -474,7 +474,7 @@ export default function Navbar() {
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="lg:hidden p-1.5 sm:p-2 rounded-xl bg-slate-100 text-slate-700 hover:text-[#ed347d]"
+                className="lg:hidden p-2 rounded-xl bg-slate-100 text-slate-700 hover:text-[#ed347d]"
               >
                 {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
