@@ -27,14 +27,18 @@ export default function NotificationsPage() {
     notifications, 
     unreadNotifCount, 
     markNotificationAsRead, 
-    markAllNotificationsAsRead 
+    markAllNotificationsAsRead,
+    isNotificationForUser 
   } = useApp();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [showOnlyUnread, setShowOnlyUnread] = useState(false);
 
-  const filteredNotifs = notifications.filter((n) => {
+  // Filter only notifications visible to this user
+  const userNotifs = notifications.filter(isNotificationForUser);
+
+  const filteredNotifs = userNotifs.filter((n) => {
     const isUnread = !n.readBy?.includes(currentUser.id);
     if (showOnlyUnread && !isUnread) return false;
 
@@ -142,12 +146,12 @@ export default function NotificationsPage() {
           {/* Category Filter Pills */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
             {[
-              { id: 'all', label: 'সকল নোটিশ', count: notifications.length },
-              { id: 'live', label: '🔵 লাইভ ক্লাস', count: notifications.filter(n => n.category === 'live').length },
-              { id: 'exam', label: '🟣 পরীক্ষা ও রেজাল্ট', count: notifications.filter(n => n.category === 'exam').length },
-              { id: 'sheet', label: '🟢 লেকচার শিট', count: notifications.filter(n => n.category === 'sheet').length },
-              { id: 'urgent', label: '🔴 জরুরি সতর্কতা', count: notifications.filter(n => n.category === 'urgent').length },
-              { id: 'course', label: '🟡 কোর্স ঘোষণা', count: notifications.filter(n => n.category === 'course').length },
+              { id: 'all', label: 'সকল নোটিশ', count: userNotifs.length },
+              { id: 'live', label: '🔵 লাইভ ক্লাস', count: userNotifs.filter(n => n.category === 'live').length },
+              { id: 'exam', label: '🟣 পরীক্ষা ও রেজাল্ট', count: userNotifs.filter(n => n.category === 'exam').length },
+              { id: 'sheet', label: '🟢 লেকচার শিট', count: userNotifs.filter(n => n.category === 'sheet').length },
+              { id: 'urgent', label: '🔴 জরুরি সতর্কতা', count: userNotifs.filter(n => n.category === 'urgent').length },
+              { id: 'course', label: '🟡 কোর্স ঘোষণা', count: userNotifs.filter(n => n.category === 'course').length },
             ].map((tab) => (
               <button
                 key={tab.id}

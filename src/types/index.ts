@@ -317,7 +317,10 @@ export interface NotificationItem {
   message: string;
   category: 'course' | 'exam' | 'live' | 'sheet' | 'urgent' | 'general';
   priority: 'normal' | 'high' | 'urgent';
-  targetAudience: 'all' | 'course' | 'batch';
+  targetAudience: 'all' | 'course' | 'batch' | 'role' | 'user';
+  targetRole?: 'student' | 'teacher' | 'admin' | 'all';
+  targetUserId?: string;
+  targetUserIds?: string[];
   targetCourseId?: string;
   targetCourseTitle?: string;
   senderName: string;

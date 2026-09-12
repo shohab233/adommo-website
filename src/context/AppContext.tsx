@@ -58,6 +58,7 @@ interface AppContextType {
   showToast: (msg: string) => void;
   notifications: NotificationItem[];
   unreadNotifCount: number;
+  isNotificationForUser: (notif: NotificationItem) => boolean;
   sendNotification: (notif: Omit<NotificationItem, 'id' | 'createdAt' | 'readBy' | 'viewCount'>) => void;
   markNotificationAsRead: (id: string) => void;
   markAllNotificationsAsRead: () => void;
@@ -1596,9 +1597,57 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   // ==================== NOTIFICATIONS LOGIC ====================
+  const isNotificationForUser = (n: NotificationItem): boolean => {
+    // 1. Specific Target User ID check
+    if (n.targetUserId) {
+      return currentUser && currentUser.id === n.targetUserId;
+    }
+    if (n.targetUserIds && n.targetUserIds.length > 0) {
+      return currentUser && n.targetUserIds.includes(currentUser.id);
+    }
+
+    // 2. Specific Target Role check
+    if (n.targetRole) {
+      if (n.targetRole === 'all') return true;
+      if (n.targetRole === 'admin') {
+        return currentRole === 'admin' || currentUser?.role === 'admin';
+      }
+      if (n.targetRole === 'teacher') {
+        return currentRole === 'teacher' || currentUser?.role === 'teacher';
+      }
+      if (n.targetRole === 'student') {
+        return currentRole === 'student' || (!currentUser || currentUser.role === 'student');
+      }
+    }
+
+    // 3. Fallback heuristic for legacy KYC notifications lacking explicit targetRole
+    if (
+      n.title?.includes('KYC') || 
+      n.title?.includes('শিক্ষক ভেরিফিকেশন') || 
+      n.message?.includes('শিক্ষক হিসেবে KYC') ||
+      n.message?.includes('শিক্ষক KYC আবেদন') ||
+      n.actionUrl === '/admin'
+    ) {
+      if (n.title?.includes('নতুন শিক্ষক KYC') || n.actionUrl === '/admin') {
+        return currentRole === 'admin' || currentUser?.role === 'admin';
+      }
+      return currentRole === 'teacher' || currentUser?.role === 'teacher';
+    }
+
+    // 4. Course specific audience check
+    if (n.targetAudience === 'course' && n.targetCourseId) {
+      if (currentRole === 'admin' || currentUser?.role === 'admin') return true;
+      if (currentRole === 'teacher' || currentUser?.role === 'teacher') return true;
+      return enrollments.some((e) => e.courseId === n.targetCourseId && e.status === 'approved');
+    }
+
+    // 5. Default public notice: visible to all
+    return true;
+  };
+
   const unreadNotifCount = (!currentUser || !currentUser.id || currentUser.id === 'usr_guest')
     ? 0
-    : notifications.filter((n) => !n.readBy?.includes(currentUser.id)).length;
+    : notifications.filter((n) => isNotificationForUser(n) && !n.readBy?.includes(currentUser.id)).length;
 
   const saveNotifications = (newNotifs: NotificationItem[]) => {
     setNotifications(newNotifs);
@@ -1649,9 +1698,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const markAllNotificationsAsRead = () => {
     const updated = notifications.map((n) => {
-      const readBy = new Set(n.readBy || []);
-      readBy.add(currentUser.id);
-      return { ...n, readBy: Array.from(readBy) };
+      if (isNotificationForUser(n)) {
+        const readBy = new Set(n.readBy || []);
+        readBy.add(currentUser.id);
+        return { ...n, readBy: Array.from(readBy) };
+      }
+      return n;
     });
     saveNotifications(updated);
     fetch('/api/notifications', {
@@ -1946,7 +1998,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       message: `${data.fullName} (${data.institutionName}) শিক্ষক হিসেবে KYC যাচাইয়ের জন্য আবেদন জমা দিয়েছেন। আবেদন আইডি: #${applicationId}`,
       category: 'general',
       priority: 'high',
-      targetAudience: 'all',
+      targetAudience: 'role',
+      targetRole: 'admin',
       senderName: 'সিস্টেম ভেরিফিকেশন',
       actionLabel: 'KYC যাচাই করুন',
       actionUrl: '/admin',
@@ -1957,7 +2010,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       message: `আপনার শিক্ষক KYC আবেদন #${applicationId} সুপার অ্যাডমিনের নিকট সফলভাবে জমা হয়েছে। যাচাই শেষে অনুমোদিত হলে ড্যাশবোর্ড সক্রিয় হবে।`,
       category: 'general',
       priority: 'normal',
-      targetAudience: 'all',
+      targetAudience: 'user',
+      targetRole: 'teacher',
+      targetUserId: currentUser.id,
       senderName: 'অদম্য ভেরিফিকেশন উইং',
     });
 
@@ -2011,7 +2066,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       message: `অভিনন্দন ${target.fullName}! আপনার শিক্ষক ভেরিফিকেশন আবেদন #${applicationId} সুপার অ্যাডমিন কর্তৃক সফলভাবে অনুমোদিত হয়েছে। এখন আপনি শিক্ষক পোর্টালে সম্পূর্ণ এক্সেস পাবেন।`,
       category: 'general',
       priority: 'high',
-      targetAudience: 'all',
+      targetAudience: 'user',
+      targetRole: 'teacher',
+      targetUserId: target.teacherId,
       senderName: 'সুপার অ্যাডমিন',
       actionLabel: 'শিক্ষক স্টুডিওতে যান',
       actionUrl: '/teacher',
@@ -2065,7 +2122,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       message: `প্রিয় ${target.fullName}, আপনার KYC আবেদন #${applicationId} গৃহীত হয়নি। কারণ: "${reason}"। অনুগ্রহ করে সঠিক তথ্য ও ডকুমেন্ট দিয়ে পুনরায় আবেদন করুন।`,
       category: 'urgent',
       priority: 'high',
-      targetAudience: 'all',
+      targetAudience: 'user',
+      targetRole: 'teacher',
+      targetUserId: target.teacherId,
       senderName: 'ভেরিফিকেশন টিম',
       actionLabel: 'পুনরায় আবেদন করুন',
       actionUrl: '/teacher',
@@ -2125,6 +2184,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         showToast,
         notifications,
         unreadNotifCount,
+        isNotificationForUser,
         sendNotification,
         markNotificationAsRead,
         markAllNotificationsAsRead,

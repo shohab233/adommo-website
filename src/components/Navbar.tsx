@@ -44,7 +44,8 @@ export default function Navbar() {
     unreadNotifCount,
     unreadStudentMsgCount,
     markNotificationAsRead,
-    markAllNotificationsAsRead
+    markAllNotificationsAsRead,
+    isNotificationForUser
   } = useApp();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
@@ -264,45 +265,49 @@ export default function Navbar() {
                     </div>
 
                     {/* Filter Tabs */}
-                    <div className="flex items-center border-b border-slate-100 bg-slate-50/80 px-3 py-1.5 gap-1.5 text-[11px] font-bold">
-                      {[
-                        { id: 'all', label: `সকল (${notifications.length})` },
-                        { id: 'unread', label: `অপঠিত (${unreadNotifCount})` },
-                        { id: 'urgent', label: '🔴 জরুরি' },
-                      ].map((tab) => (
-                        <button
-                          key={tab.id}
-                          type="button"
-                          onClick={() => setNotifTab(tab.id as any)}
-                          className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
-                            notifTab === tab.id
-                              ? 'bg-white text-[#ed347d] shadow-xs border border-pink-100 font-extrabold'
-                              : 'text-slate-500 hover:text-slate-800'
-                          }`}
-                        >
-                          {tab.label}
-                        </button>
-                      ))}
-                    </div>
+                    {(() => {
+                      const userNotifications = notifications.filter(isNotificationForUser);
+                      return (
+                        <>
+                          <div className="flex items-center border-b border-slate-100 bg-slate-50/80 px-3 py-1.5 gap-1.5 text-[11px] font-bold">
+                            {[
+                              { id: 'all', label: `সকল (${userNotifications.length})` },
+                              { id: 'unread', label: `অপঠিত (${unreadNotifCount})` },
+                              { id: 'urgent', label: '🔴 জরুরি' },
+                            ].map((tab) => (
+                              <button
+                                key={tab.id}
+                                type="button"
+                                onClick={() => setNotifTab(tab.id as any)}
+                                className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                                  notifTab === tab.id
+                                    ? 'bg-white text-[#ed347d] shadow-xs border border-pink-100 font-extrabold'
+                                    : 'text-slate-500 hover:text-slate-800'
+                                }`}
+                              >
+                                {tab.label}
+                              </button>
+                            ))}
+                          </div>
 
-                    {/* Notification List */}
-                    <div className="max-h-[340px] overflow-y-auto divide-y divide-slate-100">
-                      {(() => {
-                        const filtered = notifications.filter((n) => {
-                          if (notifTab === 'unread') return !n.readBy?.includes(currentUser.id);
-                          if (notifTab === 'urgent') return n.priority === 'urgent';
-                          return true;
-                        });
+                          {/* Notification List */}
+                          <div className="max-h-[340px] overflow-y-auto divide-y divide-slate-100">
+                            {(() => {
+                              const filtered = userNotifications.filter((n) => {
+                                if (notifTab === 'unread') return !n.readBy?.includes(currentUser.id);
+                                if (notifTab === 'urgent') return n.priority === 'urgent';
+                                return true;
+                              });
 
-                        if (filtered.length === 0) {
-                          return (
-                            <div className="p-8 text-center space-y-1.5 text-slate-400">
-                              <Bell className="w-7 h-7 mx-auto text-slate-300" />
-                              <p className="text-xs font-bold text-slate-600">কোনো নোটিফিকেশন নেই</p>
-                              <p className="text-[10px]">নতুন কোনো ঘোষণা আসলে এখানে দেখতে পাবেন</p>
-                            </div>
-                          );
-                        }
+                              if (filtered.length === 0) {
+                                return (
+                                  <div className="p-8 text-center space-y-1.5 text-slate-400">
+                                    <Bell className="w-7 h-7 mx-auto text-slate-300" />
+                                    <p className="text-xs font-bold text-slate-600">কোনো নোটিফিকেশন নেই</p>
+                                    <p className="text-[10px]">নতুন কোনো ঘোষণা আসলে এখানে দেখতে পাবেন</p>
+                                  </div>
+                                );
+                              }
 
                         const categoryBadges: Record<string, { bg: string; text: string; label: string }> = {
                           live: { bg: 'bg-blue-50 border-blue-200', text: 'text-blue-700', label: 'লাইভ ক্লাস' },
@@ -374,6 +379,9 @@ export default function Navbar() {
                         });
                       })()}
                     </div>
+                  </>
+                );
+              })()}
 
                     {/* Footer */}
                     <div className="p-2.5 bg-slate-50 border-t border-slate-100 text-center">
