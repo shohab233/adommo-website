@@ -3,7 +3,7 @@ import { db, hashPassword } from '@/lib/db';
 
 export async function GET(req: NextRequest) {
   try {
-    const rawUsers = db.findMany<any>('users');
+    const rawUsers = await db.findManyAsync<any>('users');
     const users = rawUsers.map((u) => ({
       id: u.id,
       name: u.name || (u.role === 'teacher' ? 'শিক্ষক' : 'শিক্ষার্থী'),
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if user already exists with this phone or email
-    const existing = db.findOne<any>('users', (u) => {
+    const existing = await db.findOneAsync<any>('users', (u: any) => {
       const matchPhone = cleanPhone && u.phone && u.phone === cleanPhone;
       const matchEmail = cleanEmail && u.email && u.email.toLowerCase() === cleanEmail;
       return matchPhone || matchEmail;
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
     const desig = designation || 'শিক্ষক ও প্রশিক্ষক';
     const subj = subject || 'বিজ্ঞান ও প্রযুক্তি';
 
-    const newUser = db.create('users', {
+    const newUser = await db.createAsync('users', {
       name: name.trim(),
       phone: cleanPhone,
       email: cleanEmail,
@@ -78,8 +78,8 @@ export async function POST(req: NextRequest) {
       enrolledCourseIds: [],
     });
 
-    // Also create an approved KYC record in data/teacher_kyc.json
-    db.create('teacher_kyc', {
+    // Also create an approved KYC record in MongoDB Atlas
+    await db.createAsync('teacher_kyc', {
       teacherId: newUser.id,
       teacherName: name.trim(),
       fullName: name.trim(),

@@ -3,7 +3,7 @@ import { db, verifyToken } from '@/lib/db';
 
 export async function GET(req: NextRequest) {
   try {
-    const list = db.findMany('teacher_kyc');
+    const list = await db.findManyAsync('teacher_kyc');
     return NextResponse.json({ success: true, list, kycList: list });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     const payload = token ? verifyToken<any>(token) : null;
 
     const applicationId = `KYC-2026-${Math.floor(1000 + Math.random() * 9000)}`;
-    const newKyc = db.create('teacher_kyc', {
+    const newKyc = await db.createAsync('teacher_kyc', {
       ...body,
       applicationId,
       status: 'pending',
@@ -30,9 +30,9 @@ export async function POST(req: NextRequest) {
       })
     });
 
-    // Update teacher kycStatus in user record
+    // Update teacher kycStatus in user record in MongoDB Atlas
     if (payload?.id) {
-      db.update('users', payload.id, { kycStatus: 'pending' });
+      await db.updateAsync('users', payload.id, { kycStatus: 'pending' });
     }
 
     return NextResponse.json({ success: true, applicationId, kyc: newKyc });

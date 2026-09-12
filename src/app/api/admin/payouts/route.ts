@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 
 export async function GET(req: NextRequest) {
   try {
-    const payouts = db.findMany<any>('payouts');
+    const payouts = await db.findManyAsync<any>('payouts');
     return NextResponse.json({ success: true, payouts });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const newPayout = db.create('payouts', {
+    const newPayout = await db.createAsync('payouts', {
       ...body,
       createdAt: new Date().toISOString(),
     });

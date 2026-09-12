@@ -14,7 +14,7 @@ export async function PATCH(req: NextRequest) {
     const cleanEmail = email?.trim().toLowerCase();
 
     // Find user in users database
-    const user = db.findOne<any>('users', (u) => 
+    const user = await db.findOneAsync<any>('users', (u: any) => 
       (teacherId && u.id === teacherId) ||
       (cleanPhone && u.phone === cleanPhone) ||
       (cleanEmail && u.email && u.email.toLowerCase() === cleanEmail)
@@ -35,14 +35,14 @@ export async function PATCH(req: NextRequest) {
       updates.passwordHash = hashPassword(newPassword.trim());
     }
 
-    const updatedUser = db.update('users', user.id, updates);
+    const updatedUser = await db.updateAsync('users', user.id, updates);
 
     // Also sync bio/avatar to teacher_kyc collection if exists
-    const kyc = db.findOne<any>('teacher_kyc', (k) => 
+    const kyc = await db.findOneAsync<any>('teacher_kyc', (k: any) => 
       k.teacherId === user.id || k.teacherPhone === user.phone || (k.teacherEmail && k.teacherEmail.toLowerCase() === user.email?.toLowerCase())
     );
     if (kyc) {
-      db.update('teacher_kyc', kyc.id, {
+      await db.updateAsync('teacher_kyc', kyc.id, {
         ...(avatar ? { selfieWithIdImage: avatar } : {}),
       });
     }

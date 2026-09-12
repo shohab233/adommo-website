@@ -62,7 +62,7 @@ export default function Navbar() {
   const userEnrollmentsCount = enrollments?.length || 0;
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 pointer-events-none">
+    <header className="fixed top-0 left-0 right-0 z-50 pointer-events-none w-full max-w-[100vw] overflow-x-hidden">
       
       {/* 1. Top Live Notice Bar (100% visible, sits at very top, never covered) */}
       <div className="pointer-events-auto bg-gradient-to-r from-[#fff0f5] via-[#fff5f8] to-[#fff0f5] border-b border-[#ffd2e2] py-2 px-4 text-xs shadow-xs">
@@ -102,7 +102,7 @@ export default function Navbar() {
           <nav className="ph-modern-navbar shadow-lg shadow-pink-500/5 backdrop-blur-xl bg-white/95 border border-slate-200/90">
             
             {/* ADOMMO Brand Logo */}
-            <Link href="/" className="flex items-center shrink-0 pr-1 sm:pr-2 transition-transform hover:scale-[1.02]">
+            <Link href="/" className="flex items-center shrink min-w-0 pr-1 sm:pr-2 transition-transform hover:scale-[1.02]">
               <AdommoLogo className="scale-[0.85] sm:scale-100 origin-left" />
             </Link>
 
@@ -174,7 +174,7 @@ export default function Navbar() {
             </div>
 
             {/* Right Actions */}
-            <div className="flex items-center gap-1.5 sm:gap-2.5 ml-auto lg:ml-4">
+            <div className="flex items-center gap-1.5 sm:gap-2.5 ml-auto lg:ml-4 shrink-0">
               
               {/* Hotline Box */}
               <a

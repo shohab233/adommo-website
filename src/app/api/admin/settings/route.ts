@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 
 export async function GET(req: NextRequest) {
   try {
-    const list = db.findMany<any>('settings');
+    const list = await db.findManyAsync<any>('settings');
     const settings = list[0] || null;
     return NextResponse.json({ success: true, settings });
   } catch (err: any) {
@@ -14,15 +14,15 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const list = db.findMany<any>('settings');
+    const list = await db.findManyAsync<any>('settings');
     let updated;
     if (list.length > 0) {
-      updated = db.update('settings', list[0].id, {
+      updated = await db.updateAsync('settings', list[0].id, {
         ...body,
         updatedAt: new Date().toISOString(),
       });
     } else {
-      updated = db.create('settings', {
+      updated = await db.createAsync('settings', {
         ...body,
         updatedAt: new Date().toISOString(),
       });

@@ -86,7 +86,7 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="bg-white min-h-screen pb-16 space-y-16">
+    <div className="bg-white min-h-screen pb-16 space-y-16 overflow-x-hidden w-full max-w-full">
       
       {/* 1. Hero Carousel & "কেন ফিজিক্স হান্টার্স" */}
       <HeroSection

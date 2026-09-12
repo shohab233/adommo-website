@@ -3,7 +3,7 @@ import { db, verifyToken } from '@/lib/db';
 
 export async function GET(req: NextRequest) {
   try {
-    const list = db.findMany('teacher_kyc');
+    const list = await db.findManyAsync('teacher_kyc');
     return NextResponse.json({ success: true, list, kycList: list });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -24,21 +24,21 @@ export async function PATCH(req: NextRequest) {
     const finalNotes = adminNotes || notes;
     const finalReason = rejectionReason || reason;
 
-    const target = db.findOne<any>('teacher_kyc', (k) => k.applicationId === applicationId);
+    const target = await db.findOneAsync<any>('teacher_kyc', (k: any) => k.applicationId === applicationId);
     if (!target) {
       return NextResponse.json({ success: false, error: 'KYC আবেদন পাওয়া যায়নি।' }, { status: 404 });
     }
 
-    const updated = db.update<any>('teacher_kyc', target.id, {
+    const updated = await db.updateAsync<any>('teacher_kyc', target.id, {
       status: action === 'approve' ? 'approved' : 'rejected',
       adminNotes: finalNotes || undefined,
       rejectionReason: finalReason || undefined,
       reviewedAt: new Date().toLocaleDateString('bn-BD')
     });
 
-    // Also update User record
+    // Also update User record in MongoDB Atlas
     if (target.teacherId) {
-      db.update('users', target.teacherId, {
+      await db.updateAsync('users', target.teacherId, {
         kycStatus: action === 'approve' ? 'approved' : 'rejected'
       });
     }

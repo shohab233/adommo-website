@@ -10,31 +10,31 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'এনরোলমেন্ট আইডি ও অ্যাকশন উল্লেখ করুন।' }, { status: 400 });
     }
 
-    const enrollment = db.findOne<any>('enrollments', (e) => e.id === enrollmentId);
+    const enrollment = await db.findOneAsync<any>('enrollments', (e: any) => e.id === enrollmentId);
     if (!enrollment) {
       return NextResponse.json({ success: false, error: 'এনরোলমেন্ট আবেদনটি পাওয়া যায়নি।' }, { status: 404 });
     }
 
     if (action === 'approve') {
-      const updated = db.update('enrollments', enrollment.id, { status: 'approved' });
+      const updated = await db.updateAsync('enrollments', enrollment.id, { status: 'approved' });
 
       // Unlock course in user's enrolledCourseIds
-      const student = db.findOne<any>('users', (u) => u.id === enrollment.studentId || u.phone === enrollment.studentPhone || u.phone === enrollment.senderPhone);
+      const student = await db.findOneAsync<any>('users', (u: any) => u.id === enrollment.studentId || u.phone === enrollment.studentPhone || u.phone === enrollment.senderPhone);
       if (student) {
         const currentEnrolled = new Set(student.enrolledCourseIds || []);
         currentEnrolled.add(enrollment.courseId);
-        db.update('users', student.id, { enrolledCourseIds: Array.from(currentEnrolled) });
+        await db.updateAsync('users', student.id, { enrolledCourseIds: Array.from(currentEnrolled) });
       }
 
       // Increment enrolledCount on the course
-      const course = db.findOne<any>('courses', (c) => c.id === enrollment.courseId);
+      const course = await db.findOneAsync<any>('courses', (c: any) => c.id === enrollment.courseId);
       if (course) {
-        db.update('courses', course.id, { enrolledCount: (course.enrolledCount || 0) + 1 });
+        await db.updateAsync('courses', course.id, { enrolledCount: (course.enrolledCount || 0) + 1 });
       }
 
       return NextResponse.json({ success: true, enrollment: updated });
     } else if (action === 'reject') {
-      const updated = db.update('enrollments', enrollment.id, { status: 'rejected' });
+      const updated = await db.updateAsync('enrollments', enrollment.id, { status: 'rejected' });
       return NextResponse.json({ success: true, enrollment: updated });
     }
 

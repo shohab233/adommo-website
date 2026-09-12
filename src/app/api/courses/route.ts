@@ -3,7 +3,7 @@ import { db, verifyToken } from '@/lib/db';
 
 export async function GET(req: NextRequest) {
   try {
-    const courses = db.findMany<any>('courses') || [];
+    const courses = await db.findManyAsync<any>('courses') || [];
     return NextResponse.json({ success: true, courses });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     }
 
     const courseData = await req.json();
-    const newCourse = db.create('courses', {
+    const newCourse = await db.createAsync('courses', {
       ...courseData,
       instructorId: payload?.id || courseData.instructorId || 'teacher_main',
       isPublished: true,
@@ -42,7 +42,7 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'কোর্স আইডি প্রদান করুন।' }, { status: 400 });
     }
 
-    const updated = db.update('courses', id, updates);
+    const updated = await db.updateAsync('courses', id, updates);
     return NextResponse.json({ success: true, course: updated });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -58,7 +58,7 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'কোর্স আইডি প্রদান করুন।' }, { status: 400 });
     }
 
-    const success = db.delete('courses', id);
+    const success = await db.deleteAsync('courses', id);
     return NextResponse.json({ success });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });

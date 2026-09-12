@@ -3,7 +3,7 @@ import { db, verifyToken } from '@/lib/db';
 
 export async function GET(req: NextRequest) {
   try {
-    const enrollments = db.findMany<any>('enrollments') || [];
+    const enrollments = await db.findManyAsync<any>('enrollments') || [];
     return NextResponse.json({ success: true, enrollments });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     const isFree = Number(amount) === 0;
     const initialStatus = isFree ? 'approved' : 'pending';
 
-    const newEnrollment = db.create('enrollments', {
+    const newEnrollment = await db.createAsync('enrollments', {
       courseId,
       courseTitle: courseTitle || 'কোর্স',
       studentId,
@@ -49,11 +49,11 @@ export async function POST(req: NextRequest) {
 
     // If free course, immediately unlock for user
     if (isFree) {
-      const student = db.findOne<any>('users', (u) => u.id === studentId);
+      const student = await db.findOneAsync<any>('users', (u: any) => u.id === studentId);
       if (student) {
         const enrolled = new Set(student.enrolledCourseIds || []);
         enrolled.add(courseId);
-        db.update('users', student.id, { enrolledCourseIds: Array.from(enrolled) });
+        await db.updateAsync('users', student.id, { enrolledCourseIds: Array.from(enrolled) });
       }
     }
 

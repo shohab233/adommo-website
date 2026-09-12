@@ -10,13 +10,16 @@
   --border-light: #eeeeee;
 }
 
-body {
+html, body {
   background-color: #ffffff;
   color: #334155;
   font-family: 'Anek Bangla', 'Hind Siliguri', system-ui, -apple-system, sans-serif;
   overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
   margin: 0;
   padding: 0;
+  position: relative;
 }
 
 /* Custom modern scrollbar */
@@ -68,6 +71,9 @@ body {
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.9);
   box-shadow: 0 8px 35px rgba(30, 40, 70, 0.08);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 @media (min-width: 640px) {
