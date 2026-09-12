@@ -1,0 +1,174 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #1e293b;
+  --primary-pink: #ed347d;
+  --primary-pink-hover: #e9287a;
+  --primary-gradient: linear-gradient(135deg, #f53278, #e9287a);
+  --card-bg: #ffffff;
+  --border-light: #eeeeee;
+}
+
+body {
+  background-color: #ffffff;
+  color: #334155;
+  font-family: 'Anek Bangla', 'Hind Siliguri', system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+/* Custom modern scrollbar */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f8f9fa;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #ed347d;
+}
+
+/* PhyHunt Floating Navbar */
+.ph-modern-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1050;
+  padding: 14px 20px 0;
+  pointer-events: none;
+}
+
+.ph-modern-header-wrap {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  pointer-events: auto;
+}
+
+.ph-modern-navbar {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 12px 0 18px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 8px 35px rgba(30, 40, 70, 0.08);
+}
+
+.ph-modern-login {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  padding: 0 20px;
+  border-radius: 50px;
+  color: #fff !important;
+  background: linear-gradient(135deg, #f53278, #e9287a);
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 6px 16px rgba(239, 45, 117, 0.22);
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.ph-modern-login:hover {
+  transform: scale(1.03);
+  box-shadow: 0 9px 22px rgba(239, 45, 117, 0.3);
+}
+
+/* PhyHunt Exact Course Card */
+.ph-course-card {
+  background: #ffffff;
+  border-radius: 18px;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+  transition: all 0.25s ease;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.ph-course-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 14px 30px rgba(237, 52, 125, 0.12);
+  border-color: #ffd2e2;
+}
+
+.ph-btn-pink {
+  background: linear-gradient(135deg, #f53278, #e9287a);
+  color: #ffffff;
+  border-radius: 50px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.ph-btn-pink:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(239, 45, 117, 0.3);
+  color: #ffffff;
+}
+
+/* Subtle animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Independent Dual-Pane Scrollbars for Admin Studio */
+.sidebar-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+.sidebar-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sidebar-scrollbar::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 9999px;
+}
+.sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1;
+}
+
+.canvas-scrollbar::-webkit-scrollbar {
+  width: 7px;
+}
+.canvas-scrollbar::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+.canvas-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+.canvas-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #ed347d;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+
+.animate-shake {
+  animation: shake 0.45s cubic-bezier(.36,.07,.19,.97) both;
+}
+

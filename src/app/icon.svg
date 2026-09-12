@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <linearGradient id="adommoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff1361" />
+      <stop offset="50%" stop-color="#ed347d" />
+      <stop offset="100%" stop-color="#9333ea" />
+    </linearGradient>
+    <linearGradient id="innerShine" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.35" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+
+  <!-- Squircle Base -->
+  <rect x="0.5" y="0.5" width="31" height="31" rx="8.5" ry="8.5" fill="url(#adommoGrad)" />
+  
+  <!-- Subtle top glass reflection -->
+  <rect x="1.5" y="1.5" width="29" height="14" rx="7.5" ry="7.5" fill="url(#innerShine)" />
+
+  <!-- Monogram 'A' Wings -->
+  <path d="M16 4.5 L6.5 26 H11.5 L16 14.5 L20.5 26 H25.5 L16 4.5 Z" fill="#ffffff" />
+
+  <!-- Dynamic Energy Crossbar -->
+  <rect x="10" y="19" width="12" height="2.5" rx="1.25" fill="#ed347d" />
+
+  <!-- Center Nucleus Spark -->
+  <circle cx="16" cy="20.25" r="1.8" fill="#ffffff" stroke="#ed347d" stroke-width="0.8" />
+
+  <!-- Apex Diamond Star -->
+  <path d="M16 7.5 L16.8 9.5 L18.5 10 L16.8 10.5 L16 12.5 L15.2 10.5 L13.5 10 L15.2 9.5 Z" fill="#ffffff" />
+</svg>

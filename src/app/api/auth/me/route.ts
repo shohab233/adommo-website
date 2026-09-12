@@ -1,0 +1,42 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { db, verifyToken } from '@/lib/db';
+
+export async function GET(req: NextRequest) {
+  try {
+    const token = req.cookies.get('adommo_auth_token')?.value;
+    if (!token) {
+      return NextResponse.json({ success: false, authenticated: false, user: null });
+    }
+
+    const payload = verifyToken<any>(token);
+    if (!payload || !payload.id) {
+      const res = NextResponse.json({ success: false, authenticated: false, user: null });
+      res.cookies.set('adommo_auth_token', '', { path: '/', maxAge: 0, expires: new Date(0) });
+      return res;
+    }
+
+    const user = db.findOne<any>('users', (u) => u.id === payload.id);
+    if (!user) {
+      const res = NextResponse.json({ success: false, authenticated: false, user: null });
+      res.cookies.set('adommo_auth_token', '', { path: '/', maxAge: 0, expires: new Date(0) });
+      return res;
+    }
+
+    return NextResponse.json({
+      success: true,
+      authenticated: true,
+      user: {
+        id: user.id,
+        name: user.name,
+        phone: user.phone,
+        email: user.email,
+        role: user.role,
+        college: user.college,
+        kycStatus: user.kycStatus,
+        enrolledCourseIds: user.enrolledCourseIds || [],
+      },
+    });
+  } catch (err: any) {
+    return NextResponse.json({ success: false, authenticated: false, error: err.message, user: null });
+  }
+}

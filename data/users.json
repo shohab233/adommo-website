@@ -1,0 +1,39 @@
+[
+  {
+    "id": "id_1789136556830_h8tvl",
+    "createdAt": "2026-09-11T14:22:36.830Z",
+    "name": "kaji nojrul",
+    "phone": "01714625067",
+    "email": "yidap81493@airhemp.com",
+    "college": "পদার্থবিজ্ঞান (Physics) • Lohagara Collage",
+    "passwordHash": "a4df76cd0e41463ebe2135c09857620c:b3f0d1232374085e9540422e1ab41d7270cf9cc81885e12f7b415e8761744bb347cdd7b16f261ba0e5fd966361b7d26cd9b930d006e2252d25cdc41dc36403ed",
+    "role": "teacher",
+    "kycStatus": "approved",
+    "enrolledCourseIds": [],
+    "updatedAt": "2026-09-12T03:53:54.163Z",
+    "bio": "ফিজিক্স স্পেশালিস্ট ও শিক্ষক"
+  },
+  {
+    "id": "id_1789135043017_foq2m",
+    "createdAt": "2026-09-11T13:57:23.017Z",
+    "name": "tanvir",
+    "phone": "01754111940",
+    "email": "dijiy23635@94an.com",
+    "college": "Pirgonj Govt Collage (চট্টগ্রাম)",
+    "passwordHash": "42d03a876fba6373e26f2e17fe6f7136:e7a1f0085f17da10d5f05baa28f4d0239955d04f35e6611cbcb32b70514df342d0ae41ae7be0dd2c0c7b6165cb7064ae4ec449edb79c6911292204a0814b9620",
+    "role": "student",
+    "enrolledCourseIds": [],
+    "updatedAt": "2026-09-11T14:07:56.597Z"
+  },
+  {
+    "id": "id_1788959044208_x6deh",
+    "createdAt": "2026-09-09T13:04:04.208Z",
+    "name": "Md Shohab  Hosen",
+    "phone": "01406548456",
+    "email": "airupantar01@gmail.com",
+    "college": "Lohagara Degree Collage (রংপুর)",
+    "passwordHash": "79d36a64ee8f02168e2775c33dd57447:18126e603c9150caafa7d442a15aaa2a9664f15c60d6d39bcf8a02dc4be1b33870423bd2285ac29ef6c8247e42ed93503ba2fada6e30ea6f6b519571283e1d08",
+    "role": "student",
+    "enrolledCourseIds": []
+  }
+]

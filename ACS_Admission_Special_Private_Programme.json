@@ -1,0 +1,1021 @@
+{
+  "courseId": "0776a7b0-1c22-4a89-b150-66fdba5738b2",
+  "courseTitle": "ACS Admission Special Private Programme",
+  "extractedAt": "2026-09-09T03:44:28.330Z",
+  "totalSubjects": 7,
+  "subjects": [
+    {
+      "id": "81a5cba7-4aea-466a-8110-8c152c8e95bd",
+      "title": null,
+      "chapters": [
+        {
+          "id": "447a9070-3ae4-4bd3-ab85-3cec74c4f264",
+          "title": null,
+          "classes": []
+        },
+        {
+          "id": "7f3cf6b5-456c-4660-a30d-be7d99cf1fa5",
+          "title": null,
+          "classes": [
+            {
+              "id": "14bedc8c-9d47-48f9-9eee-2a7adad200bf",
+              "classNo": "1",
+              "description": "Vector (ভেক্টর) - 01\n",
+              "instructor": "",
+              "videoUrl": "5c5d846d-9700-4de3-8a97-4c65e44126bf",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "363ac1b0-34c3-4ddc-8b5b-56b19caa6fd1",
+              "classNo": "2",
+              "description": "Vector (ভেক্টর) - 02",
+              "instructor": "",
+              "videoUrl": "a26d42c8-0d45-4120-bc70-09bca31fa6b2",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "d03acae6-7b8b-443b-85a6-ee482cfd762f",
+              "classNo": "3",
+              "description": "Vector (ভেক্টর) - 03",
+              "instructor": "",
+              "videoUrl": "633b3dae-74e1-495f-aa3c-4ee28d63ccf3",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "d054064b-8135-4a9b-b98d-d5fca66b5820",
+              "classNo": "4",
+              "description": "Vector (ভেক্টর) - 04",
+              "instructor": "",
+              "videoUrl": "f0fe6c8f-decb-446a-9bee-b6c9bbf83aeb",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            }
+          ]
+        },
+        {
+          "id": "9093ef69-7191-405d-a736-ea9088aef5ec",
+          "title": null,
+          "classes": [
+            {
+              "id": "86f9daa8-174d-4eca-881f-7441f44f6c6b",
+              "classNo": "1",
+              "description": "Dynamics (গতিবিদ্যা) - 01",
+              "instructor": "",
+              "videoUrl": "50734d3b-3248-49c0-948b-ed31ffb9ad28",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "54f512b3-e834-41c1-a0ef-6f72ce7fd721",
+              "classNo": "2",
+              "description": "Dynamics (গতিবিদ্যা) - 02",
+              "instructor": "",
+              "videoUrl": "f2ac08b5-7b7f-4c72-992e-84c3e8eed360",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "4d651567-677e-4b68-be0c-3d67e97e9535",
+              "classNo": "3",
+              "description": "Dynamics (গতিবিদ্যা) - 03",
+              "instructor": "",
+              "videoUrl": "6299843d-485e-4f11-ba31-0ac5ba727a23",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "28911592-5a5d-474a-bb68-cfe52ab175a5",
+              "classNo": "4",
+              "description": "Dynamics (গতিবিদ্যা) - 04",
+              "instructor": "",
+              "videoUrl": "d64e0044-10a5-4af3-8770-01bf4721fc41",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            }
+          ]
+        },
+        {
+          "id": "ca95f08d-da40-465b-989c-d40ace1c02a9",
+          "title": null,
+          "classes": [
+            {
+              "id": "8427daea-2173-4c5d-ac39-ff819ba20de7",
+              "classNo": "1",
+              "description": "Newtonian Mechanics (নিউটনীয় বলবিদ্যা) - 01",
+              "instructor": "",
+              "videoUrl": "894c9486-e456-4998-9b63-570c48ec860a",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "76c9c8e0-1b3a-4a49-8acb-61fbbc16e427",
+              "classNo": "2",
+              "description": "Newtonian Mechanics (নিউটনীয় বলবিদ্যা) - 02",
+              "instructor": "",
+              "videoUrl": "8d8a4faa-63c2-474c-a51f-317ca7c279e6",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "47f11e2e-c4f7-4d2f-9842-b06e08153e78",
+              "classNo": "3",
+              "description": "Newtonian Mechanics (নিউটনীয় বলবিদ্যা) - 03",
+              "instructor": "",
+              "videoUrl": "272d0980-7242-4466-8d72-e977b9d97ce8",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "36b41ce6-6bae-4003-ac6f-b3291341d06d",
+              "classNo": "4",
+              "description": "Newtonian Mechanics (নিউটনীয় বলবিদ্যা) - 04",
+              "instructor": "",
+              "videoUrl": "774fdb8c-68dc-4184-841c-38409e4b6df0",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            }
+          ]
+        },
+        {
+          "id": "e70b56ec-0687-4a69-8e41-0e7cf9e50fd5",
+          "title": null,
+          "classes": [
+            {
+              "id": "93e8f545-ab5d-445b-8659-cf824ff900a7",
+              "classNo": "1",
+              "description": "Work, Energy & Power (কাজ, শক্তি ও ক্ষমতা)  -01",
+              "instructor": "",
+              "videoUrl": "5540aac0-b375-471a-ade3-206133007c63",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "c1b4c6e0-130a-4fdb-af3c-f9f5dae6b44c",
+              "classNo": "2",
+              "description": "Work, Energy & Power (কাজ, শক্তি ও ক্ষমতা) -02",
+              "instructor": "",
+              "videoUrl": "54c0c2fd-41f4-4542-98a6-f84c69b72f03",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            }
+          ]
+        },
+        {
+          "id": "01f466f5-3630-4fb1-b8f6-347084635ce5",
+          "title": null,
+          "classes": [
+            {
+              "id": "235f6348-7fe1-4e0c-b5be-0e249bf73faf",
+              "classNo": "1",
+              "description": "Gravitation and Gravity (মহাকর্ষ ও অভিকর্ষ) -01",
+              "instructor": "",
+              "videoUrl": "aa1ce365-9878-4c83-9039-efd5490b9e71",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "797749c2-5f81-4007-ad7e-5bf47df95928",
+              "classNo": "2",
+              "description": "Gravitation and Gravity (মহাকর্ষ ও অভিকর্ষ) -02",
+              "instructor": "",
+              "videoUrl": "38016e07-0a7b-4ad2-b036-f9c16ccef4ca",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            }
+          ]
+        },
+        {
+          "id": "af02bae2-827a-42a2-886d-d3e1c84b2181",
+          "title": null,
+          "classes": [
+            {
+              "id": "b12579f9-a72a-4891-8668-2ae895aec02d",
+              "classNo": "1",
+              "description": "Structural Properties of Matter (পদার্থের গাঠনিক ধর্ম) - 01",
+              "instructor": "",
+              "videoUrl": "575d2637-8ebb-44bd-a396-2947b4964ad3",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "e04cf496-2f1a-467f-b5eb-fed2b6c3b7f8",
+              "classNo": "2",
+              "description": "Structural Properties of Matter (পদার্থের গাঠনিক ধর্ম) - 02",
+              "instructor": "",
+              "videoUrl": "1a277eda-4345-47fe-af74-e8ad24419e90",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            }
+          ]
+        },
+        {
+          "id": "16934897-e9b6-4052-b3fb-e1a0610d588b",
+          "title": null,
+          "classes": []
+        },
+        {
+          "id": "29c91b4d-626d-43d3-8ac0-6c02ed4393eb",
+          "title": null,
+          "classes": []
+        },
+        {
+          "id": "fdff9f10-4bce-4d51-8b18-47b1ecdb9049",
+          "title": null,
+          "classes": []
+        }
+      ]
+    },
+    {
+      "id": "f15892c7-bbb0-478d-81d0-84410a5de5b7",
+      "title": null,
+      "chapters": [
+        {
+          "id": "4a1eda1f-2f28-416d-8554-e99a0f2604fe",
+          "title": null,
+          "classes": []
+        },
+        {
+          "id": "e9a52b2d-5130-47ad-9bce-db51f0942648",
+          "title": null,
+          "classes": []
+        },
+        {
+          "id": "ab961a28-ef87-44ad-967e-924aa38c9158",
+          "title": null,
+          "classes": []
+        },
+        {
+          "id": "48462d82-8bda-4ba4-a62a-d912591f3b40",
+          "title": null,
+          "classes": []
+        },
+        {
+          "id": "31be03c3-1177-4a1e-80e6-50a1fe475191",
+          "title": null,
+          "classes": []
+        },
+        {
+          "id": "ec067fb7-b1b4-4bf0-971b-fa3909b9420b",
+          "title": null,
+          "classes": []
+        },
+        {
+          "id": "33ebaff7-aa0f-446d-8709-a1faeb80532d",
+          "title": null,
+          "classes": []
+        },
+        {
+          "id": "fc00f9c6-5a64-42c6-935e-9ca53a06a93c",
+          "title": null,
+          "classes": []
+        },
+        {
+          "id": "fc510194-b80f-4d59-9b93-2e0c0d1d7f40",
+          "title": null,
+          "classes": []
+        },
+        {
+          "id": "5f656d79-45c5-4f15-ac28-75dd364ff2ef",
+          "title": null,
+          "classes": []
+        },
+        {
+          "id": "ed437f44-942d-4f07-aad7-a03012dee172",
+          "title": null,
+          "classes": []
+        }
+      ]
+    },
+    {
+      "id": "843c3116-53f0-4e77-a77e-a74886352702",
+      "title": null,
+      "chapters": [
+        {
+          "id": "a3f5e920-72d7-4737-9575-e1d420d2683f",
+          "title": null,
+          "classes": []
+        },
+        {
+          "id": "1e6f2fe3-90ba-4418-b3aa-ebb12a0f9b2b",
+          "title": "Chapter 2: ভেক্টর",
+          "classes": []
+        },
+        {
+          "id": "0f73b0e1-70f6-4f19-9bed-208729d37fdb",
+          "title": null,
+          "classes": [
+            {
+              "id": "da19c2b2-afdd-4d27-9cdd-6172eff847ea",
+              "classNo": "1",
+              "description": "সরলরেখা-০১",
+              "instructor": "",
+              "videoUrl": "63fb1542-ff6c-493f-a163-e9170b2da71e",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "cd97c363-5100-48c2-ba23-bf2a8407dbc2",
+              "classNo": "2",
+              "description": "সরলরেখা-০২",
+              "instructor": "",
+              "videoUrl": "691142a9-81da-4a97-87b9-40bd8d0d2252",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "82484504-a06a-4fba-b163-c3a39e764bcd",
+              "classNo": "3",
+              "description": "সরলরেখা-০৩",
+              "instructor": "",
+              "videoUrl": "3799535a-c5f2-45e9-93b6-14b389b3592e",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            }
+          ]
+        },
+        {
+          "id": "a257f51e-71e2-4931-b358-2ddce2eaa41a",
+          "title": null,
+          "classes": [
+            {
+              "id": "3a437465-688f-4cd7-b6fd-b65ecfd4f190",
+              "classNo": "1",
+              "description": "Circle (বৃত্ত) -01",
+              "instructor": "",
+              "videoUrl": "6d627d2a-4a39-4378-bcb5-c63604dd0596",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "a0e0b792-c4de-4074-87f8-1efc23be83c8",
+              "classNo": "2",
+              "description": "Circle (বৃত্ত) -02",
+              "instructor": "",
+              "videoUrl": "8745c92d-97da-4362-8f62-2deb6bfe5510",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "89fbd0bd-3050-4f29-88ee-3a17d71942e3",
+              "classNo": "3",
+              "description": "Circle (বৃত্ত) -03",
+              "instructor": "",
+              "videoUrl": "d5bff10a-998a-431d-a41a-1e5072f7fcb2",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            }
+          ]
+        },
+        {
+          "id": "0d36265f-98d2-41a6-af4c-5873d206e730",
+          "title": "Chapter 5: বিন্যাস ও সমাবেশ",
+          "classes": []
+        },
+        {
+          "id": "4cb5d1fc-177e-4037-8c5a-335b4b3c419c",
+          "title": "Chapter 6: ত্রিকোণমিতিক অনুপাত",
+          "classes": []
+        },
+        {
+          "id": "dda4f96d-3747-4234-ba07-1a7f46f5479f",
+          "title": null,
+          "classes": []
+        },
+        {
+          "id": "fcaec149-c335-4e13-8ac1-ba7ce7486a98",
+          "title": null,
+          "classes": []
+        },
+        {
+          "id": "1d858913-5cb7-43a4-b9cb-040b16d154bc",
+          "title": null,
+          "classes": []
+        },
+        {
+          "id": "4dc6148a-bd88-4c0f-a8c4-28aa2f4fcabf",
+          "title": null,
+          "classes": []
+        }
+      ]
+    },
+    {
+      "id": "e1de256a-2cb6-4bc0-97d7-898c159f7c4c",
+      "title": null,
+      "chapters": [
+        {
+          "id": "1d4a2d2f-768c-422a-a60e-865c9a281ead",
+          "title": null,
+          "classes": []
+        },
+        {
+          "id": "dc9fd87b-e8fe-4e6a-9fd0-b22ad060139a",
+          "title": "Chapter 2: যোগাশ্রয়ী প্রোগ্রাম",
+          "classes": []
+        },
+        {
+          "id": "e021df7a-74ad-45d6-8257-5d411c41a7f3",
+          "title": null,
+          "classes": [
+            {
+              "id": "abe4568a-5ecb-41e9-9ac3-648ed50a238f",
+              "classNo": "1",
+              "description": "Complex Number (জটিল সংখ্যা) - 01",
+              "instructor": "",
+              "videoUrl": "9fa72545-b8eb-49be-954f-d7e2e2104672",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "232d4896-1c58-4b0c-9b42-2b22bdb99c21",
+              "classNo": "2",
+              "description": "Complex Number (জটিল সংখ্যা) - 02",
+              "instructor": "",
+              "videoUrl": "9c34e850-1c7e-40fa-b658-d53051fff464",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "1a4f9236-28d8-495c-9151-3ba6b43f62e6",
+              "classNo": "3",
+              "description": "জটিল সংখ্যার সব MCQ করে ফেলো ক্যাল্কুলেটরেই - 991 ES/ES plus, 991 EX, CW\n",
+              "instructor": "",
+              "videoUrl": "MX1re8Iql0Y",
+              "libraryId": "610687",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "ac87524d-7cd2-4240-8d0f-2e3e6798416f",
+              "classNo": "3",
+              "description": "Complex Number (জটিল সংখ্যা) - 03",
+              "instructor": "",
+              "videoUrl": "db9244c2-fb4f-454f-bf90-7a64f67018fb",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            }
+          ]
+        },
+        {
+          "id": "3c12a2b4-d2e7-43c7-9c66-7dfc525d7dd3",
+          "title": null,
+          "classes": [
+            {
+              "id": "0dfbe6b2-225e-430c-9456-6b53791b3852",
+              "classNo": "1",
+              "description": "Polynomial and Polynomial Equations (বহুপদী ও বহুপদী সমীকরণ) -01",
+              "instructor": "",
+              "videoUrl": "fd6c078b-a44c-4274-a33b-240e9accb33a",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "a5ac25a9-9fac-454e-9d94-0b36d3ebba10",
+              "classNo": "2",
+              "description": "Polynomial and Polynomial Equations (বহুপদী ও বহুপদী সমীকরণ) -02",
+              "instructor": "",
+              "videoUrl": "af2b0236-bab3-4bf7-84d4-2e819cf67cae",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            }
+          ]
+        },
+        {
+          "id": "302f5ffd-e9a4-4785-a3b9-8ec716b8df3b",
+          "title": null,
+          "classes": [
+            {
+              "id": "ff73ce6e-8cea-4786-bb8a-bc201db33b21",
+              "classNo": "1",
+              "description": "Binomial Expansion (দ্বিপদী বিস্তৃতি) - 01\n",
+              "instructor": "",
+              "videoUrl": "26af965a-1de5-4bb5-8b36-acb8ac6e8d91",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "a50e0af9-7512-4c89-b8b3-bb3104e7958f",
+              "classNo": "2",
+              "description": "Binomial Expansion (দ্বিপদী বিস্তৃতি) - 02",
+              "instructor": "",
+              "videoUrl": "7f4fecfc-044b-446c-852c-7d2cb2777bbe",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            }
+          ]
+        },
+        {
+          "id": "313a7cf3-9f5e-4e2f-9b19-7c74307c8f20",
+          "title": null,
+          "classes": [
+            {
+              "id": "6e8ec267-dacb-42fa-9e6e-3865ad48b6d4",
+              "classNo": "1",
+              "description": "Conics (কনিক) - 01",
+              "instructor": "",
+              "videoUrl": "af46e52a-550c-4c84-99c9-5a1985009df8",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            }
+          ]
+        },
+        {
+          "id": "7c198543-9c4d-4a47-ad61-5d049c6e4beb",
+          "title": null,
+          "classes": []
+        },
+        {
+          "id": "e7d93b3e-f9a9-40e8-b354-dd4c2e86d4a1",
+          "title": null,
+          "classes": []
+        },
+        {
+          "id": "e4d07c1b-de11-4017-92a3-6531c2f92620",
+          "title": null,
+          "classes": []
+        },
+        {
+          "id": "f30688c7-0cce-4f96-8573-8268a0abdb3c",
+          "title": null,
+          "classes": []
+        }
+      ]
+    },
+    {
+      "id": "e6fb3f73-bcab-4904-be40-b4d596972132",
+      "title": null,
+      "chapters": [
+        {
+          "id": "c2fc9419-669c-4fe4-9a07-8024a654d02d",
+          "title": null,
+          "classes": [
+            {
+              "id": "5bb41049-4124-47f8-8b00-ab160dade6aa",
+              "classNo": "1",
+              "description": "সম্পূর্ণ চ্যাপ্টার",
+              "instructor": "",
+              "videoUrl": "a7f1ad97-6fad-42f0-a4ed-04f388828461",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            }
+          ]
+        },
+        {
+          "id": "d880b6df-c79e-4f58-867c-41125b0f26ae",
+          "title": null,
+          "classes": [
+            {
+              "id": "ea37d279-050a-457f-9082-1852f00a6ad2",
+              "classNo": "1",
+              "description": "Qualitative Chemistry (গুনগত রসায়ন) - 01",
+              "instructor": "",
+              "videoUrl": "f784406b-d8b3-42c6-a0af-f571c041553c",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "00e5e72a-5088-417d-93ea-8d38ad0b1a18",
+              "classNo": "2",
+              "description": "Qualitative Chemistry (গুনগত রসায়ন) - 02",
+              "instructor": "",
+              "videoUrl": "31e64771-5b12-47b9-8a73-5860b29cadfe",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "ca7db478-f31a-4c33-8cd8-e5d9c2a16d94",
+              "classNo": "3",
+              "description": "Qualitative Chemistry (গুনগত রসায়ন) - 03",
+              "instructor": "",
+              "videoUrl": "45f204fd-a49b-401b-af78-809d77391011",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            }
+          ]
+        },
+        {
+          "id": "764ed2b8-1bcb-4bc0-9f0e-91b7a1be72c6",
+          "title": null,
+          "classes": [
+            {
+              "id": "81537dae-4e45-4c78-9db8-52af2bfae5af",
+              "classNo": "4",
+              "description": "Periodic Properties of Elements (মৌলের পর্যাবৃত্তিক ধর্ম ও রাসায়নিক বন্ধন) - 04",
+              "instructor": "",
+              "videoUrl": "5c33f414-4a58-4f4f-934b-eba2a9f68359",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            }
+          ]
+        },
+        {
+          "id": "d9ffc0bd-87ed-4b8c-ab61-e1d4c5e68030",
+          "title": null,
+          "classes": [
+            {
+              "id": "a83b63c5-4b61-4411-9f70-34795ada8d9c",
+              "classNo": "1",
+              "description": "রাসায়নিক পরিবর্তন-০১",
+              "instructor": "",
+              "videoUrl": "f4e87790-d031-4fac-afb6-df6e8ec5af75",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "0a7ffd8d-164f-4b6c-9a14-4a7f33e47e7c",
+              "classNo": "2",
+              "description": "রাসায়নিক পরিবর্তন-০২",
+              "instructor": "",
+              "videoUrl": "8b9ac436-c309-4c80-8963-debd77dc98ad",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "45457ce6-5c9f-40a4-9e67-e9030484b153",
+              "classNo": "3",
+              "description": "রাসায়নিক পরিবর্তন-০৩",
+              "instructor": "",
+              "videoUrl": "2601bf6d-1fa3-448c-a601-b7c693a72945",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "f76f3073-138e-4c37-8b42-13cb488841a4",
+              "classNo": "4",
+              "description": "রাসায়নিক পরিবরতন-০৪",
+              "instructor": "",
+              "videoUrl": "932d7653-5b1d-4068-8b1a-ec45368d3d43",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "866edade-2eb1-49d5-bb28-e1cb039006a3",
+              "classNo": "5",
+              "description": "রাসায়নিক পরিবর্তন-০৫ ",
+              "instructor": "",
+              "videoUrl": "e89f7c4c-3be7-4e64-bf6e-d9908a3286d7",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "afe389b3-a6b2-4db7-9527-1e81640e32dc",
+              "classNo": "6",
+              "description": "রাসায়নিক পরিবর্তন-০৬",
+              "instructor": "",
+              "videoUrl": "7b982aab-a8cf-4806-b482-f6171f5058e2",
+              "libraryId": "610687",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            }
+          ]
+        },
+        {
+          "id": "2552709a-5705-4710-9b4d-1566b4137a5e",
+          "title": null,
+          "classes": []
+        }
+      ]
+    },
+    {
+      "id": "e35b074a-d73b-4e98-b279-3d283ac003c6",
+      "title": null,
+      "chapters": [
+        {
+          "id": "0ca6bf95-fb56-4e22-965a-91401a00de68",
+          "title": null,
+          "classes": []
+        },
+        {
+          "id": "59d7fd20-feb9-4a72-9792-dfb9e2e32c70",
+          "title": null,
+          "classes": []
+        },
+        {
+          "id": "83cc9238-1e97-4bbb-a1d2-39536f05faa3",
+          "title": null,
+          "classes": [
+            {
+              "id": "56e52b5f-24e5-42bf-b132-a019d4695585",
+              "classNo": "1",
+              "description": "Quantitative Chemistry (পরিমাণগত রসায়ন)-01",
+              "instructor": "",
+              "videoUrl": "d1bdb824-a39d-4c37-99a2-c43f7620097f",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "05ee728d-859f-43db-84d3-0208fb7f5022",
+              "classNo": "2",
+              "description": "Quantitative Chemistry (পরিমাণগত রসায়ন)-02",
+              "instructor": "",
+              "videoUrl": "f9ddf6e6-5141-42e8-9fac-f6a3929f6ff6",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "c360fb60-2ce1-4540-967c-e03768f6ff57",
+              "classNo": "3",
+              "description": "Quantitative Chemistry (পরিমাণগত রসায়ন)-03",
+              "instructor": "",
+              "videoUrl": "36392990-73f2-41b7-866f-93e2c5f7c42e",
+              "libraryId": "610665",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            }
+          ]
+        },
+        {
+          "id": "6966c928-ed16-42d8-b22b-4f0282a2c213",
+          "title": null,
+          "classes": []
+        },
+        {
+          "id": "3d525d03-9a96-4941-af5c-a7fb75bc6c49",
+          "title": null,
+          "classes": []
+        }
+      ]
+    },
+    {
+      "id": "86c4519e-dabf-4ae1-8437-13c34b297e1a",
+      "title": null,
+      "chapters": [
+        {
+          "id": "bdc1dd71-38ef-40fa-8329-ed3b08e595ba",
+          "title": "English 1st Paper",
+          "classes": []
+        },
+        {
+          "id": "1bfefb54-cf46-4550-9443-820efd76835c",
+          "title": null,
+          "classes": [
+            {
+              "id": "4453a12d-615a-4a05-a8b4-2ff9b33c1831",
+              "classNo": "1",
+              "description": "",
+              "instructor": "",
+              "videoUrl": "Zk8ApdjuMOg",
+              "libraryId": "610687",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "cd1fe423-ff41-4238-b8aa-6518be2c416b",
+              "classNo": "2",
+              "description": "",
+              "instructor": "",
+              "videoUrl": "K7bFq41wU8Y",
+              "libraryId": "610687",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "16a653ba-d586-4c27-a85f-679f3fd3cefd",
+              "classNo": "3",
+              "description": "",
+              "instructor": "",
+              "videoUrl": "9bXoQcXx4Yw",
+              "libraryId": "610687",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "3a78fb01-bb12-425a-8e36-4cf72b436907",
+              "classNo": "4",
+              "description": "",
+              "instructor": "",
+              "videoUrl": "h6ry7_4zQlk",
+              "libraryId": "610687",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "a63c7f2b-7fb0-46c7-8117-ebe72975f0ac",
+              "classNo": "5",
+              "description": "",
+              "instructor": "",
+              "videoUrl": "5bpHiL5PmYI",
+              "libraryId": "610687",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "a268745e-915d-43ca-a5f4-7fb22e44baed",
+              "classNo": "6",
+              "description": "",
+              "instructor": "",
+              "videoUrl": "p5vWMguG-E4",
+              "libraryId": "610687",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "f0fe1f6d-f9d0-4a66-a7ee-67b6b07e0528",
+              "classNo": "7",
+              "description": "",
+              "instructor": "",
+              "videoUrl": "4c33Ag3IYOs",
+              "libraryId": "610687",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "9744501b-283e-4c4c-99df-5de7ee9afb21",
+              "classNo": "8",
+              "description": "",
+              "instructor": "",
+              "videoUrl": "GdKN6J-28MI",
+              "libraryId": "610687",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "bd2304a4-18be-4126-a1ec-98213b94e0d9",
+              "classNo": "9",
+              "description": "",
+              "instructor": "",
+              "videoUrl": "Jc-3imOVxCM",
+              "libraryId": "610687",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "a47eeec6-4e27-4cf4-94a5-f29b12127fed",
+              "classNo": "10",
+              "description": "",
+              "instructor": "",
+              "videoUrl": "bV5DLehaotU",
+              "libraryId": "610687",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "2f655045-e014-4f53-a8c5-db83bfba9605",
+              "classNo": "11",
+              "description": "",
+              "instructor": "",
+              "videoUrl": "FgpUFvZYlzQ",
+              "libraryId": "610687",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "80b13f6b-8b90-49a5-9790-b7b16864b9f7",
+              "classNo": "12",
+              "description": "",
+              "instructor": "",
+              "videoUrl": "wXtTdGv5TTU",
+              "libraryId": "610687",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "fa6824db-e49f-4e52-94fb-b0c510915b2b",
+              "classNo": "13",
+              "description": "",
+              "instructor": "",
+              "videoUrl": "tfOHhaQV-hE",
+              "libraryId": "610687",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "36c0c1ab-4b79-4b41-a848-df7bf0ccfcac",
+              "classNo": "14",
+              "description": "",
+              "instructor": "",
+              "videoUrl": "hPrhmdTFFt0",
+              "libraryId": "610687",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            },
+            {
+              "id": "d985f32b-970e-4516-b1e6-d4e9549a8c8c",
+              "classNo": "15",
+              "description": "",
+              "instructor": "",
+              "videoUrl": "4ytqQibHZkY",
+              "libraryId": "610687",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": null,
+              "solutionSheetPdf": null
+            }
+          ]
+        },
+        {
+          "id": "d1c5762c-4d06-428f-8b06-e6e95e673500",
+          "title": null,
+          "classes": []
+        }
+      ]
+    }
+  ],
+  "totalClasses": 62
+}
