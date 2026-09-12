@@ -46,7 +46,7 @@ export default function ExamDirectoryPage() {
       
       {/* Header Banner */}
       <div className="bg-white border-b border-slate-200 py-10 shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="max-w-[1480px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-[#fff0f5] text-[#ed347d] border border-[#fecdd3] mb-3">
@@ -165,7 +165,7 @@ export default function ExamDirectoryPage() {
       </div>
 
       {/* Main Body */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+      <div className="max-w-[1480px] mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* If user is viewing enrolled exams and has none */}
         {displayExams.length === 0 ? (

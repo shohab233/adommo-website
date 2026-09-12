@@ -108,7 +108,7 @@ export default function CourseDetailsPage({
       
       {/* Top Breadcrumb Header */}
       <div className="bg-white border-b border-slate-200/80 py-4 shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="max-w-[1480px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2 text-slate-500">
             <Link href="/" className="hover:text-[#ed347d] transition-colors flex items-center gap-1">
               <ArrowLeft className="w-3.5 h-3.5" />
@@ -132,7 +132,7 @@ export default function CourseDetailsPage({
       </div>
 
       {/* Main Content Area: 2 Columns */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-8">
+      <div className="max-w-[1480px] mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           
           {/* =========================================================

@@ -67,7 +67,7 @@ export default function Navbar() {
       
       {/* 1. Top Live Notice Bar (100% visible, sits at very top, never covered) */}
       <div className="pointer-events-auto bg-gradient-to-r from-[#fff0f5] via-[#fff5f8] to-[#fff0f5] border-b border-[#ffd2e2] py-2 px-4 text-xs shadow-xs">
-        <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
+        <div className="max-w-[1480px] mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-2 font-medium overflow-hidden whitespace-nowrap">
             {hasActiveLive ? (
               <Link 

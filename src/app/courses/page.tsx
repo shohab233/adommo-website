@@ -55,8 +55,8 @@ export default function AllCoursesPage() {
     <div className="bg-white min-h-screen pb-20 pt-6 font-sans">
       
       {/* Top Banner Header */}
-      <div className="bg-gradient-to-b from-[#fff5f8] to-white border-b border-slate-100 py-10 px-4 sm:px-6">
-        <div className="max-w-6xl mx-auto space-y-4">
+      <div className="bg-gradient-to-b from-[#fff5f8] to-white border-b border-slate-100 py-10 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1480px] mx-auto space-y-4">
           
           <Link
             href="/"
@@ -89,7 +89,7 @@ export default function AllCoursesPage() {
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-8 space-y-6">
+      <div className="max-w-[1480px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-6">
         
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200/80 shadow-xs">
           
