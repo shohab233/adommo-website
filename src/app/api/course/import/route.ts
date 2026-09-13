@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { verifyToken } from '@/lib/db';
 import { Course, CourseSection, CourseModule, Lecture, ResourceNote } from '@/types';
 
 function slugify(text: string): string {
@@ -13,14 +14,128 @@ function slugify(text: string): string {
     .replace(/--+/g, '-');
 }
 
+const CHAPTER_SYNONYMS: Record<string, string> = {
+  'ভেক্টর': 'ভেক্টর',
+  'vector': 'ভেক্টর',
+  'গতিবিদ্যা': 'গতিবিদ্যা',
+  'dynamics': 'গতিবিদ্যা',
+  'নিউটনীয় বলবিদ্যা': 'নিউটনীয় বলবিদ্যা',
+  'নিউটনিয়ান মেকানিক্স': 'নিউটনীয় বলবিদ্যা',
+  'নিউটনিয়ান মেকানিক্স': 'নিউটনীয় বলবিদ্যা',
+  'newtonian mechanics': 'নিউটনীয় বলবিদ্যা',
+  'কাজ শক্তি ও ক্ষমতা': 'কাজ, শক্তি ও ক্ষমতা',
+  'কাজ, শক্তি ও ক্ষমতা': 'কাজ, শক্তি ও ক্ষমতা',
+  'মহাকর্ষ ও অভিকর্ষ': 'মহাকর্ষ ও অভিকর্ষ',
+  'পদার্থের গাঠনিক ধর্ম': 'পদার্থের গাঠনিক ধর্ম',
+  'পর্যাবৃত্ত গতি': 'পর্যাবৃত্ত গতি',
+  'তরঙ্গ': 'তরঙ্গ',
+  'আদর্শ গ্যাস ও গতিতত্ত্ব': 'আদর্শ গ্যাস ও গতিতত্ত্ব',
+  'আদর্শ গ্যাস': 'আদর্শ গ্যাস ও গতিতত্ত্ব',
+  'তাপগতিবিদ্যা': 'তাপগতিবিদ্যা',
+  'স্থির তড়িৎ': 'স্থির তড়িৎ',
+  'স্থির তড়িৎ': 'স্থির তড়িৎ',
+  'চল তড়িৎ': 'চল তড়িৎ',
+  'চল তড়িৎ': 'চল তড়িৎ',
+  'চলতড়িৎ': 'চল তড়িৎ',
+  'তড়িৎ প্রবাহের চৌম্বক ক্রিয়া ও চুম্বকত্ব': 'তড়িৎ প্রবাহের চৌম্বক ক্রিয়া ও চুম্বকত্ব',
+  'ভৌত আলোকবিজ্ঞান': 'ভৌত আলোকবিজ্ঞান',
+  'জ্যামিতিক আলোকবিজ্ঞান': 'জ্যামিতিক আলোকবিজ্ঞান',
+  'আধুনিক পদার্থবিজ্ঞানের সূচনা': 'আধুনিক পদার্থবিজ্ঞানের সূচনা',
+  'পরমাণু মডেল ও নিউক্লিয়ার পদার্থবিজ্ঞান': 'পরমাণু মডেল ও নিউক্লিয়ার পদার্থবিজ্ঞান',
+  'সেমিকন্ডাক্টর ও ইলেকট্রনিক্স': 'সেমিকন্ডাক্টর ও ইলেকট্রনিক্স',
+  'গুণগত রসায়ন': 'গুণগত রসায়ন',
+  'গুণগত রসায়ন': 'গুণগত রসায়ন',
+  'মৌলের পর্যায়বৃত্ত ধর্ম ও রাসায়নিক বন্ধন': 'মৌলের পর্যায়বৃত্ত ধর্ম ও রাসায়নিক বন্ধন',
+  'রাসায়নিক পরিবর্তন': 'রাসায়নিক পরিবর্তন',
+  'কর্মমুখী রসায়ন': 'কর্মমুখী রসায়ন',
+  'পরিবেশ রসায়ন': 'পরিবেশ রসায়ন',
+  'জৈব যৌগ': 'জৈব যৌগ',
+  'পরিমাণগত রসায়ন': 'পরিমাণগত রসায়ন',
+  'তড়িৎ রসায়ন': 'তড়িৎ রসায়ন',
+  'অর্থনৈতিক রসায়ন': 'অর্থনৈতিক রসায়ন',
+  'ম্যাট্রিক্স ও নির্ণায়ক': 'ম্যাট্রিক্স ও নির্ণায়ক',
+  'সরলরেখা': 'সরলরেখা',
+  'বৃত্ত': 'বৃত্ত',
+  'বিন্যাস ও সমাবেশ': 'বিন্যাস ও সমাবেশ',
+  'ত্রিকোণমিতিক অনুপাত': 'ত্রিকোণমিতিক অনুপাত',
+  'সংযুক্ত কোণের ত্রিকোণমিতিক অনুপাত': 'ত্রিকোণমিতিক অনুপাত',
+  'অন্তরীকরণ': 'অন্তরীকরণ',
+  'যোগাশ্রয়ী প্রোগ্রাম': 'যোগাশ্রয়ী প্রোগ্রাম',
+  'যোগাশ্রয়ী প্রোগ্রাম': 'যোগাশ্রয়ী প্রোগ্রাম',
+  'কণিক': 'কণিক',
+  'বিপরীত ত্রিকোণমিতিক ফাংশন ও ত্রিকোণমিতিক সমীকরণ': 'বিপরীত ত্রিকোণমিতিক ফাংশন',
+  'বিপরীত ত্রিকোণমিতিক ফাংশন': 'বিপরীত ত্রিকোণমিতিক ফাংশন',
+  'স্থিতিবিদ্যা': 'স্থিতিবিদ্যা',
+  'সমতলে বস্তুকণার গতি': 'সমতলে বস্তুকণার গতি',
+  'বিস্তার পরিমাপ ও সম্ভাবনা': 'বিস্তার পরিমাপ ও সম্ভাবনা',
+  'বহুপদী ও বহুপদী সমীকরণ': 'বহুপদী ও বহুপদী সমীকরণ'
+};
+
+function cleanAndNormalizeChapterTitle(raw: string): string {
+  if (!raw) return '';
+  let s = raw
+    .replace(/[✔✅▶⏩🔹📌🔥•\*\_~\|\#\(\)\[\]\{\}]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  s = s.replace(/^(?:physics|chemistry|math|higher math|biology|ict|বাংলা|গণিত|পদার্থ|রসায়ন|ch-?\d+|chapter-?\d+)\s*[:–—\-]\s*/i, '');
+
+  let prev = '';
+  while (s !== prev) {
+    prev = s;
+    s = s
+      .replace(/\s*[-–—:]\s*(?:lecture|লেকচার|class|ক্লাস|part|পার্ট|পর্ব|ep|episode|লে)\s*[\d০-৯]+.*$/i, '')
+      .replace(/\s*(?:lecture|লেকচার|class|ক্লাস|part|পার্ট|পর্ব|ep|episode|লে)\s*[\d০-৯]+.*$/i, '')
+      .replace(/\s*[-–—:]\s*[\d০-৯]+.*$/i, '')
+      .replace(/\s+[\d০-৯]+(?:\s+(?:part|পার্ট|পর্ব|লেকচার)[\s\d০-৯]+)?.*$/i, '')
+      .replace(/\s*(?:part|পার্ট|পর্ব|লেকচার|class|ক্লাস)\s*$/i, '')
+      .replace(/\s*[-–—:]\s*$/i, '')
+      .replace(/\|.*$/g, '')
+      .trim();
+  }
+
+  const lower = s.toLowerCase();
+  if (CHAPTER_SYNONYMS[lower]) {
+    s = CHAPTER_SYNONYMS[lower];
+  }
+  return s;
+}
+
+function resolveChapterTitle(rawTitle: string | null | undefined, firstClassTitle: string | undefined, order: number): string {
+  const norm = (rawTitle || '').normalize('NFC').trim();
+  const isGeneric = !norm || 
+                    /^অধ্যা[য়য়]\s*[\d০-৯]+$/i.test(norm) || 
+                    /^chapter\s*[\d০-৯]+$/i.test(norm) ||
+                    /^chapter\s*[\d০-৯]+[:\s]*অধ্যা/i.test(norm) ||
+                    /^মূল অধ্যা/i.test(norm) ||
+                    /^টপিক\s*[\d০-৯]+$/i.test(norm);
+
+  let inferred = '';
+  if (firstClassTitle) {
+    inferred = cleanAndNormalizeChapterTitle(firstClassTitle);
+  }
+
+  let finalName = '';
+  if (!isGeneric && rawTitle && rawTitle.trim()) {
+    finalName = rawTitle.trim();
+  } else if (inferred && inferred.length >= 2) {
+    finalName = inferred;
+  } else if (rawTitle && rawTitle.trim()) {
+    finalName = rawTitle.trim();
+  } else {
+    finalName = `অধ্যায় ${order}`;
+  }
+
+  if (/^chapter\s*[\d০-৯]+/i.test(finalName)) {
+    return finalName;
+  }
+  return `Chapter ${order}: ${finalName}`;
+}
+
 function cleanChapterTitle(desc: string | undefined, defaultTitle: string): string {
   if (!desc || !desc.trim()) return defaultTitle;
-  const cleaned = desc.trim()
-    .replace(/\s*-\s*\d+.*$/i, '')
-    .replace(/-\d+.*$/i, '')
-    .replace(/\s*Class\s*\d+.*$/i, '')
-    .trim();
-  return cleaned || defaultTitle;
+  const inferred = cleanAndNormalizeChapterTitle(desc);
+  return inferred || defaultTitle;
 }
 
 function resolveVideoUrl(cl: any): string {
@@ -68,7 +183,51 @@ function formatDrivePdf(val: any): string | null {
 
 export async function processCourseImport(rawData: any) {
   try {
-    if (!rawData || (!rawData.subjects && !rawData.archive)) {
+    if (!rawData) {
+      return { success: false, message: 'অবৈধ কোর্স ডেটা ফরম্যাট।' };
+    }
+
+    // A. Direct chapters support
+    if (rawData.chapters && !rawData.subjects) {
+      rawData.subjects = [{
+        id: 'sub_1',
+        title: rawData.courseTitle || 'মূল বিষয়সমূহ',
+        chapters: rawData.chapters
+      }];
+    }
+
+    // B. Sections/Modules support
+    if ((rawData.sections || rawData.modules) && !rawData.subjects) {
+      const subMap = new Map<string, any>();
+      (rawData.sections || []).forEach((sec: any) => {
+        subMap.set(sec.id, { id: sec.id, title: sec.title, isArchive: !!sec.isArchive, chapters: [] });
+      });
+      (rawData.modules || []).forEach((mod: any) => {
+        const secId = mod.parentSectionId || 'default_sec';
+        if (!subMap.has(secId)) {
+          subMap.set(secId, { id: secId, title: mod.parentSectionTitle || 'মূল বিষয়সমূহ', isArchive: !!mod.isArchive, chapters: [] });
+        }
+        const sub = subMap.get(secId);
+        if (sub) {
+          sub.chapters.push({
+            id: mod.id,
+            title: mod.title,
+            classes: (mod.lectures || []).map((l: any, idx: number) => ({
+              id: l.id || ('cl_' + idx),
+              classNo: (idx + 1).toString(),
+              title: l.title,
+              videoUrl: l.videoUrl,
+              lectureSheetPdf: l.notes?.find((n: any) => n.type === 'lecture_sheet')?.pdfUrl,
+              practiceSheetPdf: l.notes?.find((n: any) => n.type === 'practice_sheet')?.pdfUrl,
+              solutionSheetPdf: l.notes?.find((n: any) => n.type === 'handnote')?.pdfUrl
+            }))
+          });
+        }
+      });
+      rawData.subjects = Array.from(subMap.values());
+    }
+
+    if (!rawData.subjects && !rawData.archive) {
       return { success: false, message: 'অবৈধ কোর্স ডেটা ফরম্যাট। কোনো বিষয় বা অধ্যায় খুঁজে পাওয়া যায়নি।' };
     }
 
@@ -258,7 +417,7 @@ export async function processCourseImport(rawData: any) {
           let targetMod = courseModules.find(m => m.id === modId || m.id.includes(ch.id));
 
           if (!targetMod) {
-            const chapTitle = ch.title || cleanChapterTitle(classes[0]?.title, `অধ্যায় ${cIdx + 1}`);
+            const chapTitle = resolveChapterTitle(ch.title, classes[0]?.title, cIdx + 1);
             let parentSec = courseSections.find(s => s.id.includes(sub.id));
             if (!parentSec) {
               parentSec = {
@@ -272,7 +431,7 @@ export async function processCourseImport(rawData: any) {
 
             targetMod = {
               id: modId,
-              title: chapTitle.startsWith('Chapter') ? chapTitle : `Chapter ${cIdx + 1}: ${chapTitle}`,
+              title: chapTitle,
               order: cIdx + 1,
               parentSectionId: parentSec.id,
               parentSectionTitle: parentSec.title,
@@ -280,6 +439,8 @@ export async function processCourseImport(rawData: any) {
               lectures: []
             };
             courseModules.push(targetMod);
+          } else if (/^chapter\s*[\d০-৯]+[:\s]*অধ্যা[য়য়]\s*[\d০-৯]+$/i.test(targetMod.title) || /^অধ্যা[য়য়]\s*[\d০-৯]+$/i.test(targetMod.title)) {
+            targetMod.title = resolveChapterTitle(null, classes[0]?.title, cIdx + 1);
           }
 
           syncClasses(targetMod, classes, targetMod.title);
@@ -525,12 +686,12 @@ export async function processCourseImport(rawData: any) {
         if (classes.length === 0) return;
 
         const modId = 'mod_' + (ch.id || `${subIdx + 1}_${chIdx + 1}`);
-        const inferredChapterTitle = ch.title || cleanChapterTitle(classes[0]?.title, `অধ্যায় ${activeChapterOrder}`);
+        const inferredChapterTitle = resolveChapterTitle(ch.title, classes[0]?.title, activeChapterOrder);
         const lectures = processNewClasses(classes, inferredChapterTitle);
 
         modules.push({
           id: modId,
-          title: inferredChapterTitle.startsWith('Chapter') ? inferredChapterTitle : `Chapter ${activeChapterOrder}: ${inferredChapterTitle}`,
+          title: inferredChapterTitle,
           order: activeChapterOrder,
           parentSectionId: secId,
           parentSectionTitle: subTitle,
@@ -577,12 +738,12 @@ export async function processCourseImport(rawData: any) {
           if (classes.length === 0) return;
 
           const modId = 'mod_arc_' + (ch.id || `${arcSubIdx + 1}_${chIdx + 1}`);
-          const chTitle = ch.title || cleanChapterTitle(classes[0]?.title, `অধ্যায় ${chIdx + 1}`);
+          const chTitle = resolveChapterTitle(ch.title, classes[0]?.title, chIdx + 1);
           const lectures = processNewClasses(classes, chTitle);
 
           modules.push({
             id: modId,
-            title: chTitle.startsWith('Chapter') ? chTitle : `Chapter ${chIdx + 1}: ${chTitle}`,
+            title: chTitle,
             order: chIdx + 1,
             parentSectionId: arcSubSecId,
             parentSectionTitle: arcSubTitle,
@@ -606,9 +767,12 @@ export async function processCourseImport(rawData: any) {
       coverImage: '/courses/frb26_banner.png',
       tagline: 'অনলাইনে একাডেমিক ও এডমিশনের সবচেয়ে জনপ্রিয় ও অভিজ্ঞ শিক্ষক মন্ডলীকে নিয়ে একটি কম্প্যাক্ট কোর্স',
       description: `${courseTitle} — উচ্চতর প্রস্তুতি ও কনসেপ্ট মাস্টারির জন্য বিশেষ প্রোগ্রাম।`,
+      instructorId: rawData.instructorId || 'id_1789136556830_h8tvl',
+      teacherEmail: rawData.teacherEmail || 'yidap81493@airhemp.com',
+      teacherPhone: rawData.teacherPhone || '01714625067',
       instructor: {
-        name: 'অপার, মাশরুর, অপূর্ব, সঞ্জয় ও টিম',
-        designation: 'ACS সিনিয়র লিড মেন্টরস',
+        name: rawData.teacherName || 'কাজী নজরুল (লিড মেন্টর)',
+        designation: 'ACS ও অদম্য সিনিয়র মেন্টর',
         institution: 'BUET & Top Engineering Universities',
         avatar: 'https://i.postimg.cc/RFKgPcNF/Screenshot-109.png'
       },
@@ -673,6 +837,14 @@ export async function processCourseImport(rawData: any) {
 export async function POST(request: NextRequest) {
   try {
     const rawData = await request.json();
+    const token = request.cookies.get('adommo_auth_token')?.value;
+    const authPayload = token ? verifyToken<any>(token) : null;
+    if (authPayload) {
+      if (!rawData.instructorId) rawData.instructorId = authPayload.id;
+      if (!rawData.teacherEmail) rawData.teacherEmail = authPayload.email;
+      if (!rawData.teacherPhone) rawData.teacherPhone = authPayload.phone;
+      if (!rawData.teacherName) rawData.teacherName = authPayload.name;
+    }
     const result = await processCourseImport(rawData);
     return NextResponse.json(result, { status: result.success ? 200 : 400 });
   } catch (err: any) {

@@ -142,10 +142,9 @@ export default function PaymentModal({ course, isOpen, onClose, onSuccessRedirec
                   আপনার ট্রানজাকশন আইডি <strong>#{trxId}</strong> যাচাইয়ের জন্য জমা রয়েছে।
                 </p>
               </div>
-              <div className="p-4 rounded-2xl bg-[#fff3f7] border border-[#ffd2e2] text-xs text-slate-700 text-left space-y-1">
-                <p className="flex items-center gap-2 text-[#ed347d] font-bold">
-                  <Sparkles className="w-4 h-4 shrink-0" />
-                  সুপার অ্যাডমিন প্যানেল থেকে এটি ১ ক্লিকে অনুমোদন করা যাবে।
+              <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-slate-700 text-center space-y-1">
+                <p className="text-emerald-700 font-bold">
+                  ভেরিফিকেশন সম্পন্ন হওয়া মাত্রই আপনার ড্যাশবোর্ডে ক্লাসরুম স্বয়ংক্রিয়ভাবে খুলে যাবে।
                 </p>
               </div>
               <div className="pt-2">

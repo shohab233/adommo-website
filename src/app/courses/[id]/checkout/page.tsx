@@ -184,13 +184,13 @@ export default function CourseCheckoutPage({
               </p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-[#fff0f5] border border-[#ffd2e2] text-xs text-left space-y-1.5 text-slate-700">
-              <p className="font-bold text-[#ed347d] flex items-center gap-1.5">
+            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-center space-y-1.5 text-slate-700">
+              <p className="font-bold text-emerald-700 flex items-center justify-center gap-1.5">
                 <Sparkles className="w-4 h-4" />
-                সুপার অ্যাডমিন প্যানেল থেকে ভেরিফিকেশন সম্পন্ন হবে
+                পেমেন্ট ভেরিফিকেশন চলমান রয়েছে
               </p>
-              <p className="text-[11px] text-slate-500">
-                অ্যাডমিন প্যানেলে রিকোয়েস্ট পৌঁছানো মাত্রই অনুমোদন দেওয়া হবে এবং আপনার ড্যাশবোর্ডে ক্লাসরুম স্বয়ংক্রিয়ভাবে খুলে যাবে।
+              <p className="text-[11px] text-slate-600">
+                ভেরিফিকেশন সম্পন্ন হওয়া মাত্রই আপনার ড্যাশবোর্ডে ক্লাসরুম স্বয়ংক্রিয়ভাবে খুলে যাবে।
               </p>
             </div>
 

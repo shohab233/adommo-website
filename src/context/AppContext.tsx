@@ -767,7 +767,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       body: JSON.stringify(newEnrollment),
     }).catch((err) => console.log('Enrollment sync completed', err));
 
-    showToast('✅ আপনার পেমেন্ট রিকোয়েস্ট সফলভাবে সাবমিট হয়েছে! সুপার অ্যাডমিন প্যানেল থেকে অ্যাপ্রুভ করার পর ক্লাসরুম স্বয়ংক্রিয়ভাবে খুলে যাবে।');
+    showToast('✅ আপনার পেমেন্ট রিকোয়েস্ট সফলভাবে সাবমিট হয়েছে! ভেরিফিকেশন সম্পন্ন হলে ক্লাসরুম স্বয়ংক্রিয়ভাবে খুলে যাবে।');
     return {
       success: true,
       message: 'পেমেন্ট ভেরিফিকেশন সফলভাবে সাবমিট হয়েছে। কিছুক্ষণের মধ্যে এক্সেস পাবেন।',
@@ -1061,19 +1061,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const updateLecture = (courseId: string, moduleId: string, lectureId: string, updatedData: Partial<Lecture>) => {
     setCourses((prevCourses) => {
+      let targetModules: any = null;
       const updated = prevCourses.map((course) => {
         if (course.id !== courseId) return course;
 
-        const updatedModules = course.modules.map((mod) => {
+        const updatedModules = (course.modules || []).map((mod) => {
           if (mod.id !== moduleId) return mod;
           return {
             ...mod,
-            lectures: mod.lectures.map((lec) =>
+            lectures: (mod.lectures || []).map((lec) =>
               lec.id === lectureId ? { ...lec, ...updatedData } : lec
             ),
           };
         });
 
+        targetModules = updatedModules;
         return {
           ...course,
           modules: updatedModules,
@@ -1082,6 +1084,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       try {
         localStorage.setItem('adommo_courses', JSON.stringify(updated));
       } catch {}
+
+      if (targetModules) {
+        fetch('/api/courses', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: courseId, modules: targetModules }),
+        }).catch((err) => console.log('Lecture update sync error', err));
+      }
+
       return updated;
     });
     showToast('✏️ ক্লাসের তথ্য সফলভাবে আপডেট হয়েছে!');
@@ -1089,6 +1100,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const deleteLecture = (courseId: string, moduleId: string, lectureId: string) => {
     setCourses((prevCourses) => {
+      let targetModules: any = null;
+      let targetTotalLecs = 0;
       const updated = prevCourses.map((course) => {
         if (course.id !== courseId) return course;
 
@@ -1101,6 +1114,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         });
 
         const totalLecs = updatedModules.reduce((sum, m) => sum + (m.lectures?.length || 0), 0);
+        targetModules = updatedModules;
+        targetTotalLecs = totalLecs;
 
         return {
           ...course,
@@ -1111,6 +1126,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       try {
         localStorage.setItem('adommo_courses', JSON.stringify(updated));
       } catch {}
+
+      if (targetModules) {
+        fetch('/api/courses', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: courseId, modules: targetModules, totalLectures: targetTotalLecs }),
+        }).catch((err) => console.log('Lecture delete sync error', err));
+      }
+
       return updated;
     });
     showToast('🗑️ ক্লাসটি সফলভাবে মুছে ফেলা হয়েছে!');

@@ -74,15 +74,24 @@ export default function ProtectedVideoPlayer({ videoUrl, title }: ProtectedVideo
     }
     const trimmed = videoUrl.trim();
 
+    // 0. Internal /api/player proxy (for BunnyCDN)
+    if (trimmed.startsWith('/api/player') || trimmed.includes('/api/player')) {
+      return {
+        type: 'iframe' as const,
+        embedUrl: trimmed,
+      };
+    }
+
     // YouTube formats (watch, youtu.be, embed, shorts, live)
     const ytMatch = trimmed.match(
       /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts|live)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i
     );
     if (ytMatch && ytMatch[1]) {
+      const origin = typeof window !== 'undefined' ? `&origin=${encodeURIComponent(window.location.origin)}` : '';
       return {
         type: 'youtube' as const,
         videoId: ytMatch[1],
-        embedUrl: `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&controls=0&disablekb=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&playsinline=1&enablejsapi=1`,
+        embedUrl: `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&controls=0&disablekb=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&playsinline=1&enablejsapi=1${origin}`,
       };
     }
 

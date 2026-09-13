@@ -30,7 +30,8 @@ import {
   Monitor,
   Globe,
   SlidersHorizontal,
-  Edit3
+  Edit3,
+  Bookmark
 } from 'lucide-react';
 
 interface ParsedClass {
@@ -859,6 +860,8 @@ function parseTelegramDesktopExport(data: any): ParsedCourseData {
   };
 }
 
+const ACS_BOOKMARKLET_CODE = "javascript:(async%20function%20universalACSExtractor()%20%7B%20console.clear();%20console.log(%22%25c%F0%9F%9A%80%20ADOMMO%20%E2%80%94%20Universal%20ACS%20Multi-Subdomain%20Scraper%20%E0%A6%B6%E0%A7%81%E0%A6%B0%E0%A7%81%20%E0%A6%B9%E0%A6%9A%E0%A7%8D%E0%A6%9B%E0%A7%87...%22,%20%22color:%20#00c269;%20font-size:%2016px;%20font-weight:%20bold;%22);%20let%20token%20=%20'';%20let%20tokenSource%20=%20'';%20for%20(let%20i%20=%200;%20i%20%3C%20localStorage.length;%20i++)%20%7B%20const%20key%20=%20localStorage.key(i);%20const%20val%20=%20localStorage.getItem(key)%20%7C%7C%20'';%20const%20match%20=%20val.match(/ey%5BA-Za-z0-9-_=%5D+%5C.%5BA-Za-z0-9-_=%5D+%5C.?%5BA-Za-z0-9-_.+/=%5D*/);%20if%20(match)%20%7B%20token%20=%20match%5B0%5D;%20tokenSource%20=%20%60localStorage%20%5B$%7Bkey%7D%5D%60;%20break;%20%7D%20%7D%20if%20(!token)%20%7B%20for%20(let%20i%20=%200;%20i%20%3C%20sessionStorage.length;%20i++)%20%7B%20const%20key%20=%20sessionStorage.key(i);%20const%20val%20=%20sessionStorage.getItem(key)%20%7C%7C%20'';%20const%20match%20=%20val.match(/ey%5BA-Za-z0-9-_=%5D+%5C.%5BA-Za-z0-9-_=%5D+%5C.?%5BA-Za-z0-9-_.+/=%5D*/);%20if%20(match)%20%7B%20token%20=%20match%5B0%5D;%20tokenSource%20=%20%60sessionStorage%20%5B$%7Bkey%7D%5D%60;%20break;%20%7D%20%7D%20%7D%20if%20(!token)%20%7B%20const%20cookieMatch%20=%20document.cookie.match(/(?:token%7Caccess_token%7Cjwt)=(%5B%5E;%5D+)/i);%20if%20(cookieMatch)%20%7B%20token%20=%20cookieMatch%5B1%5D;%20tokenSource%20=%20'Cookies';%20%7D%20%7D%20console.log(token%20?%20%60%F0%9F%94%91%20%E0%A6%85%E0%A6%A5%E0%A7%87%E0%A6%A8%E0%A6%9F%E0%A6%BF%E0%A6%95%E0%A7%87%E0%A6%B6%E0%A6%A8%20%E0%A6%9F%E0%A7%8B%E0%A6%95%E0%A7%87%E0%A6%A8%20%E0%A6%AA%E0%A6%BE%E0%A6%93%E0%A7%9F%E0%A6%BE%20%E0%A6%97%E0%A7%87%E0%A6%9B%E0%A7%87%20($%7BtokenSource%7D)!%60%20:%20%60%E2%9A%A0%EF%B8%8F%20%E0%A6%B8%E0%A6%B0%E0%A6%BE%E0%A6%B8%E0%A6%B0%E0%A6%BF%20%E0%A6%9F%E0%A7%8B%E0%A6%95%E0%A7%87%E0%A6%A8%20%E0%A6%AA%E0%A6%BE%E0%A6%93%E0%A7%9F%E0%A6%BE%20%E0%A6%AF%E0%A6%BE%E0%A7%9F%E0%A6%A8%E0%A6%BF,%20%E0%A6%95%E0%A7%81%E0%A6%95%E0%A6%BF%20%E0%A6%A6%E0%A6%BF%E0%A7%9F%E0%A7%87%20%E0%A6%9A%E0%A7%87%E0%A6%B7%E0%A7%8D%E0%A6%9F%E0%A6%BE%20%E0%A6%95%E0%A6%B0%E0%A6%BE%20%E0%A6%B9%E0%A6%AC%E0%A7%87%E0%A5%A4%60);%20let%20API_BASE%20=%20'';%20try%20%7B%20const%20apiResources%20=%20performance.getEntriesByType('resource')%20.map(r%20=%3E%20r.name)%20.filter(n%20=%3E%20n.includes('/api/'));%20const%20detected%20=%20apiResources.find(n%20=%3E%20n.includes('/api/v1/'));%20if%20(detected)%20%7B%20const%20m%20=%20detected.match(/(https?:%5C/%5C/%5B%5E%5C/%5D+%5C/api%5C/v1)/);%20if%20(m)%20API_BASE%20=%20m%5B1%5D;%20%7D%20%7D%20catch%20(e)%20%7B%7D%20if%20(!API_BASE)%20%7B%20const%20host%20=%20location.hostname.toLowerCase();%20if%20(host.includes('engineering'))%20%7B%20API_BASE%20=%20'https://api.engineering.aparsclassroom.com/api/v1';%20%7D%20else%20if%20(host.includes('admission'))%20%7B%20API_BASE%20=%20'https://api.varsity.aparsclassroom.com/api/v1';%20%7D%20else%20if%20(host.includes('varsity')%20%7C%7C%20host.includes('frb'))%20%7B%20API_BASE%20=%20'https://api.varsity.aparsclassroom.com/api/v1';%20%7D%20else%20if%20(host.includes('medical'))%20%7B%20API_BASE%20=%20'https://api.medical.aparsclassroom.com/api/v1';%20%7D%20else%20%7B%20API_BASE%20=%20'https://api.varsity.aparsclassroom.com/api/v1';%20%7D%20%7D%20console.log(%60%F0%9F%8C%90%20%E0%A6%B6%E0%A6%A8%E0%A6%BE%E0%A6%95%E0%A7%8D%E0%A6%A4%E0%A6%95%E0%A7%83%E0%A6%A4%20API%20%E0%A6%8F%E0%A6%A8%E0%A7%8D%E0%A6%A1%E0%A6%AA%E0%A6%AF%E0%A6%BC%E0%A7%87%E0%A6%A8%E0%A7%8D%E0%A6%9F:%20$%7BAPI_BASE%7D%60);%20const%20urlMatch%20=%20location.href.match(/course%5C/(%5Ba-zA-Z0-9-%5D+)/i)%20%7C%7C%20location.href.match(/shop%5C/(%5Ba-zA-Z0-9-%5D+)/i);%20let%20defaultCourse%20=%20urlMatch%20?%20urlMatch%5B1%5D%20:%20'';%20let%20courseInput%20=%20prompt(%22%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8%20%E0%A6%86%E0%A6%87%E0%A6%A1%E0%A6%BF%20%E0%A6%AC%E0%A6%BE%20%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8%20%E0%A6%B2%E0%A6%BF%E0%A6%82%E0%A6%95%20%E0%A6%A6%E0%A6%BF%E0%A6%A8:%22,%20defaultCourse);%20if%20(!courseInput)%20return;%20const%20courseIdMatch%20=%20courseInput.trim().match(/(?:course%7Cshop)%5C/(%5B%5E%5C/?#%5D+)/i);%20const%20courseId%20=%20courseIdMatch%20?%20courseIdMatch%5B1%5D%20:%20courseInput.trim();%20let%20detectedArchiveId%20=%20'';%20try%20%7B%20const%20allLinks%20=%20Array.from(document.querySelectorAll('a%5Bhref*=%22/course/%22%5D,%20a%5Bhref*=%22/shop/%22%5D'));%20const%20archiveLink%20=%20allLinks.find(a%20=%3E%20/archive%7C%E0%A6%86%E0%A6%B0%E0%A7%8D%E0%A6%95%E0%A6%BE%E0%A6%87%E0%A6%AD%7Cprevious%7C%E0%A6%AA%E0%A7%82%E0%A6%B0%E0%A7%8D%E0%A6%AC%7C%E0%A6%AA%E0%A7%81%E0%A6%B0%E0%A7%8D%E0%A6%AC/i.test(a.textContent%20%7C%7C%20'')%20%7C%7C%20/archive%7Cprevious/i.test(a.getAttribute('href')%20%7C%7C%20'')%20);%20if%20(archiveLink)%20%7B%20const%20m%20=%20(archiveLink.getAttribute('href')%20%7C%7C%20'').match(/(?:course%7Cshop)%5C/(%5Ba-zA-Z0-9-%5D+)/i);%20if%20(m%20&&%20m%5B1%5D%20!==%20courseId)%20%7B%20detectedArchiveId%20=%20m%5B1%5D;%20%7D%20%7D%20%7D%20catch%20(e)%20%7B%7D%20if%20(!detectedArchiveId%20&&%20(courseId.includes('c82195b9')%20%7C%7C%20location.href.toLowerCase().includes('frb')))%20%7B%20detectedArchiveId%20=%20'52acc196-55a7-4499-9ca2-dc44ccab3568';%20%7D%20let%20archiveInput%20=%20prompt(%20%22%E0%A6%86%E0%A6%B0%E0%A7%8D%E0%A6%95%E0%A6%BE%E0%A6%87%E0%A6%AD%20%E0%A6%AC%E0%A7%8D%E0%A6%AF%E0%A6%BE%E0%A6%9A%E0%A7%87%E0%A6%B0%20%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8%20%E0%A6%86%E0%A6%87%E0%A6%A1%E0%A6%BF%20%E0%A6%AC%E0%A6%BE%20%E0%A6%B2%E0%A6%BF%E0%A6%82%E0%A6%95:%5C%5Cn(%E0%A6%AA%E0%A7%87%E0%A6%9C%E0%A7%87%20%E0%A6%AA%E0%A6%BE%E0%A6%93%E0%A7%9F%E0%A6%BE%20%E0%A6%86%E0%A6%87%E0%A6%A1%E0%A6%BF%20%E0%A6%A8%E0%A6%BF%E0%A6%9A%E0%A7%87%20%E0%A6%A6%E0%A7%87%E0%A7%9F%E0%A6%BE%20%E0%A6%B9%E0%A7%9F%E0%A7%87%E0%A6%9B%E0%A7%87%E0%A5%A4%20%E0%A6%86%E0%A6%B0%E0%A7%8D%E0%A6%95%E0%A6%BE%E0%A6%87%E0%A6%AD%20%E0%A6%A8%E0%A6%BF%E0%A6%A4%E0%A7%87%20%E0%A6%9A%E0%A6%BE%E0%A6%87%E0%A6%B2%E0%A7%87%20OK%20%E0%A6%A6%E0%A6%BF%E0%A6%A8,%20%E0%A6%A8%E0%A6%BE%20%E0%A6%A5%E0%A6%BE%E0%A6%95%E0%A6%B2%E0%A7%87%20%E0%A6%AB%E0%A6%BE%E0%A6%81%E0%A6%95%E0%A6%BE%20%E0%A6%B0%E0%A6%BE%E0%A6%96%E0%A7%81%E0%A6%A8):%22,%20detectedArchiveId%20);%20let%20archiveCourseId%20=%20'';%20if%20(archiveInput%20&&%20archiveInput.trim())%20%7B%20const%20m%20=%20archiveInput.trim().match(/(?:course%7Cshop)%5C/(%5Ba-zA-Z0-9-%5D+)/i);%20archiveCourseId%20=%20m%20?%20m%5B1%5D%20:%20archiveInput.trim();%20%7D%20const%20headers%20=%20%7B%20'accept':%20'application/json,%20text/plain,%20*/*',%20'x-access-token':%20token,%20'authorization':%20token%20?%20%60Bearer%20$%7Btoken%7D%60%20:%20''%20%7D;%20console.log(%60%F0%9F%93%A6%20%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8%20%E0%A6%86%E0%A6%87%E0%A6%A1%E0%A6%BF:%20$%7BcourseId%7D%60);%20if%20(archiveCourseId)%20%7B%20console.log(%60%F0%9F%97%84%EF%B8%8F%20%E0%A6%86%E0%A6%B0%E0%A7%8D%E0%A6%95%E0%A6%BE%E0%A6%87%E0%A6%AD%20%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8%20%E0%A6%86%E0%A6%87%E0%A6%A1%E0%A6%BF:%20$%7BarchiveCourseId%7D%60);%20%7D%20let%20courseTitle%20=%20'';%20try%20%7B%20const%20cRes%20=%20await%20fetch(%60$%7BAPI_BASE%7D/course/$%7BcourseId%7D%60,%20%7B%20headers,%20credentials:%20'include'%20%7D);%20const%20cJson%20=%20await%20cRes.json();%20if%20(cJson.data?.title%20%7C%7C%20cJson.data?.name)%20%7B%20courseTitle%20=%20cJson.data.title%20%7C%7C%20cJson.data.name;%20%7D%20%7D%20catch(e)%20%7B%7D%20if%20(!courseTitle)%20%7B%20try%20%7B%20const%20h1%20=%20document.querySelector('h1')?.textContent?.trim();%20if%20(h1%20&&%20h1.length%20%3E%202%20&&%20!/apars%7Cdashboard%7Clogin%7Cwelcome/i.test(h1))%20%7B%20courseTitle%20=%20h1;%20%7D%20%7D%20catch%20(e)%20%7B%7D%20%7D%20if%20(!courseTitle%20%7C%7C%20courseTitle%20===%20'ACS%20Admission%20Special%20Private%20Programme')%20%7B%20const%20docTitle%20=%20document.title?.trim();%20if%20(docTitle%20&&%20!/apars%5Cs*classroom/i.test(docTitle))%20%7B%20courseTitle%20=%20docTitle;%20%7D%20%7D%20if%20(!courseTitle)%20%7B%20const%20userTitle%20=%20prompt(%22%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8%E0%A7%87%E0%A6%B0%20%E0%A6%A8%E0%A6%BE%E0%A6%AE%20%E0%A6%A8%E0%A6%BF%E0%A6%B6%E0%A7%8D%E0%A6%9A%E0%A6%BF%E0%A6%A4%20%E0%A6%95%E0%A6%B0%E0%A7%81%E0%A6%A8:%22,%20%22ACS%20Course%22);%20courseTitle%20=%20userTitle?.trim()%20%7C%7C%20%22ACS%20Course%22;%20%7D%20function%20formatDrivePdf(val)%20%7B%20if%20(!val)%20return%20null;%20if%20(typeof%20val%20===%20'string'%20&&%20val.startsWith('http'))%20return%20val;%20return%20%60https://drive.google.com/file/d/$%7Bval%7D/view%60;%20%7D%20async%20function%20scrapeCourseStructure(cId,%20isArchive%20=%20false)%20%7B%20const%20label%20=%20isArchive%20?%20%22%F0%9F%97%84%EF%B8%8F%20%E0%A6%86%E0%A6%B0%E0%A7%8D%E0%A6%95%E0%A6%BE%E0%A6%87%E0%A6%AD%22%20:%20%22%F0%9F%93%9A%20%E0%A6%AE%E0%A7%87%E0%A6%87%E0%A6%A8%22;%20console.log(%60$%7Blabel%7D%20%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8%20%E0%A6%A1%E0%A7%87%E0%A6%9F%E0%A6%BE%20%E0%A6%AB%E0%A7%87%E0%A6%9A%20%E0%A6%95%E0%A6%B0%E0%A6%BE%20%E0%A6%B9%E0%A6%9A%E0%A7%8D%E0%A6%9B%E0%A7%87...%20%5BID:%20$%7BcId%7D%5D%60);%20const%20subRes%20=%20await%20fetch(%60$%7BAPI_BASE%7D/course-subject/subjects/$%7BcId%7D?limit=100%60,%20%7B%20headers,%20credentials:%20'include'%20%7D);%20const%20subJson%20=%20await%20subRes.json();%20const%20rawSubjects%20=%20subJson.data%20%7C%7C%20%5B%5D;%20if%20(!rawSubjects.length)%20%7B%20console.warn(%60%E2%9A%A0%EF%B8%8F%20$%7Blabel%7D%20%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8%E0%A7%87%20%E0%A6%95%E0%A7%8B%E0%A6%A8%E0%A7%8B%20%E0%A6%AC%E0%A6%BF%E0%A6%B7%E0%A7%9F%20%E0%A6%AA%E0%A6%BE%E0%A6%93%E0%A7%9F%E0%A6%BE%20%E0%A6%AF%E0%A6%BE%E0%A7%9F%E0%A6%A8%E0%A6%BF!%60);%20return%20%7B%20subjects:%20%5B%5D,%20totalClasses:%200%20%7D;%20%7D%20console.log(%60%25c%E2%9C%85%20$%7Blabel%7D%20%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8%E0%A7%87%20$%7BrawSubjects.length%7D%20%E0%A6%9F%E0%A6%BF%20%E0%A6%AC%E0%A6%BF%E0%A6%B7%E0%A7%9F%20%E0%A6%AA%E0%A6%BE%E0%A6%93%E0%A7%9F%E0%A6%BE%20%E0%A6%97%E0%A7%87%E0%A6%9B%E0%A7%87!%60,%20%22color:%20#00c269;%20font-weight:%20bold;%22);%20const%20formattedSubjects%20=%20%5B%5D;%20let%20classesCount%20=%200;%20for%20(let%20sIdx%20=%200;%20sIdx%20%3C%20rawSubjects.length;%20sIdx++)%20%7B%20const%20sub%20=%20rawSubjects%5BsIdx%5D;%20const%20subTitle%20=%20sub.title%20%7C%7C%20sub.name%20%7C%7C%20sub.subjectName%20%7C%7C%20sub.courseSubject?.title%20%7C%7C%20sub.courseSubjectName%20%7C%7C%20%60%E0%A6%AC%E0%A6%BF%E0%A6%B7%E0%A7%9F%20$%7BsIdx%20+%201%7D%60;%20console.log(%60%F0%9F%91%89%20%5B$%7BsIdx%20+%201%7D/$%7BrawSubjects.length%7D%5D%20%E0%A6%AC%E0%A6%BF%E0%A6%B7%E0%A7%9F:%20$%7BsubTitle%7D%60);%20const%20chapRes%20=%20await%20fetch(%60$%7BAPI_BASE%7D/course/subject/chapter/course-subject/$%7Bsub.id%7D?courseSubjectId=$%7Bsub.id%7D&limit=1000%60,%20%7B%20headers,%20credentials:%20'include'%20%7D);%20const%20chapJson%20=%20await%20chapRes.json();%20const%20rawChapters%20=%20chapJson.data%20%7C%7C%20%5B%5D;%20const%20isBangla%20=%20/%E0%A6%AC%E0%A6%BE%E0%A6%82%E0%A6%B2%E0%A6%BE%7Cbangla/i.test(subTitle);%20const%20isEnglish%20=%20/english%7C%E0%A6%87%E0%A6%82%E0%A6%B0%E0%A7%87%E0%A6%9C%E0%A6%BF/i.test(subTitle);%20const%20subjectObj%20=%20%7B%20id:%20sub.id,%20title:%20subTitle,%20isArchive:%20isArchive,%20isMultiPaper:%20(isBangla%20%7C%7C%20isEnglish)%20&&%20rawChapters.length%20%3E=%202,%20chapters:%20%5B%5D%20%7D;%20for%20(let%20cIdx%20=%200;%20cIdx%20%3C%20rawChapters.length;%20cIdx++)%20%7B%20const%20ch%20=%20rawChapters%5BcIdx%5D;%20const%20chapTitle%20=%20ch.title%20%7C%7C%20ch.name%20%7C%7C%20ch.chapterName%20%7C%7C%20ch.courseSubjectChapterName%20%7C%7C%20%60%E0%A6%85%E0%A6%A7%E0%A7%8D%E0%A6%AF%E0%A6%BE%E0%A6%AF%E0%A6%BC%20$%7BcIdx%20+%201%7D%60;%20let%20paperTag%20=%20'';%20if%20(isBangla)%20%7B%20paperTag%20=%20cIdx%20===%200%20?%20'%E0%A6%AC%E0%A6%BE%E0%A6%82%E0%A6%B2%E0%A6%BE%20%E0%A7%A7%E0%A6%AE%20%E0%A6%AA%E0%A6%A4%E0%A7%8D%E0%A6%B0%20(%E0%A6%B8%E0%A6%BE%E0%A6%B9%E0%A6%BF%E0%A6%A4%E0%A7%8D%E0%A6%AF)'%20:%20'%E0%A6%AC%E0%A6%BE%E0%A6%82%E0%A6%B2%E0%A6%BE%20%E0%A7%A8%E0%A7%9F%20%E0%A6%AA%E0%A6%A4%E0%A7%8D%E0%A6%B0%20(%E0%A6%AC%E0%A7%8D%E0%A6%AF%E0%A6%BE%E0%A6%95%E0%A6%B0%E0%A6%A3)';%20%7D%20else%20if%20(isEnglish)%20%7B%20paperTag%20=%20cIdx%20===%200%20?%20'English%201st%20Paper'%20:%20'English%202nd%20Paper';%20%7D%20try%20%7B%20const%20classRes%20=%20await%20fetch(%60$%7BAPI_BASE%7D/class/all/videos/$%7Bch.id%7D?limit=1000%60,%20%7B%20headers,%20credentials:%20'include'%20%7D);%20const%20classJson%20=%20await%20classRes.json();%20const%20rawClasses%20=%20classJson.data%20%7C%7C%20%5B%5D;%20const%20classes%20=%20rawClasses.map((cl,%20i)%20=%3E%20%7B%20classesCount++;%20return%20%7B%20id:%20cl.id,%20classNo:%20cl.classNo%20%7C%7C%20(i%20+%201).toString(),%20title:%20cl.classTitle%20%7C%7C%20cl.title%20%7C%7C%20cl.description%20%7C%7C%20%60Class%20$%7Bi%20+%201%7D:%20$%7BchapTitle%7D%60,%20description:%20cl.description%20%7C%7C%20'',%20instructor:%20cl.instructor%20%7C%7C%20cl.instructorName%20%7C%7C%20'ACS%20Instructor',%20hostingType:%20cl.hostingType%20%7C%7C%20'',%20videoId:%20cl.videoId%20%7C%7C%20'',%20videoUrl:%20cl.videoUrl%20%7C%7C%20'',%20hlsPlaylistUrl:%20cl.hlsPlaylistUrl%20%7C%7C%20null,%20iframePlayerUrl:%20cl.iframePlayerUrl%20%7C%7C%20null,%20libraryId:%20cl.libraryId%20%7C%7C%20'610687',%20lectureSheetPdf:%20formatDrivePdf(cl.lectureSheet%20%7C%7C%20cl.lectureSheetPdf),%20practiceSheetPdf:%20formatDrivePdf(cl.practiceSheet%20%7C%7C%20cl.practiceSheetPdf),%20solutionSheetPdf:%20formatDrivePdf(cl.solutionSheet%20%7C%7C%20cl.solutionSheetPdf),%20markedBookPdf:%20formatDrivePdf(cl.markedBook%20%7C%7C%20cl.markedBookPdf),%20paperTag:%20paperTag%20%7C%7C%20null%20%7D;%20%7D);%20subjectObj.chapters.push(%7B%20id:%20ch.id,%20title:%20chapTitle,%20paperTag:%20paperTag%20%7C%7C%20null,%20classes%20%7D);%20%7D%20catch(cErr)%20%7B%20subjectObj.chapters.push(%7B%20id:%20ch.id,%20title:%20chapTitle,%20paperTag:%20paperTag%20%7C%7C%20null,%20classes:%20%5B%5D%20%7D);%20%7D%20%7D%20formattedSubjects.push(subjectObj);%20%7D%20return%20%7B%20subjects:%20formattedSubjects,%20totalClasses:%20classesCount%20%7D;%20%7D%20try%20%7B%20console.log(%22%E0%A7%A7%E0%A6%AE%20%E0%A6%A7%E0%A6%BE%E0%A6%AA:%20%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8%E0%A7%87%E0%A6%B0%20%E0%A6%95%E0%A7%8D%E0%A6%B2%E0%A6%BE%E0%A6%B8%20%E0%A6%B8%E0%A6%82%E0%A6%97%E0%A7%8D%E0%A6%B0%E0%A6%B9%20%E0%A6%B6%E0%A7%81%E0%A6%B0%E0%A7%81%20%E0%A6%B9%E0%A6%9A%E0%A7%8D%E0%A6%9B%E0%A7%87...%22);%20const%20mainData%20=%20await%20scrapeCourseStructure(courseId,%20false);%20const%20fullCourseData%20=%20%7B%20courseId,%20courseTitle,%20extractedAt:%20new%20Date().toISOString(),%20apiBaseUsed:%20API_BASE,%20subdomain:%20location.hostname,%20totalSubjects:%20mainData.subjects.length,%20totalClasses:%20mainData.totalClasses,%20subjects:%20mainData.subjects%20%7D;%20if%20(archiveCourseId)%20%7B%20console.log(%22%E0%A7%A8%E0%A6%AF%E0%A6%BC%20%E0%A6%A7%E0%A6%BE%E0%A6%AA:%20%E0%A6%86%E0%A6%B0%E0%A7%8D%E0%A6%95%E0%A6%BE%E0%A6%87%E0%A6%AD%20%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8%E0%A7%87%E0%A6%B0%20%E0%A6%95%E0%A7%8D%E0%A6%B2%E0%A6%BE%E0%A6%B8%20%E0%A6%B8%E0%A6%82%E0%A6%97%E0%A7%8D%E0%A6%B0%E0%A6%B9%20%E0%A6%B6%E0%A7%81%E0%A6%B0%E0%A7%81%20%E0%A6%B9%E0%A6%9A%E0%A7%8D%E0%A6%9B%E0%A7%87...%22);%20let%20archiveTitle%20=%20%22%E0%A6%86%E0%A6%B0%E0%A7%8D%E0%A6%95%E0%A6%BE%E0%A6%87%E0%A6%AD%20%E0%A6%AC%E0%A7%8D%E0%A6%AF%E0%A6%BE%E0%A6%9A%20(Previous%20Batch%20Archive)%22;%20try%20%7B%20const%20aRes%20=%20await%20fetch(%60$%7BAPI_BASE%7D/course/$%7BarchiveCourseId%7D%60,%20%7B%20headers,%20credentials:%20'include'%20%7D);%20const%20aJson%20=%20await%20aRes.json();%20if%20(aJson.data?.title%20%7C%7C%20aJson.data?.name)%20%7B%20archiveTitle%20=%20%60%E0%A6%86%E0%A6%B0%E0%A7%8D%E0%A6%95%E0%A6%BE%E0%A6%87%E0%A6%AD:%20$%7BaJson.data.title%20%7C%7C%20aJson.data.name%7D%60;%20%7D%20%7D%20catch%20(e)%20%7B%7D%20const%20archiveData%20=%20await%20scrapeCourseStructure(archiveCourseId,%20true);%20fullCourseData.archive%20=%20%7B%20courseId:%20archiveCourseId,%20title:%20archiveTitle,%20totalSubjects:%20archiveData.subjects.length,%20totalClasses:%20archiveData.totalClasses,%20subjects:%20archiveData.subjects%20%7D;%20console.log(%60%25c%F0%9F%97%84%EF%B8%8F%20%E0%A6%86%E0%A6%B0%E0%A7%8D%E0%A6%95%E0%A6%BE%E0%A6%87%E0%A6%AD%20%E0%A6%B8%E0%A6%AB%E0%A6%B2%E0%A6%AD%E0%A6%BE%E0%A6%AC%E0%A7%87%20%E0%A6%8F%E0%A6%95%E0%A7%8D%E0%A6%B8%E0%A6%9F%E0%A7%8D%E0%A6%B0%E0%A7%8D%E0%A6%AF%E0%A6%BE%E0%A6%95%E0%A7%8D%E0%A6%9F%20%E0%A6%B9%E0%A7%9F%E0%A7%87%E0%A6%9B%E0%A7%87!%20($%7BarchiveData.totalClasses%7D%20%E0%A6%9F%E0%A6%BF%20%E0%A6%95%E0%A7%8D%E0%A6%B2%E0%A6%BE%E0%A6%B8)%60,%20%22color:%20#eab308;%20font-weight:%20bold;%22);%20%7D%20const%20totalCombinedClasses%20=%20fullCourseData.totalClasses%20+%20(fullCourseData.archive?.totalClasses%20%7C%7C%200);%20const%20blob%20=%20new%20Blob(%5BJSON.stringify(fullCourseData,%20null,%202)%5D,%20%7B%20type:%20'application/json'%20%7D);%20const%20a%20=%20document.createElement('a');%20a.href%20=%20URL.createObjectURL(blob);%20const%20cleanName%20=%20(courseTitle.replace(/%5B%5Ea-zA-Z0-9%5Cu0980-%5Cu09FF%5D/g,%20'_')%20%7C%7C%20'course')%20+%20'.json';%20a.download%20=%20cleanName;%20document.body.appendChild(a);%20a.click();%20document.body.removeChild(a);%20alert(%60%F0%9F%8E%89%20%E0%A6%B8%E0%A6%AE%E0%A7%8D%E0%A6%AA%E0%A7%82%E0%A6%B0%E0%A7%8D%E0%A6%A3%20%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8%20%E0%A6%B8%E0%A6%AB%E0%A6%B2%E0%A6%AD%E0%A6%BE%E0%A6%AC%E0%A7%87%20%E0%A6%8F%E0%A6%95%E0%A7%8D%E0%A6%B8%E0%A6%AA%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%9F%20%E0%A6%B9%E0%A7%9F%E0%A7%87%E0%A6%9B%E0%A7%87!%5C%5Cn%5C%5Cn%F0%9F%93%8C%20%E0%A6%AE%E0%A7%87%E0%A6%87%E0%A6%A8%20%E0%A6%95%E0%A7%8D%E0%A6%B2%E0%A6%BE%E0%A6%B8:%20$%7BfullCourseData.totalClasses%7D%20%E0%A6%9F%E0%A6%BF%5C%5Cn%F0%9F%93%8C%20%E0%A6%86%E0%A6%B0%E0%A7%8D%E0%A6%95%E0%A6%BE%E0%A6%87%E0%A6%AD%20%E0%A6%95%E0%A7%8D%E0%A6%B2%E0%A6%BE%E0%A6%B8:%20$%7BfullCourseData.archive?.totalClasses%20%7C%7C%200%7D%20%E0%A6%9F%E0%A6%BF%5C%5Cn%F0%9F%93%8C%20%E0%A6%B8%E0%A6%B0%E0%A7%8D%E0%A6%AC%E0%A6%AE%E0%A7%8B%E0%A6%9F%20%E0%A6%95%E0%A7%8D%E0%A6%B2%E0%A6%BE%E0%A6%B8:%20$%7BtotalCombinedClasses%7D%20%E0%A6%9F%E0%A6%BF%5C%5Cn%5C%5Cn%E0%A6%AB%E0%A6%BE%E0%A6%87%E0%A6%B2%20($%7BcleanName%7D)%20%E0%A6%A1%E0%A6%BE%E0%A6%89%E0%A6%A8%E0%A6%B2%E0%A7%8B%E0%A6%A1%20%E0%A6%B9%E0%A7%9F%E0%A7%87%E0%A6%9B%E0%A7%87%E0%A5%A4%20%E0%A6%8F%E0%A6%AC%E0%A6%BE%E0%A6%B0%20%E0%A6%8F%E0%A6%9F%E0%A6%BF%20%E0%A6%86%E0%A6%AE%E0%A6%BE%E0%A6%A6%E0%A7%87%E0%A6%B0%20%E0%A6%93%E0%A7%9F%E0%A7%87%E0%A6%AC%E0%A6%B8%E0%A6%BE%E0%A6%87%E0%A6%9F%E0%A7%87%20%E0%A6%86%E0%A6%AA%E0%A6%B2%E0%A7%8B%E0%A6%A1%20%E0%A6%95%E0%A6%B0%E0%A7%81%E0%A6%A8%E0%A5%A4%60);%20console.log(%22=========================================%22);%20console.log(%60%25c%F0%9F%8E%89%20%E0%A6%B8%E0%A6%AE%E0%A7%8D%E0%A6%AA%E0%A7%82%E0%A6%B0%E0%A7%8D%E0%A6%A3%20%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8%20%E0%A6%B8%E0%A6%AB%E0%A6%B2%E0%A6%AD%E0%A6%BE%E0%A6%AC%E0%A7%87%20%E0%A6%8F%E0%A6%95%E0%A7%8D%E0%A6%B8%E0%A6%AA%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%9F%20%E0%A6%B9%E0%A7%9F%E0%A7%87%E0%A6%9B%E0%A7%87!%60,%20%22color:%20#00c269;%20font-size:%2018px;%20font-weight:%20bold;%22);%20console.log(%60%F0%9F%93%8C%20%E0%A6%AE%E0%A7%87%E0%A6%87%E0%A6%A8%20%E0%A6%95%E0%A7%8D%E0%A6%B2%E0%A6%BE%E0%A6%B8:%20$%7BfullCourseData.totalClasses%7D%20%E0%A6%9F%E0%A6%BF%60);%20if%20(fullCourseData.archive)%20%7B%20console.log(%60%F0%9F%93%8C%20%E0%A6%86%E0%A6%B0%E0%A7%8D%E0%A6%95%E0%A6%BE%E0%A6%87%E0%A6%AD%20%E0%A6%95%E0%A7%8D%E0%A6%B2%E0%A6%BE%E0%A6%B8:%20$%7BfullCourseData.archive.totalClasses%7D%20%E0%A6%9F%E0%A6%BF%60);%20%7D%20console.log(%60%F0%9F%93%8C%20%E0%A6%B8%E0%A6%B0%E0%A7%8D%E0%A6%AC%E0%A6%AE%E0%A7%8B%E0%A6%9F%20%E0%A6%95%E0%A7%8D%E0%A6%B2%E0%A6%BE%E0%A6%B8:%20$%7BtotalCombinedClasses%7D%20%E0%A6%9F%E0%A6%BF%60);%20console.log(%60%F0%9F%93%81%20%E0%A6%AB%E0%A6%BE%E0%A6%87%E0%A6%B2%E0%A6%9F%E0%A6%BF%20%E0%A6%A1%E0%A6%BE%E0%A6%89%E0%A6%A8%E0%A6%B2%E0%A7%8B%E0%A6%A1%20%E0%A6%B9%E0%A7%9F%E0%A7%87%E0%A6%9B%E0%A7%87:%20$%7BcleanName%7D%60);%20console.log(%22=========================================%22);%20%7D%20catch%20(err)%20%7B%20console.error(%22%E2%9D%8C%20%E0%A6%8F%E0%A6%95%E0%A7%8D%E0%A6%B8%E0%A6%9F%E0%A7%8D%E0%A6%B0%E0%A6%BE%E0%A6%95%E0%A6%B6%E0%A6%A8%20%E0%A6%A4%E0%A7%8D%E0%A6%B0%E0%A7%81%E0%A6%9F%E0%A6%BF:%22,%20err);%20alert(%22%E0%A6%8F%E0%A6%95%E0%A7%8D%E0%A6%B8%E0%A6%9F%E0%A7%8D%E0%A6%B0%E0%A7%8D%E0%A6%AF%E0%A6%BE%E0%A6%95%E0%A7%8D%E0%A6%9F%20%E0%A6%95%E0%A6%B0%E0%A6%A4%E0%A7%87%20%E0%A6%B8%E0%A6%AE%E0%A6%B8%E0%A7%8D%E0%A6%AF%E0%A6%BE%20%E0%A6%B9%E0%A7%9F%E0%A7%87%E0%A6%9B%E0%A7%87:%20%22%20+%20err.message);%20%7D%20%7D)();";
+
 export default function AutomationToolsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -867,7 +870,8 @@ export default function AutomationToolsPage() {
   const [customCourseTitle, setCustomCourseTitle] = useState<string>('');
   const [selectedTopicIds, setSelectedTopicIds] = useState<Record<string, boolean>>({});
   const [activeTab, setActiveTab] = useState<'upload' | 'hierarchy' | 'search' | 'raw'>('upload');
-  const [guideTab, setGuideTab] = useState<'desktop' | 'web'>('web');
+  const [guideTab, setGuideTab] = useState<'desktop' | 'web' | 'acs'>('acs');
+  const [copiedBookmarklet, setCopiedBookmarklet] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>('all');
   const [expandedChapters, setExpandedChapters] = useState<Record<string, boolean>>({});
@@ -1100,6 +1104,15 @@ const CHAPTER_SYNONYMS: Record<string, string> = {
     , 0) || 0), 0);
 
   // Process JSON File (supports both standard Course JSON and Telegram Desktop result.json)
+  
+  const handleCopyBookmarklet = () => {
+    try {
+      navigator.clipboard.writeText(ACS_BOOKMARKLET_CODE);
+      setCopiedBookmarklet(true);
+      setTimeout(() => setCopiedBookmarklet(false), 3000);
+    } catch (e) {}
+  };
+
   const handleFile = (file: File) => {
     if (!file.name.endsWith('.json')) {
       setErrorMsg('দয়া করে একটি সঠিক .json ফাইল নির্বাচন করুন');
@@ -1500,7 +1513,20 @@ const CHAPTER_SYNONYMS: Record<string, string> = {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 bg-[#091424] p-1 rounded-2xl border border-sky-500/20">
+                <div className="flex items-center gap-2 bg-[#091424] p-1 rounded-2xl border border-sky-500/20 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => setGuideTab('acs')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                      guideTab === 'acs'
+                        ? 'bg-gradient-to-r from-pink-600 to-rose-600 text-white shadow-md'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <span className="text-sm">🎓</span>
+                    <span>১. ACS ওয়েবসাইট (F12 ছাড়া বুকমার্কলেট)</span>
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => setGuideTab('desktop')}
@@ -1511,7 +1537,7 @@ const CHAPTER_SYNONYMS: Record<string, string> = {
                     }`}
                   >
                     <Monitor className="w-3.5 h-3.5" />
-                    <span>১. টেলিগ্রাম ডেক্সটপ (সুপার সহজ)</span>
+                    <span>২. টেলিগ্রাম ডেক্সটপ</span>
                   </button>
 
                   <button
@@ -1524,10 +1550,77 @@ const CHAPTER_SYNONYMS: Record<string, string> = {
                     }`}
                   >
                     <Globe className="w-3.5 h-3.5" />
-                    <span>২. টেলিগ্রাম ওয়েব</span>
+                    <span>৩. টেলিগ্রাম ওয়েব</span>
                   </button>
                 </div>
               </div>
+
+              
+              {/* Guide Content: ACS Website Bookmarklet */}
+              {guideTab === 'acs' && (
+                <div className="space-y-4">
+                  <div className="p-5 rounded-2xl bg-[#091424] border border-pink-500/30 space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div>
+                        <h4 className="text-sm font-extrabold text-white flex items-center gap-2">
+                          <span>⭐ ১-ক্লিক বুকমার্কলেট (F12 ছাড়া ACS থেকে ডাউনলোড)</span>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                            কপিরাইট সতর্কতা বাইপাস
+                          </span>
+                        </h4>
+                        <p className="text-slate-300 text-xs mt-1">
+                          ACS ওয়েবসাইটে F12 চাপলে যে &quot;কপিরাইট সতর্কতা&quot; পপ-আপ আসে, এই বুকমার্কলেট ব্যবহার করলে <strong>কোনো F12 বা Inspect খুলতেই হবে না!</strong>
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleCopyBookmarklet}
+                        className={`px-5 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all shadow-lg cursor-pointer shrink-0 ${
+                          copiedBookmarklet
+                            ? 'bg-emerald-600 text-white shadow-emerald-500/30'
+                            : 'bg-gradient-to-r from-pink-600 via-rose-600 to-amber-600 hover:opacity-95 text-white active:scale-[0.98]'
+                        }`}
+                      >
+                        {copiedBookmarklet ? <Check className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
+                        <span>{copiedBookmarklet ? '⭐ বুকমার্কলেট কোড কপি হয়েছে!' : '⭐ ১-ক্লিক বুকমার্কলেট কোড কপি করুন'}</span>
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-2">
+                      <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1.5">
+                        <div className="w-6 h-6 rounded-lg bg-pink-500/20 text-pink-400 flex items-center justify-center font-black text-xs">
+                          ১
+                        </div>
+                        <h5 className="font-bold text-white">কোডটি কপি করুন</h5>
+                        <p className="text-slate-400 text-[11px] leading-relaxed">
+                          উপরের <strong>&quot;⭐ ১-ক্লিক বুকমার্কলেট কোড কপি করুন&quot;</strong> বাটনে চাপ দিন। কোড কপি হয়ে যাবে।
+                        </p>
+                      </div>
+
+                      <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1.5">
+                        <div className="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-black text-xs">
+                          ২
+                        </div>
+                        <h5 className="font-bold text-white">বুকমার্কে সেভ করুন</h5>
+                        <p className="text-slate-400 text-[11px] leading-relaxed">
+                          ব্রাউজারের বুকমার্ক বারে (Ctrl+Shift+B) রাইট-ক্লিক করে <strong>Add page...</strong> দিন। Name দিন <strong className="text-pink-400">ACS Download</strong> এবং URL বক্সে কপি করা কোডটি পেস্ট করে Save দিন।
+                        </p>
+                      </div>
+
+                      <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1.5">
+                        <div className="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black text-xs">
+                          ৩
+                        </div>
+                        <h5 className="font-bold text-white">ACS পেজে ক্লিক করুন!</h5>
+                        <p className="text-slate-400 text-[11px] leading-relaxed">
+                          ACS কোর্সের পেজে যান (কোনো F12 চাপবেন না)। জাস্ট বুকমার্ক বারের <strong>ACS Download</strong>-এ ক্লিক করলেই চোখের পলকে JSON ফাইল ডাউনলোড হয়ে যাবে!
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Guide Content: Telegram Desktop */}
               {guideTab === 'desktop' && (

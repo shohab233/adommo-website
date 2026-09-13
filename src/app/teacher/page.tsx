@@ -424,6 +424,10 @@ export default function TeacherDashboardPage() {
           return true;
         }
       }
+      // 5. Fallback: if course has no instructor assigned yet or was imported, let the active teacher manage it
+      if (!c.instructorId || !c.teacherEmail) {
+        return true;
+      }
       return false;
     });
   }, [courses, currentUser, currentRole]);
@@ -1154,12 +1158,13 @@ export default function TeacherDashboardPage() {
   // ==================== SECTION & CHAPTER / CURRICULUM MANAGEMENT ====================
   const handleAddSection = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newSectionTitle.trim() || !selectedCourseForSection) {
+    const effCourseId = selectedCourseForSection || teacherCourses[0]?.id || courses[0]?.id;
+    if (!newSectionTitle.trim() || !effCourseId) {
       showToast('⚠️ বিষয়ের/মডিউলের নাম লিখুন');
       return;
     }
 
-    const course = courses.find((c) => c.id === selectedCourseForSection);
+    const course = courses.find((c) => c.id === effCourseId);
     if (!course) return;
 
     const currentSections = course.sections || [];
@@ -1172,7 +1177,7 @@ export default function TeacherDashboardPage() {
       parentArchiveId: targetArchiveIdForSubject || undefined,
     };
 
-    updateCourse(selectedCourseForSection, {
+    updateCourse(effCourseId, {
       sections: [...currentSections, newSection],
     });
 
@@ -1183,8 +1188,10 @@ export default function TeacherDashboardPage() {
   };
 
   const handleUpdateSection = (sectionId: string) => {
-    if (!editingSectionTitle.trim() || !selectedCourseForSection) return;
-    const course = courses.find((c) => c.id === selectedCourseForSection);
+    if (!editingSectionTitle.trim()) return;
+    const course = courses.find((c) => c.sections?.some((s) => s.id === sectionId)) ||
+                   courses.find((c) => c.id === selectedCourseForSection) ||
+                   teacherCourses[0] || courses[0];
     if (!course) return;
 
     const updatedSections = (course.sections || []).map((s) =>
@@ -1196,7 +1203,7 @@ export default function TeacherDashboardPage() {
       m.parentSectionId === sectionId ? { ...m, parentSectionTitle: editingSectionTitle.trim() } : m
     );
 
-    updateCourse(selectedCourseForSection, {
+    updateCourse(course.id, {
       sections: updatedSections,
       modules: updatedModules,
     });
@@ -1207,9 +1214,12 @@ export default function TeacherDashboardPage() {
   };
 
   const handleDeleteSection = (sectionId: string) => {
-    if (!selectedCourseForSection) return;
-    const course = courses.find((c) => c.id === selectedCourseForSection);
+    const course = courses.find((c) => c.sections?.some((s) => s.id === sectionId)) ||
+                   courses.find((c) => c.id === selectedCourseForSection) ||
+                   teacherCourses[0] || courses[0];
     if (!course) return;
+
+    if (!confirm('আপনি কি এই সেকশনটি মুছে ফেলতে চান? এর সকল অধ্যায় ও ক্লাস মুছে যাবে।')) return;
 
     const deletingSection = (course.sections || []).find((s) => s.id === sectionId);
     // If deleting an archive section, also find all its child subjects
@@ -1234,7 +1244,7 @@ export default function TeacherDashboardPage() {
       0
     );
 
-    updateCourse(selectedCourseForSection, {
+    updateCourse(course.id, {
       sections: updatedSections,
       modules: updatedModules,
       totalLectures: totalLecs,
@@ -1257,12 +1267,13 @@ export default function TeacherDashboardPage() {
 
   const handleAddChapter = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newChapterTitle.trim() || !selectedCourseForSection) {
+    const effCourseId = selectedCourseForSection || teacherCourses[0]?.id || courses[0]?.id;
+    if (!newChapterTitle.trim() || !effCourseId) {
       showToast('⚠️ অধ্যায়/টপিকের নাম লিখুন');
       return;
     }
 
-    const course = courses.find((c) => c.id === selectedCourseForSection);
+    const course = courses.find((c) => c.id === effCourseId);
     if (!course) return;
 
     const effectiveSectionId = targetSectionIdForChapter || course.sections?.[0]?.id;
@@ -1280,7 +1291,7 @@ export default function TeacherDashboardPage() {
       lectures: [],
     };
 
-    updateCourse(selectedCourseForSection, {
+    updateCourse(effCourseId, {
       modules: [...(course.modules || []), newMod],
     });
 
@@ -1290,15 +1301,17 @@ export default function TeacherDashboardPage() {
   };
 
   const handleUpdateChapter = (moduleId: string) => {
-    if (!editingModuleTitle.trim() || !selectedCourseForSection) return;
-    const course = courses.find((c) => c.id === selectedCourseForSection);
+    if (!editingModuleTitle.trim()) return;
+    const course = courses.find((c) => c.modules?.some((m) => m.id === moduleId)) ||
+                   courses.find((c) => c.id === selectedCourseForSection) ||
+                   teacherCourses[0] || courses[0];
     if (!course) return;
 
     const updatedModules = (course.modules || []).map((m) =>
       m.id === moduleId ? { ...m, title: editingModuleTitle.trim() } : m
     );
 
-    updateCourse(selectedCourseForSection, {
+    updateCourse(course.id, {
       modules: updatedModules,
     });
 
@@ -1307,15 +1320,19 @@ export default function TeacherDashboardPage() {
     showToast('✅ অধ্যায়/টপিক নাম আপডেট হয়েছে!');
   };
 
-  const handleDeleteChapter = (moduleId: string) => {
-    if (!selectedCourseForSection) return;
-    const course = courses.find((c) => c.id === selectedCourseForSection);
+  const handleDeleteChapter = (moduleId: string, explicitCourseId?: string) => {
+    const course = (explicitCourseId ? courses.find((c) => c.id === explicitCourseId) : null) ||
+                   courses.find((c) => c.modules?.some((m) => m.id === moduleId)) ||
+                   courses.find((c) => c.id === selectedCourseForSection) ||
+                   teacherCourses[0] || courses[0];
     if (!course) return;
+
+    if (!confirm('আপনি কি এই অধ্যায়টি মুছে ফেলতে চান? এর সকল ক্লাস মুছে যাবে।')) return;
 
     const updatedModules = (course.modules || []).filter((m) => m.id !== moduleId);
     const totalLecs = updatedModules.reduce((sum, m) => sum + (m.lectures?.length || 0), 0);
 
-    updateCourse(selectedCourseForSection, {
+    updateCourse(course.id, {
       modules: updatedModules,
       totalLectures: totalLecs,
     });

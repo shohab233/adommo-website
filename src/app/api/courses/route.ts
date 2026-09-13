@@ -48,9 +48,12 @@ export async function PUT(req: NextRequest) {
     if (payload && payload.role === 'teacher') {
       const existing = await db.findOneAsync<any>('courses', (c: any) => c.id === id);
       if (existing && existing.instructorId) {
-        const isOwner = existing.instructorId === payload.id ||
+        const isOwner = !existing.instructorId ||
+                        existing.instructorId === payload.id ||
                         existing.instructorId === payload.phone ||
                         existing.instructorId === payload.email ||
+                        (payload.email && existing.teacherEmail === payload.email) ||
+                        (payload.phone && existing.teacherPhone === payload.phone) ||
                         existing.instructorId === 'teacher_main' ||
                         existing.instructorId === 'teacher_demo';
         if (!isOwner) {
