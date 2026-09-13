@@ -19,7 +19,7 @@ export default function AdommoLogo({
 
   const iconSizes = {
     sm: 'w-8 h-8 rounded-[14px]',
-    md: 'w-10 h-10 rounded-[16px]',
+    md: 'w-8 h-8 sm:w-10 sm:h-10 rounded-[14px] sm:rounded-[16px]',
     lg: 'w-12 h-12 rounded-[18px]',
   };
 

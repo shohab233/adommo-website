@@ -98,12 +98,12 @@ export default function Navbar() {
       </div>
 
       {/* 2. Floating PhyHunt-Style Pill Navbar */}
-      <div className="pt-2 px-3 sm:px-6 pointer-events-none">
+      <div className="pt-2 px-2 sm:px-6 pointer-events-none">
         <div className="ph-modern-header-wrap pointer-events-auto">
-          <nav className="ph-modern-navbar shadow-lg shadow-pink-500/5 backdrop-blur-xl bg-white/95 border border-slate-200/90">
+          <nav className="ph-modern-navbar shadow-lg shadow-pink-500/5 backdrop-blur-xl bg-white/95 border border-slate-200/90 !px-2.5 sm:!px-4 lg:!px-4.5 !gap-1.5 sm:!gap-4">
             
             {/* ADOMMO Brand Logo */}
-            <Link href="/" className="flex items-center shrink-0 pr-2 transition-transform hover:scale-[1.02]">
+            <Link href="/" className="flex items-center shrink min-w-0 pr-1 sm:pr-2 transition-transform hover:scale-[1.02]">
               <AdommoLogo />
             </Link>
 
@@ -175,7 +175,7 @@ export default function Navbar() {
             </div>
 
             {/* Right Actions */}
-            <div className="flex items-center gap-2.5 ml-auto lg:ml-4">
+            <div className="flex items-center gap-1.5 sm:gap-2.5 ml-auto lg:ml-4 shrink-0">
               
               {/* Hotline Box */}
               <a
@@ -211,21 +211,21 @@ export default function Navbar() {
               </Link>
 
               {/* Notification Bell with Badge & Dropdown Center */}
-              <div className="relative">
+              <div className="relative shrink-0">
                 <button
                   type="button"
                   onClick={() => {
                     setNotifDropdownOpen(!notifDropdownOpen);
                     setUserDropdownOpen(false);
                   }}
-                  className={`relative w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
+                  className={`relative w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer shrink-0 ${
                     notifDropdownOpen
                       ? 'bg-pink-50 text-[#ed347d] border border-pink-300 shadow-xs'
                       : 'bg-white text-slate-600 border border-slate-200 hover:text-[#ed347d] hover:bg-pink-50 hover:border-pink-200 shadow-xs'
                   }`}
                   title="নোটিফিকেশন সেন্টার"
                 >
-                  <Bell className="w-4 h-4" />
+                  <Bell className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   {unreadNotifCount > 0 && (
                     <>
                       <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-gradient-to-r from-[#ff1361] to-[#ed347d] text-[10px] font-black text-white shadow-xs">
@@ -398,25 +398,25 @@ export default function Navbar() {
                 )}
               </div>
 
-              {/* Login or Profile Dropdown (Physics Hunters exact: only Login button) */}
+              {/* Login or Profile Dropdown */}
               {isGuest ? (
                 <Link
                   href="/auth/login"
-                  className="ph-modern-login"
+                  className="ph-modern-login !h-8 sm:!h-[38px] !px-3 sm:!px-5 !text-xs shrink-0"
                 >
                   <LogIn className="w-3.5 h-3.5 mr-1" />
                   <span>লগইন</span>
                 </Link>
               ) : (
-                <div className="relative">
+                <div className="relative shrink-0">
                   <button
                     type="button"
                     onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                    className="ph-modern-login"
+                    className="ph-modern-login !h-8 sm:!h-[38px] !px-2.5 sm:!px-5 !text-xs shrink-0 max-w-[105px] sm:max-w-none"
                   >
-                    <UserIcon className="w-3.5 h-3.5 mr-1" />
-                    <span>{currentUser.name.split(' ')[0]}</span>
-                    <ChevronDown className="w-3 h-3 ml-1" />
+                    <UserIcon className="w-3.5 h-3.5 mr-1 shrink-0" />
+                    <span className="truncate">{currentUser.name.split(' ')[0]}</span>
+                    <ChevronDown className="w-3 h-3 ml-1 shrink-0" />
                   </button>
 
                   {userDropdownOpen && (
@@ -470,13 +470,14 @@ export default function Navbar() {
                 </div>
               )}
 
-              {/* Mobile Menu Button */}
+              {/* Mobile Menu Button (Hamburger) */}
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="lg:hidden p-2 rounded-xl bg-slate-100 text-slate-700 hover:text-[#ed347d]"
+                className="lg:hidden p-2 rounded-xl bg-slate-100 hover:bg-pink-50 text-slate-700 hover:text-[#ed347d] shrink-0 active:scale-95 transition-all flex items-center justify-center cursor-pointer"
+                aria-label="মেনু খুলুন"
               >
-                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                {mobileMenuOpen ? <X className="w-5 h-5 text-[#ed347d]" /> : <Menu className="w-5 h-5" />}
               </button>
 
             </div>
