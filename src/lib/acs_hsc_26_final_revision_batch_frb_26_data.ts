@@ -15847,5 +15847,6 @@ export const acsCourse_frb26: Course = {
       ]
     }
   ],
-  "isDraft": true
+  "isDraft": false,
+  "isPublished": true
 };

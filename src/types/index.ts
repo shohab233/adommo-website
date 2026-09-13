@@ -200,6 +200,7 @@ export interface Course {
   couponCode?: string;
   couponDiscount?: number;
   isDraft?: boolean;
+  isPublished?: boolean;
   instructorId?: string;
   teacherEmail?: string;
   teacherPhone?: string;

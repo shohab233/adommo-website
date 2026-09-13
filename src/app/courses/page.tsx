@@ -29,7 +29,8 @@ export default function AllCoursesPage() {
     { label: 'ফ্রি মডেল টেস্ট ও স্কলারশিপ', value: 'Free Tests' },
   ];
 
-  const publishedCourses = courses.filter((c) => !c.isDraft);
+  const uniqueCourses = Array.from(new Map(courses.map((c) => [c.id, c])).values());
+  const publishedCourses = uniqueCourses.filter((c) => !c.isDraft);
 
   const filteredCourses = publishedCourses
     .filter((c) => {

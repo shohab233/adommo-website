@@ -797,7 +797,8 @@ export async function processCourseImport(rawData: any) {
       ],
       sections,
       modules,
-      isDraft: true
+      isDraft: false,
+      isPublished: true
     };
 
     const fileContent = `import { Course } from '@/types';\n\nexport const ${variableName}: Course = ${JSON.stringify(newCourseObj, null, 2)};\n`;
