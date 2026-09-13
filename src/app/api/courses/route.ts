@@ -42,6 +42,16 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'কোর্স আইডি প্রদান করুন।' }, { status: 400 });
     }
 
+    const token = req.cookies.get('adommo_auth_token')?.value;
+    const payload = token ? verifyToken<any>(token) : null;
+
+    if (payload && payload.role === 'teacher') {
+      const existing = await db.findOneAsync<any>('courses', (c: any) => c.id === id);
+      if (existing && existing.instructorId && existing.instructorId !== payload.id) {
+        return NextResponse.json({ success: false, error: 'অনুমতি নেই। এটি অন্য শিক্ষকের কোর্স।' }, { status: 403 });
+      }
+    }
+
     const updated = await db.updateAsync('courses', id, updates);
     return NextResponse.json({ success: true, course: updated });
   } catch (err: any) {
@@ -56,6 +66,16 @@ export async function DELETE(req: NextRequest) {
 
     if (!id) {
       return NextResponse.json({ success: false, error: 'কোর্স আইডি প্রদান করুন।' }, { status: 400 });
+    }
+
+    const token = req.cookies.get('adommo_auth_token')?.value;
+    const payload = token ? verifyToken<any>(token) : null;
+
+    if (payload && payload.role === 'teacher') {
+      const existing = await db.findOneAsync<any>('courses', (c: any) => c.id === id);
+      if (existing && existing.instructorId && existing.instructorId !== payload.id) {
+        return NextResponse.json({ success: false, error: 'অনুমতি নেই। আপনি শুধুমাত্র আপনার নিজের কোর্স ডিলিট করতে পারেন।' }, { status: 403 });
+      }
     }
 
     const success = await db.deleteAsync('courses', id);

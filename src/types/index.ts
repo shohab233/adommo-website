@@ -200,6 +200,9 @@ export interface Course {
   couponCode?: string;
   couponDiscount?: number;
   isDraft?: boolean;
+  instructorId?: string;
+  teacherEmail?: string;
+  teacherPhone?: string;
 }
 
 export interface Enrollment {

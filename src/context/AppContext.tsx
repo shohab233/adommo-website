@@ -497,7 +497,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       phone: user.phone || currentUser.phone,
       email: user.email || currentUser.email,
       role: user.role || currentUser.role,
-      enrolledCourseIds: user.enrolledCourseIds || currentUser.enrolledCourseIds || ['course_campus6'],
+      enrolledCourseIds: Array.isArray(user.enrolledCourseIds)
+        ? user.enrolledCourseIds
+        : (user.id && user.id === currentUser.id ? currentUser.enrolledCourseIds : []),
     };
     setCurrentUser(updated);
     if (user.role) {
@@ -611,7 +613,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const isEnrolled = (courseId: string): boolean => {
-    return currentUser.enrolledCourseIds.includes(courseId);
+    if (!currentUser || !currentUser.id || currentUser.id === 'usr_guest') {
+      return false;
+    }
+    if (Array.isArray(currentUser.enrolledCourseIds) && currentUser.enrolledCourseIds.includes(courseId)) {
+      return true;
+    }
+    return enrollments.some(
+      (e) => e.studentId === currentUser.id && e.courseId === courseId && e.status === 'approved'
+    );
   };
 
   const enrollInCourse = (
@@ -752,6 +762,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       badge: newCourseData.badge || 'ভর্তি চলছে',
       tagline: newCourseData.tagline || 'সহজ ও কার্যকরী উপায়ে বিষয় আয়ত্ত করুন।',
       description: newCourseData.description || 'সম্পূর্ণ কোর্স সিলেবাস কভারেজ ও গাণিতিক প্রস্তুতি।',
+      instructorId: currentUser.id || newCourseData.instructorId || '',
+      teacherEmail: currentUser.email || newCourseData.teacherEmail || '',
+      teacherPhone: currentUser.phone || newCourseData.teacherPhone || '',
       instructor: {
         name: currentUser.name || 'সুমন হোসেন',
         designation: 'লিড ইনস্ট্রাক্টর',

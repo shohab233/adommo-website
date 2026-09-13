@@ -60,7 +60,7 @@ export default function Navbar() {
 
   const isGuest = !currentUser || !currentUser.id || currentUser.id === 'usr_guest';
   const hasActiveLive = liveClasses?.some(c => c.status === 'live');
-  const userEnrollmentsCount = enrollments?.length || 0;
+  const userEnrollmentsCount = isGuest ? 0 : (currentUser.enrolledCourseIds?.length || 0);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 pointer-events-none">

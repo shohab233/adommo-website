@@ -393,28 +393,39 @@ export default function TeacherDashboardPage() {
   };
 
   // ==================== TEACHER-SPECIFIC DATA FILTERING ====================
-  // All courses for teachers, or filtered if specific instructor assignment
+  // Strictly isolate and return ONLY the logged-in teacher's own courses
   const teacherCourses = useMemo(() => {
-    if (currentUser?.role === 'teacher' || currentRole === 'teacher') {
-      return courses;
+    if (!currentUser?.id || (currentUser.role !== 'teacher' && currentRole !== 'teacher')) {
+      return [];
     }
-    if (!currentUser?.name) return courses;
-    const currentNameClean = currentUser.name.trim().toLowerCase();
-    const filtered = courses.filter(c => {
-      const instructorNameClean = c.instructor?.name?.trim().toLowerCase() || '';
-      const hasMentorMatch = c.mentors?.some(m => 
-        m.name.trim().toLowerCase().includes(currentNameClean) ||
-        currentNameClean.includes(m.name.trim().toLowerCase())
-      );
-      return (
-        instructorNameClean.includes(currentNameClean) ||
-        currentNameClean.includes(instructorNameClean) ||
-        hasMentorMatch
-      );
+
+    const currentId = currentUser.id.trim();
+    const currentNameClean = (currentUser.name || '').trim().toLowerCase();
+    const currentEmailClean = (currentUser.email || '').trim().toLowerCase();
+    const currentPhoneClean = (currentUser.phone || '').trim();
+
+    return courses.filter((c) => {
+      // 1. Direct Teacher ID match (highest priority)
+      if (c.instructorId && c.instructorId === currentId) return true;
+      // 2. Direct Teacher Email match
+      if (currentEmailClean && c.teacherEmail && c.teacherEmail.trim().toLowerCase() === currentEmailClean) return true;
+      // 3. Direct Teacher Phone match
+      if (currentPhoneClean && c.teacherPhone && c.teacherPhone.trim() === currentPhoneClean) return true;
+      // 4. Exact/Close Instructor Name or Mentor Name match
+      if (currentNameClean) {
+        const instName = (c.instructor?.name || '').trim().toLowerCase();
+        if (instName && (instName === currentNameClean || instName.includes(currentNameClean) || currentNameClean.includes(instName))) {
+          return true;
+        }
+        if (c.mentors?.some((m) => {
+          const mName = (m.name || '').trim().toLowerCase();
+          return mName === currentNameClean || mName.includes(currentNameClean) || currentNameClean.includes(mName);
+        })) {
+          return true;
+        }
+      }
+      return false;
     });
-    // Fallback: If no course matches specific teacher name, display all courses to prevent empty state
-    if (filtered.length === 0) return courses;
-    return filtered;
   }, [courses, currentUser, currentRole]);
 
   const teacherCourseIds = useMemo(() => teacherCourses.map(c => c.id), [teacherCourses]);
@@ -585,7 +596,7 @@ export default function TeacherDashboardPage() {
   const [editingModuleId, setEditingModuleId] = useState<string | null>(null);
   const [editingModuleTitle, setEditingModuleTitle] = useState('');
 
-  const [selectedCourseForLec, setSelectedCourseForLec] = useState(teacherCourses[0]?.id || courses[0]?.id || '');
+  const [selectedCourseForLec, setSelectedCourseForLec] = useState(teacherCourses[0]?.id || '');
   const [targetModuleForLec, setTargetModuleForLec] = useState('');
   const [lecCategoryFilter, setLecCategoryFilter] = useState<'regular' | 'archive'>('regular');
   const [lecSubjectFilter, setLecSubjectFilter] = useState<string>('');
@@ -594,7 +605,7 @@ export default function TeacherDashboardPage() {
   const [lectureVideoUrl, setLectureVideoUrl] = useState('');
   const [isFreeTrial, setIsFreeTrial] = useState(false);
 
-  const [selectedCourseForSheet, setSelectedCourseForSheet] = useState(teacherCourses[0]?.id || courses[0]?.id || '');
+  const [selectedCourseForSheet, setSelectedCourseForSheet] = useState(teacherCourses[0]?.id || '');
   const [targetModuleForSheet, setTargetModuleForSheet] = useState('');
   const [sheetCategoryFilter, setSheetCategoryFilter] = useState<'regular' | 'archive'>('regular');
   const [sheetSubjectFilter, setSheetSubjectFilter] = useState<string>('');
@@ -613,7 +624,7 @@ export default function TeacherDashboardPage() {
 
   // 3. Exam Builder States
   const [examTitle, setExamTitle] = useState('');
-  const [examCourseId, setExamCourseId] = useState(teacherCourses[0]?.id || courses[0]?.id || '');
+  const [examCourseId, setExamCourseId] = useState(teacherCourses[0]?.id || '');
   const [examType, setExamType] = useState<'combined' | 'mcq' | 'written'>('combined');
   const [examDuration, setExamDuration] = useState(130);
   const [examMcqDuration, setExamMcqDuration] = useState(30);
@@ -653,7 +664,7 @@ export default function TeacherDashboardPage() {
   const [evaluationTab, setEvaluationTab] = useState<'all' | 'pending' | 'evaluated'>('pending');
 
   // Question Bank States
-  const [qbCourseId, setQbCourseId] = useState(teacherCourses[0]?.id || courses[0]?.id || '');
+  const [qbCourseId, setQbCourseId] = useState(teacherCourses[0]?.id || '');
   const [qbTitle, setQbTitle] = useState('');
   const [qbSubject, setQbSubject] = useState('পদার্থবিজ্ঞান (Physics)');
   const [qbChapter, setQbChapter] = useState('');
@@ -934,7 +945,7 @@ export default function TeacherDashboardPage() {
   const [notifCategory, setNotifCategory] = useState<'live' | 'exam' | 'course' | 'sheet' | 'urgent' | 'general'>('course');
   const [notifPriority, setNotifPriority] = useState<'normal' | 'high' | 'urgent'>('normal');
   const [notifTargetAudience, setNotifTargetAudience] = useState<'all' | 'course'>('all');
-  const [notifTargetCourseId, setNotifTargetCourseId] = useState(courses[0]?.id || 'course_campus6');
+  const [notifTargetCourseId, setNotifTargetCourseId] = useState(teacherCourses[0]?.id || '');
   const [notifTitle, setNotifTitle] = useState('');
   const [notifBody, setNotifBody] = useState('');
   const [notifActionLabel, setNotifActionLabel] = useState('');
@@ -1103,6 +1114,9 @@ export default function TeacherDashboardPage() {
       couponCode: wCouponCode,
       couponDiscount: Number(wCouponDiscount) || 200,
       isDraft: isDraft,
+      instructorId: currentUser.id || existingCourse?.instructorId || '',
+      teacherEmail: currentUser.email || existingCourse?.teacherEmail || '',
+      teacherPhone: currentUser.phone || existingCourse?.teacherPhone || '',
       instructor: {
         name: currentUser.name || leadMentor?.name || 'সুমন হোসেন',
         designation: leadMentor?.role || 'লিড ইনস্ট্রাক্টর',
