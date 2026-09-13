@@ -514,8 +514,20 @@ export async function processCourseImport(rawData: any) {
       existingCourse.totalLectures = existingCourse.modules.reduce((acc, m) => acc + (m.lectures?.length || 0), 0);
       existingCourse.totalSheets = existingCourse.modules.reduce((acc, m) => acc + m.lectures.reduce((sAcc, l) => sAcc + (l.notes?.length || 0), 0), 0);
 
-      const fileContent = `import { Course } from '@/types';\n\nexport const ${variableName}: Course = ${JSON.stringify(existingCourse, null, 2)};\n`;
-      fs.writeFileSync(existingTargetFile, fileContent, 'utf8');
+      try {
+        const fileContent = `import { Course } from '@/types';\n\nexport const ${variableName}: Course = ${JSON.stringify(existingCourse, null, 2)};\n`;
+        fs.writeFileSync(existingTargetFile, fileContent, 'utf8');
+      } catch (fsErr) {
+        console.warn('Vercel read-only filesystem, skipping local file write:', fsErr);
+      }
+
+      // Sync to database
+      try {
+        const { db } = await import('@/lib/db');
+        await db.updateAsync('courses', existingCourse.id, existingCourse);
+      } catch (dbErr) {
+        console.warn('DB update warning in existing course sync:', dbErr);
+      }
 
       return {
         success: true,
@@ -801,8 +813,12 @@ export async function processCourseImport(rawData: any) {
       isPublished: rawData.isPublished !== undefined ? rawData.isPublished : false
     };
 
-    const fileContent = `import { Course } from '@/types';\n\nexport const ${variableName}: Course = ${JSON.stringify(newCourseObj, null, 2)};\n`;
-    fs.writeFileSync(outFilePath, fileContent, 'utf8');
+    try {
+      const fileContent = `import { Course } from '@/types';\n\nexport const ${variableName}: Course = ${JSON.stringify(newCourseObj, null, 2)};\n`;
+      fs.writeFileSync(outFilePath, fileContent, 'utf8');
+    } catch (fsErr) {
+      console.warn('Vercel read-only filesystem, skipping local file write:', fsErr);
+    }
 
     // Save to real database (data/courses.json)
     try {
