@@ -1213,8 +1213,8 @@ const CHAPTER_SYNONYMS: Record<string, string> = {
       setImportSuccessMsg(null);
       setErrorMsg(null);
 
-      // Only import subjects that are active/selected
-      const activeSubs = (parsedData.subjects || []).filter(s => selectedTopicIds[s.id] !== false);
+      // Only import subjects that are active/selected (use normalizedSubjects which has clean & rebalanced chapters)
+      const activeSubs = (normalizedSubjects.length > 0 ? normalizedSubjects : (parsedData.subjects || [])).filter(s => selectedTopicIds[s.id] !== false);
 
       if (activeSubs.length === 0) {
         throw new Error('দয়া করে কমপক্ষে একটি বিষয় নির্বাচন করুন!');

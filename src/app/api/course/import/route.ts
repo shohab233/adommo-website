@@ -54,15 +54,20 @@ const CHAPTER_SYNONYMS: Record<string, string> = {
   'তড়িৎ রসায়ন': 'তড়িৎ রসায়ন',
   'অর্থনৈতিক রসায়ন': 'অর্থনৈতিক রসায়ন',
   'ম্যাট্রিক্স ও নির্ণায়ক': 'ম্যাট্রিক্স ও নির্ণায়ক',
+  'ম্যাট্রিক্স ও নির্ণায়ক': 'ম্যাট্রিক্স ও নির্ণায়ক',
   'সরলরেখা': 'সরলরেখা',
   'বৃত্ত': 'বৃত্ত',
   'বিন্যাস ও সমাবেশ': 'বিন্যাস ও সমাবেশ',
   'ত্রিকোণমিতিক অনুপাত': 'ত্রিকোণমিতিক অনুপাত',
-  'সংযুক্ত কোণের ত্রিকোণমিতিক অনুপাত': 'ত্রিকোণমিতিক অনুপাত',
+  'সংযুক্ত কোণের ত্রিকোণমিতিক অনুপাত': 'সংযুক্ত কোণের ত্রিকোণমিতিক অনুপাত',
+  'সংযুক্ত কোনের ত্রিকোনমিতিক অনুপাত': 'সংযুক্ত কোণের ত্রিকোণমিতিক অনুপাত',
+  'ফাংশন ও ফাংশনের লেখচিত্র': 'ফাংশন ও ফাংশনের লেখচিত্র',
   'অন্তরীকরণ': 'অন্তরীকরণ',
+  'যোগজীকরণ': 'যোগজীকরণ',
   'যোগাশ্রয়ী প্রোগ্রাম': 'যোগাশ্রয়ী প্রোগ্রাম',
   'যোগাশ্রয়ী প্রোগ্রাম': 'যোগাশ্রয়ী প্রোগ্রাম',
   'কণিক': 'কণিক',
+  'কনিক': 'কণিক',
   'বিপরীত ত্রিকোণমিতিক ফাংশন ও ত্রিকোণমিতিক সমীকরণ': 'বিপরীত ত্রিকোণমিতিক ফাংশন',
   'বিপরীত ত্রিকোণমিতিক ফাংশন': 'বিপরীত ত্রিকোণমিতিক ফাংশন',
   'স্থিতিবিদ্যা': 'স্থিতিবিদ্যা',
@@ -101,35 +106,54 @@ function cleanAndNormalizeChapterTitle(raw: string): string {
   return s;
 }
 
-function resolveChapterTitle(rawTitle: string | null | undefined, firstClassTitle: string | undefined, order: number): string {
-  const norm = (rawTitle || '').normalize('NFC').trim();
-  const isGeneric = !norm || 
-                    /^অধ্যা[য়য়]\s*[\d০-৯]+$/i.test(norm) || 
-                    /^chapter\s*[\d০-৯]+$/i.test(norm) ||
-                    /^chapter\s*[\d০-৯]+[:\s]*অধ্যা/i.test(norm) ||
-                    /^মূল অধ্যা/i.test(norm) ||
-                    /^টপিক\s*[\d০-৯]+$/i.test(norm);
+export function isGenericChapterTitle(raw: string | null | undefined): boolean {
+  if (!raw || !raw.trim()) return true;
+  const clean = raw.replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+  if (/^(?:অধ্যা[য়য়য][\u09BC]?|chapter|topic|টপিক|module|লেকচার|ক্লাস|পাঠ)\s*[:–—\-#]?\s*[\d০-৯a-z]*$/i.test(clean)) return true;
+  if (/^chapter\s*[\d০-৯]+[:\s]*(?:অধ্যা[য়য়য][\u09BC]?\s*[\d০-৯]*)$/i.test(clean)) return true;
+  if (/^মূল\s*অধ্যা/i.test(clean)) return true;
+  if (/^টপিক\s*[\d০-৯]+/i.test(clean)) return true;
+  return false;
+}
 
-  let inferred = '';
-  if (firstClassTitle) {
-    inferred = cleanAndNormalizeChapterTitle(firstClassTitle);
+export function inferChapterTitleFromClasses(classes: any[] | undefined, fallbackOrder: number): string {
+  const counts: Record<string, number> = {};
+  for (const cl of (classes || [])) {
+    const t = cl?.title || cl?.classTitle || cl?.description || '';
+    if (!t) continue;
+    if (/orientation|tech test|intro/i.test(t) && (classes || []).length > 1) continue;
+    const norm = cleanAndNormalizeChapterTitle(t);
+    if (norm && norm.length >= 2 && !isGenericChapterTitle(norm)) {
+      counts[norm] = (counts[norm] || 0) + 1;
+    }
   }
 
-  let finalName = '';
+  let best = '';
+  let maxCount = 0;
+  for (const [name, cnt] of Object.entries(counts)) {
+    if (cnt > maxCount) {
+      maxCount = cnt;
+      best = name;
+    }
+  }
+
+  if (best) return best;
+  for (const cl of (classes || [])) {
+    const norm = cleanAndNormalizeChapterTitle(cl?.title || cl?.classTitle || cl?.description || '');
+    if (norm && norm.length >= 2 && !isGenericChapterTitle(norm)) return norm;
+  }
+  return `অধ্যায় ${fallbackOrder}`;
+}
+
+export function resolveChapterTitle(rawTitle: string | null | undefined, classes: any[] | undefined, order: number): string {
+  const isGeneric = isGenericChapterTitle(rawTitle);
+
   if (!isGeneric && rawTitle && rawTitle.trim()) {
-    finalName = rawTitle.trim();
-  } else if (inferred && inferred.length >= 2) {
-    finalName = inferred;
-  } else if (rawTitle && rawTitle.trim()) {
-    finalName = rawTitle.trim();
-  } else {
-    finalName = `অধ্যায় ${order}`;
+    return rawTitle.trim();
   }
 
-  if (/^chapter\s*[\d০-৯]+/i.test(finalName)) {
-    return finalName;
-  }
-  return `Chapter ${order}: ${finalName}`;
+  const inferred = inferChapterTitleFromClasses(classes, order);
+  return inferred;
 }
 
 function cleanChapterTitle(desc: string | undefined, defaultTitle: string): string {
@@ -417,7 +441,7 @@ export async function processCourseImport(rawData: any) {
           let targetMod = courseModules.find(m => m.id === modId || m.id.includes(ch.id));
 
           if (!targetMod) {
-            const chapTitle = resolveChapterTitle(ch.title, classes[0]?.title, cIdx + 1);
+            const chapTitle = resolveChapterTitle(ch.title, classes, cIdx + 1);
             let parentSec = courseSections.find(s => s.id.includes(sub.id));
             if (!parentSec) {
               parentSec = {
@@ -439,8 +463,8 @@ export async function processCourseImport(rawData: any) {
               lectures: []
             };
             courseModules.push(targetMod);
-          } else if (/^chapter\s*[\d০-৯]+[:\s]*অধ্যা[য়য়]\s*[\d০-৯]+$/i.test(targetMod.title) || /^অধ্যা[য়য়]\s*[\d০-৯]+$/i.test(targetMod.title)) {
-            targetMod.title = resolveChapterTitle(null, classes[0]?.title, cIdx + 1);
+          } else if (isGenericChapterTitle(targetMod.title)) {
+            targetMod.title = resolveChapterTitle(ch.title, classes, cIdx + 1);
           }
 
           syncClasses(targetMod, classes, targetMod.title);
@@ -491,10 +515,10 @@ export async function processCourseImport(rawData: any) {
             let targetMod = courseModules.find(m => m.id === modId || m.id.includes(ch.id));
 
             if (!targetMod) {
-              const chTitle = ch.title && !ch.title.startsWith('অধ্যায়') ? ch.title : cleanChapterTitle(classes[0]?.title, `অধ্যায় ${cIdx + 1}`);
+              const chTitle = resolveChapterTitle(ch.title, classes, cIdx + 1);
               targetMod = {
                 id: modId,
-                title: chTitle.startsWith('Chapter') ? chTitle : `Chapter ${cIdx + 1}: ${chTitle}`,
+                title: chTitle,
                 order: cIdx + 1,
                 parentSectionId: arcSubSec!.id,
                 parentSectionTitle: arcSubSec!.title,
@@ -504,6 +528,8 @@ export async function processCourseImport(rawData: any) {
                 lectures: []
               };
               courseModules.push(targetMod);
+            } else if (isGenericChapterTitle(targetMod.title)) {
+              targetMod.title = resolveChapterTitle(ch.title, classes, cIdx + 1);
             }
 
             syncClasses(targetMod, classes, targetMod.title);
@@ -668,12 +694,12 @@ export async function processCourseImport(rawData: any) {
           });
 
           const modId = 'mod_' + ch.id;
-          const chapterTitle = ch.title || cleanChapterTitle(classes[0]?.title, `অধ্যায় ${chIdx + 1}`);
+          const chapterTitle = resolveChapterTitle(ch.title, classes, chIdx + 1);
           const lectures = processNewClasses(classes, chapterTitle);
 
           modules.push({
             id: modId,
-            title: chapterTitle.startsWith('Chapter') ? chapterTitle : `Chapter ${chIdx + 1}: ${chapterTitle}`,
+            title: chapterTitle,
             order: 1,
             parentSectionId: secId,
             parentSectionTitle: paperTitle,
@@ -698,7 +724,7 @@ export async function processCourseImport(rawData: any) {
         if (classes.length === 0) return;
 
         const modId = 'mod_' + (ch.id || `${subIdx + 1}_${chIdx + 1}`);
-        const inferredChapterTitle = resolveChapterTitle(ch.title, classes[0]?.title, activeChapterOrder);
+        const inferredChapterTitle = resolveChapterTitle(ch.title, classes, activeChapterOrder);
         const lectures = processNewClasses(classes, inferredChapterTitle);
 
         modules.push({
@@ -750,7 +776,7 @@ export async function processCourseImport(rawData: any) {
           if (classes.length === 0) return;
 
           const modId = 'mod_arc_' + (ch.id || `${arcSubIdx + 1}_${chIdx + 1}`);
-          const chTitle = resolveChapterTitle(ch.title, classes[0]?.title, chIdx + 1);
+          const chTitle = resolveChapterTitle(ch.title, classes, chIdx + 1);
           const lectures = processNewClasses(classes, chTitle);
 
           modules.push({
