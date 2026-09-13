@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const body = await req.json();
-    const { id, ...updates } = body;
+    const { id, _id, ...updates } = body;
     if (!id) return NextResponse.json({ success: false, error: 'পরীক্ষা আইডি আবশ্যক' }, { status: 400 });
     const updated = await db.updateAsync('exams', id, updates);
     return NextResponse.json({ success: true, exam: updated });

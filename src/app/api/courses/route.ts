@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const courseData = await req.json();
-    const { id, ...updates } = courseData;
+    const { id, _id, ...updates } = courseData;
 
     if (!id) {
       return NextResponse.json({ success: false, error: 'কোর্স আইডি প্রদান করুন।' }, { status: 400 });
@@ -47,8 +47,15 @@ export async function PUT(req: NextRequest) {
 
     if (payload && payload.role === 'teacher') {
       const existing = await db.findOneAsync<any>('courses', (c: any) => c.id === id);
-      if (existing && existing.instructorId && existing.instructorId !== payload.id) {
-        return NextResponse.json({ success: false, error: 'অনুমতি নেই। এটি অন্য শিক্ষকের কোর্স।' }, { status: 403 });
+      if (existing && existing.instructorId) {
+        const isOwner = existing.instructorId === payload.id ||
+                        existing.instructorId === payload.phone ||
+                        existing.instructorId === payload.email ||
+                        existing.instructorId === 'teacher_main' ||
+                        existing.instructorId === 'teacher_demo';
+        if (!isOwner) {
+          return NextResponse.json({ success: false, error: 'অনুমতি নেই। এটি অন্য শিক্ষকের কোর্স।' }, { status: 403 });
+        }
       }
     }
 

@@ -84,8 +84,9 @@ async function syncToAtlas(action: 'upsert' | 'delete', collection: string, item
     if (!atlas) return;
     const col = atlas.collection(collection);
     if (action === 'upsert') {
-      const query = { id: itemOrId.id };
-      await col.replaceOne(query, itemOrId, { upsert: true });
+      const { _id, ...cleanItem } = itemOrId || {};
+      const query = { id: cleanItem.id };
+      await col.replaceOne(query, cleanItem, { upsert: true });
     } else if (action === 'delete') {
       await col.deleteOne({ id: itemOrId });
     }
@@ -199,13 +200,16 @@ export const db = {
       const atlas = await getAtlasDb();
       if (atlas) {
         const col = atlas.collection(collection);
+        let item: any = null;
         if (typeof queryOrFilter === 'function') {
           const all = await col.find({}).toArray();
-          const match = (all as any[]).find(queryOrFilter);
-          return (match as unknown as T) || null;
+          item = (all as any[]).find(queryOrFilter);
         } else if (queryOrFilter && typeof queryOrFilter === 'object') {
-          const item = await col.findOne(queryOrFilter);
-          return (item as unknown as T) || null;
+          item = await col.findOne(queryOrFilter);
+        }
+        if (item) {
+          const { _id, ...clean } = item;
+          return clean as unknown as T;
         }
       }
     } catch (err: any) {
@@ -223,15 +227,28 @@ export const db = {
       const atlas = await getAtlasDb();
       if (atlas) {
         const col = atlas.collection(collection);
+        let results: any[] = [];
         if (typeof queryOrFilter === 'function') {
           const all = await col.find({}).toArray();
-          return (all as any[]).filter(queryOrFilter) as unknown as T[];
+          results = (all as any[]).filter(queryOrFilter);
         } else if (queryOrFilter && typeof queryOrFilter === 'object') {
-          const results = await col.find(queryOrFilter).toArray();
-          return results as unknown as T[];
+          results = await col.find(queryOrFilter).toArray();
         } else {
-          const results = await col.find({}).toArray();
-          return results as unknown as T[];
+          results = await col.find({}).toArray();
+        }
+        if (results && results.length > 0) {
+          const cleaned = results.map((doc: any) => {
+            const { _id, ...clean } = doc;
+            return clean;
+          });
+          // Cache to local JSON if local file is empty or missing
+          try {
+            const local = readCollection(collection);
+            if (!local || local.length === 0) {
+              writeCollection(collection, cleaned);
+            }
+          } catch {}
+          return cleaned as unknown as T[];
         }
       }
     } catch (err: any) {
@@ -241,10 +258,11 @@ export const db = {
   },
 
   createAsync: async <T extends Record<string, any> = any>(collection: string, item: T): Promise<T & { id: string }> => {
+    const { _id, ...cleanItem } = (item || {}) as any;
     const newItem = {
-      id: item.id || `id_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-      createdAt: item.createdAt || new Date().toISOString(),
-      ...item,
+      id: cleanItem.id || `id_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      createdAt: cleanItem.createdAt || new Date().toISOString(),
+      ...cleanItem,
     };
 
     try {
@@ -266,18 +284,31 @@ export const db = {
   },
 
   updateAsync: async <T extends Record<string, any> = any>(collection: string, id: string, data: Partial<T>): Promise<T | null> => {
+    const { _id, ...cleanData } = (data || {}) as any;
+    const updateData = { ...cleanData, updatedAt: new Date().toISOString() };
+    let updatedDoc: T | null = null;
+
     try {
       const atlas = await getAtlasDb();
       if (atlas) {
-        const updateData = { ...data, updatedAt: new Date().toISOString() };
         await atlas.collection(collection).updateOne({ id }, { $set: updateData });
         const updated = await atlas.collection(collection).findOne({ id });
-        return (updated as unknown as T) || null;
+        if (updated) {
+          const { _id: unused, ...cleanUpdated } = updated as any;
+          updatedDoc = cleanUpdated as unknown as T;
+        }
       }
     } catch (err: any) {
       console.warn(`updateAsync(${collection}) Atlas warning:`, err.message);
     }
-    return db.update(collection, id, data);
+
+    // Also update local JSON file as durable backup
+    try {
+      const localUpdated = db.update(collection, id, updateData);
+      return updatedDoc || localUpdated;
+    } catch {
+      return updatedDoc;
+    }
   },
 
   deleteAsync: async (collection: string, id: string): Promise<boolean> => {

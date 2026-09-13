@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const body = await req.json();
-    const { id, ...updates } = body;
+    const { id, _id, ...updates } = body;
     if (!id) {
       return NextResponse.json({ success: false, error: 'আইডি আবশ্যক।' }, { status: 400 });
     }

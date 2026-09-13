@@ -1325,58 +1325,78 @@ export default function TeacherDashboardPage() {
 
   const handleAddLecture = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!lectureTitle || !selectedCourseForLec) return;
+    if (!lectureTitle.trim()) {
+      showToast('⚠️ অনুগ্রহ করে ক্লাসের শিরোনাম লিখুন!');
+      return;
+    }
 
-    const course = courses.find((c) => c.id === selectedCourseForLec);
-    const targetModuleId = targetModuleForLec || course?.modules[0]?.id || 'mod_default';
+    const effCourseId = selectedCourseForLec || teacherCourses[0]?.id || courses[0]?.id;
+    if (!effCourseId) {
+      showToast('⚠️ কোনো কোর্স নির্বাচন করা হয়নি। প্রথমে একটি কোর্স তৈরি বা নির্বাচন করুন!');
+      return;
+    }
 
-    addLectureToCourse(selectedCourseForLec, targetModuleId, {
-      title: lectureTitle,
-      duration: lectureDuration,
-      videoUrl: lectureVideoUrl,
+    const course = courses.find((c) => c.id === effCourseId);
+    let targetModuleId = targetModuleForLec;
+    if (!targetModuleId || !course?.modules?.some((m) => m.id === targetModuleId)) {
+      targetModuleId = course?.modules?.[0]?.id || 'mod_default';
+    }
+
+    addLectureToCourse(effCourseId, targetModuleId, {
+      title: lectureTitle.trim(),
+      duration: lectureDuration.trim() || '৪৫ মিনিট',
+      videoUrl: lectureVideoUrl.trim() || '',
       isFreePreview: isFreeTrial,
       notes: [],
     });
 
     setLectureTitle('');
-    showToast('✅ ক্লাসরুমে নতুন লেকচার ভিডিও যুক্ত হয়েছে!');
+    setLectureVideoUrl('');
+    setLectureDuration('৪৫ মিনিট');
+    setIsFreeTrial(false);
   };
 
   const handleAddSheet = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!sheetTitle || !selectedCourseForSheet) {
-      showToast('⚠️ অনুগ্রহ করে কোর্সের নাম ও শিটের শিরোনাম লিখুন।');
+    if (!sheetTitle.trim()) {
+      showToast('⚠️ অনুগ্রহ করে শিটের শিরোনাম লিখুন।');
       return;
     }
 
-    const course = courses.find((c) => c.id === selectedCourseForSheet);
-    const mod = (targetModuleForSheet && course?.modules.find(m => m.id === targetModuleForSheet)) || course?.modules[0];
+    const effCourseId = selectedCourseForSheet || teacherCourses[0]?.id || courses[0]?.id;
+    if (!effCourseId) {
+      showToast('⚠️ অনুগ্রহ করে প্রথমে একটি কোর্স নির্বাচন করুন।');
+      return;
+    }
+
+    const course = courses.find((c) => c.id === effCourseId);
+    let mod = (targetModuleForSheet && course?.modules.find(m => m.id === targetModuleForSheet)) || course?.modules?.[0];
 
     if (!mod) {
-      showToast('⚠️ অনুগ্রহ করে এই কোর্সের একটি অধ্যায় নির্বাচন করুন বা তৈরি করুন।');
-      return;
+      const defaultModId = `mod_${Date.now()}`;
+      mod = { id: defaultModId, title: 'সাধারণ অধ্যায়', order: 1, lectures: [] };
     }
 
     let targetLecId = targetLectureForSheet;
-    if (!targetLecId && mod.lectures.length > 0) {
+    if (!targetLecId && mod.lectures && mod.lectures.length > 0) {
       targetLecId = mod.lectures[0].id;
     }
 
-    const targetLec = mod.lectures.find((l) => l.id === targetLecId);
+    const targetLec = mod.lectures?.find((l) => l.id === targetLecId);
 
     let finalPdfUrl = sheetLink.trim();
     if (!finalPdfUrl) {
       finalPdfUrl = '#';
     }
 
-    addResourceSheet(selectedCourseForSheet, mod.id, targetLecId, {
-      title: sheetTitle,
+    addResourceSheet(effCourseId, mod.id, targetLecId || '', {
+      title: sheetTitle.trim(),
       type: sheetType,
       size: sheetSize || '4.5 MB',
       pages: Number(sheetPages) || 12,
       pdfUrl: finalPdfUrl,
-      lectureId: targetLecId,
-      lectureTitle: targetLec?.title || '',
+      lectureId: targetLecId || '',
+      lectureTitle: targetLec?.title || 'সাধারণ রিসোর্স',
       uploadMethod: sheetUploadMethod,
     });
 
@@ -1565,12 +1585,13 @@ export default function TeacherDashboardPage() {
       return;
     }
 
-    const course = courses.find((c) => c.id === examCourseId);
+    const effCourseId = examCourseId || teacherCourses[0]?.id || courses[0]?.id || '';
+    const course = courses.find((c) => c.id === effCourseId);
     const startMs = examStartTime ? new Date(examStartTime).getTime() : 0;
     const isUpcomingSchedule = Boolean(startMs && !isNaN(startMs) && Date.now() < startMs);
 
     addExam({
-      courseId: examCourseId,
+      courseId: effCourseId,
       courseTitle: course?.title || 'স্পেশাল ফিজিক্স কোর্স',
       title: examTitle.trim(),
       examType: examType,
@@ -1610,11 +1631,12 @@ export default function TeacherDashboardPage() {
       return;
     }
 
-    const course = courses.find((c) => c.id === qbCourseId);
+    const effCourseId = qbCourseId || teacherCourses[0]?.id || courses[0]?.id || '';
+    const course = courses.find((c) => c.id === effCourseId);
 
     if (editingQbId) {
       updateQuestionBank(editingQbId, {
-        courseId: qbCourseId,
+        courseId: effCourseId,
         courseTitle: course?.title || 'ক্যাম্পাস ৬.০ প্রস্তুতি',
         title: qbTitle.trim(),
         subject: qbSubject,
@@ -1628,7 +1650,7 @@ export default function TeacherDashboardPage() {
       setEditingQbId(null);
     } else {
       addQuestionBank({
-        courseId: qbCourseId,
+        courseId: effCourseId,
         courseTitle: course?.title || 'ক্যাম্পাস ৬.০ প্রস্তুতি',
         title: qbTitle.trim(),
         subject: qbSubject,
@@ -6596,9 +6618,13 @@ export default function TeacherDashboardPage() {
                             onChange={(e) => handleSelectCourse(e.target.value)}
                             className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-[#ed347d] bg-white font-medium"
                           >
-                            {teacherCourses.map((c) => (
-                              <option key={c.id} value={c.id}>{c.title}</option>
-                            ))}
+                            {teacherCourses.length === 0 ? (
+                              <option value="">কোনো কোর্স তৈরি করা নেই (প্রথমে কোর্স তৈরি করুন)</option>
+                            ) : (
+                              teacherCourses.map((c) => (
+                                <option key={c.id} value={c.id}>{c.title}</option>
+                              ))
+                            )}
                           </select>
                         </div>
 
@@ -6698,10 +6724,9 @@ export default function TeacherDashboardPage() {
                             <select
                               value={targetModuleForLec}
                               onChange={(e) => setTargetModuleForLec(e.target.value)}
-                              required
                               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:border-[#ed347d] bg-white shadow-2xs"
                             >
-                              <option value="">-- অধ্যায় নির্বাচন করুন --</option>
+                              <option value="">-- অধ্যায় নির্বাচন করুন (ঐচ্ছিক) --</option>
                               {availableModules.map((m) => (
                                 <option key={m.id} value={m.id}>
                                   📖 {m.title} ({m.lectures?.length || 0} টি ক্লাস)
@@ -7494,9 +7519,13 @@ export default function TeacherDashboardPage() {
                             onChange={(e) => handleSelectCourse(e.target.value)}
                             className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-[#ed347d]"
                           >
-                            {teacherCourses.map((c) => (
-                              <option key={c.id} value={c.id}>{c.title}</option>
-                            ))}
+                            {teacherCourses.length === 0 ? (
+                              <option value="">কোনো কোর্স তৈরি করা নেই (প্রথমে কোর্স তৈরি করুন)</option>
+                            ) : (
+                              teacherCourses.map((c) => (
+                                <option key={c.id} value={c.id}>{c.title}</option>
+                              ))
+                            )}
                           </select>
                         </div>
 
@@ -7599,10 +7628,9 @@ export default function TeacherDashboardPage() {
                                 setTargetModuleForSheet(e.target.value);
                                 setTargetLectureForSheet('');
                               }}
-                              required
                               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:border-[#ed347d] bg-white shadow-2xs"
                             >
-                              <option value="">-- অধ্যায় নির্বাচন করুন --</option>
+                              <option value="">-- অধ্যায় নির্বাচন করুন (ঐচ্ছিক) --</option>
                               {availableSheetModules.map((m) => (
                                 <option key={m.id} value={m.id}>
                                   📖 {m.title} ({m.lectures?.length || 0} টি ক্লাস)
