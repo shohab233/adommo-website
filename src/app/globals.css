@@ -10,6 +10,22 @@
   --border-light: #eeeeee;
 }
 
+/* 
+  Desktop & Laptop standard scaling (108% - 110% zoom feel)
+  Mobile and small tablets (< 1100px) remain at 100% so mobile design is strictly preserved
+*/
+@media (min-width: 1100px) {
+  html {
+    zoom: 1.08;
+  }
+}
+
+@media (min-width: 1440px) {
+  html {
+    zoom: 1.1;
+  }
+}
+
 body {
   background-color: #ffffff;
   color: #334155;

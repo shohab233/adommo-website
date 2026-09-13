@@ -421,6 +421,40 @@ export async function processCourseImport(rawData: any) {
           });
         }
 
+        const markedBookUrl = formatDrivePdf(cl.markedBook || cl.markedBookPdf);
+        if (markedBookUrl) {
+          totalSheets++;
+          notes.push({
+            id: 'note_' + (cl.id || totalLectures) + '_book',
+            title: 'দাগানো বই (Marked Book PDF)',
+            type: 'handnote',
+            size: '8.5 MB',
+            pages: 45,
+            pdfUrl: markedBookUrl,
+            downloadCount: 220,
+            fileType: 'pdf',
+            fileSize: '8.5 MB',
+            url: markedBookUrl
+          });
+        }
+
+        const solSheetUrl = formatDrivePdf(cl.solutionSheet || cl.solutionSheetPdf);
+        if (solSheetUrl) {
+          totalSheets++;
+          notes.push({
+            id: 'note_' + (cl.id || totalLectures) + '_sol',
+            title: 'সল্যুশন বুকলেট (Solution PDF)',
+            type: 'practice_sheet',
+            size: '3.0 MB',
+            pages: 10,
+            pdfUrl: solSheetUrl,
+            downloadCount: 160,
+            fileType: 'pdf',
+            fileSize: '3.0 MB',
+            url: solSheetUrl
+          });
+        }
+
         const classTitle = (cl.title || cl.classTitle || cl.description || '').trim() || `Class ${clIdx + 1}: ${parentTitle}`;
         return {
           id: 'lec_' + (cl.id || totalLectures),

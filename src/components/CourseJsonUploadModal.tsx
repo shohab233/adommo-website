@@ -38,7 +38,6 @@ const ACS_MASTER_DOWNLOADER_CODE = "/**\n * ADOMMO (অদম্য) — Univers
 export default function CourseJsonUploadModal({ isOpen, onClose, onEditCourse }: CourseJsonUploadModalProps) {
   const { courses, addCourse, updateCourse, showToast } = useApp();
   const fileInputRef = useRef<HTMLInputElement>(null);
-
   const [copiedMasterCode, setCopiedMasterCode] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [parsedData, setParsedData] = useState<any>(null);
@@ -70,7 +69,7 @@ export default function CourseJsonUploadModal({ isOpen, onClose, onEditCourse }:
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const handleCopyMasterCode = () => {
+    const handleCopyMasterCode = () => {
     try {
       navigator.clipboard.writeText(ACS_MASTER_DOWNLOADER_CODE);
       setCopiedMasterCode(true);
