@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 
 export default function StudentProfilePage() {
-  const { currentUser, courses, enrollments, examSubmissions, exams } = useApp();
+  const { currentUser, courses, enrollments, examSubmissions, exams, isEnrolled } = useApp();
   
   const isGuest = !currentUser || !currentUser.id || currentUser.id === 'usr_guest';
 
@@ -61,11 +61,8 @@ export default function StudentProfilePage() {
     );
   }
 
-  // 1. Real Enrolled Courses (strictly from currentUser.enrolledCourseIds)
-  const enrolledCourseIds = currentUser.enrolledCourseIds || [];
-  const enrolledCourses = courses.filter((c) =>
-    enrolledCourseIds.includes(c.id)
-  );
+  // 1. Real Enrolled Courses (checked via isEnrolled)
+  const enrolledCourses = courses.filter((c) => isEnrolled(c.id));
 
   // 2. Real Exam Submissions for this user
   const allSubmissions = Object.values(examSubmissions);
@@ -107,9 +104,17 @@ export default function StudentProfilePage() {
   }
 
   // 3. Real Payments (strictly filtered by currentUser)
-  const myEnrollments = enrollments.filter(
-    (e) => e.studentId === currentUser.id || e.studentPhone === currentUser.phone
-  );
+  const userPhoneClean = (currentUser.phone || '').replace(/\D/g, '');
+  const myEnrollments = enrollments.filter((e) => {
+    if (currentUser.id && e.studentId === currentUser.id) return true;
+    if (userPhoneClean) {
+      const p1 = (e.studentPhone || '').replace(/\D/g, '');
+      const p2 = (e.senderPhone || '').replace(/\D/g, '');
+      if (p1 && p1 === userPhoneClean) return true;
+      if (p2 && p2 === userPhoneClean) return true;
+    }
+    return false;
+  });
 
   return (
     <div className="bg-[#f8f9fc] min-h-screen pb-24 pt-6 space-y-8">

@@ -10,7 +10,10 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'এনরোলমেন্ট আইডি ও অ্যাকশন উল্লেখ করুন।' }, { status: 400 });
     }
 
-    const enrollment = await db.findOneAsync<any>('enrollments', (e: any) => e.id === enrollmentId);
+    const cleanEnrollmentId = String(enrollmentId).trim();
+    const enrollment = await db.findOneAsync<any>('enrollments', (e: any) => 
+      e.id === cleanEnrollmentId || (e.trxId && e.trxId.trim() === cleanEnrollmentId)
+    );
     if (!enrollment) {
       return NextResponse.json({ success: false, error: 'এনরোলমেন্ট আবেদনটি পাওয়া যায়নি।' }, { status: 404 });
     }
@@ -19,7 +22,17 @@ export async function PATCH(req: NextRequest) {
       const updated = await db.updateAsync('enrollments', enrollment.id, { status: 'approved' });
 
       // Unlock course in user's enrolledCourseIds
-      const student = await db.findOneAsync<any>('users', (u: any) => u.id === enrollment.studentId || u.phone === enrollment.studentPhone || u.phone === enrollment.senderPhone);
+      const cleanStudentId = (enrollment.studentId || '').trim();
+      const cleanPhone1 = (enrollment.studentPhone || '').replace(/\D/g, '');
+      const cleanPhone2 = (enrollment.senderPhone || '').replace(/\D/g, '');
+
+      const student = await db.findOneAsync<any>('users', (u: any) => {
+        if (cleanStudentId && u.id === cleanStudentId) return true;
+        const uPhoneClean = (u.phone || '').replace(/\D/g, '');
+        if (uPhoneClean && (uPhoneClean === cleanPhone1 || uPhoneClean === cleanPhone2)) return true;
+        return false;
+      });
+
       if (student) {
         const currentEnrolled = new Set(student.enrolledCourseIds || []);
         currentEnrolled.add(enrollment.courseId);

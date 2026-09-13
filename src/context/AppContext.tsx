@@ -367,11 +367,34 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         .catch(() => {});
     };
 
+    const syncEnrollments = () => {
+      fetch('/api/enrollments')
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data && data.success && Array.isArray(data.enrollments)) {
+            setEnrollments((prev) => {
+              if (JSON.stringify(prev) !== JSON.stringify(data.enrollments)) {
+                try {
+                  localStorage.setItem('adommo_enrollments', JSON.stringify(data.enrollments));
+                } catch {}
+                return data.enrollments;
+              }
+              return prev;
+            });
+          }
+        })
+        .catch(() => {});
+    };
+
     syncConversations();
-    const chatPollTimer = setInterval(syncConversations, 3000);
+    syncEnrollments();
+    const livePollTimer = setInterval(() => {
+      syncConversations();
+      syncEnrollments();
+    }, 3000);
 
     return () => {
-      clearInterval(chatPollTimer);
+      clearInterval(livePollTimer);
     };
   }, []);
 
@@ -450,19 +473,38 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       } catch {}
     };
 
+    const handleLocalEnrollmentsUpdate = () => {
+      try {
+        const saved = localStorage.getItem('adommo_enrollments');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) setEnrollments(parsed);
+        }
+        const savedU = localStorage.getItem('adommo_user');
+        if (savedU) {
+          const parsedU = JSON.parse(savedU);
+          if (parsedU && (parsedU.id === currentUser.id || parsedU.phone === currentUser.phone)) {
+            setCurrentUser(parsedU);
+          }
+        }
+      } catch {}
+    };
+
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('adommo_subs_updated', handleLocalSubsUpdate);
     window.addEventListener('adommo_live_updated', handleLocalLiveUpdate);
     window.addEventListener('adommo_notifications_updated', handleLocalNotifsUpdate);
     window.addEventListener('adommo_conversations_updated', handleLocalConvsUpdate);
+    window.addEventListener('adommo_enrollments_updated', handleLocalEnrollmentsUpdate);
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('adommo_subs_updated', handleLocalSubsUpdate);
       window.removeEventListener('adommo_live_updated', handleLocalLiveUpdate);
       window.removeEventListener('adommo_notifications_updated', handleLocalNotifsUpdate);
       window.removeEventListener('adommo_conversations_updated', handleLocalConvsUpdate);
+      window.removeEventListener('adommo_enrollments_updated', handleLocalEnrollmentsUpdate);
     };
-  }, []);
+  }, [currentUser.id, currentUser.phone]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -619,9 +661,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (Array.isArray(currentUser.enrolledCourseIds) && currentUser.enrolledCourseIds.includes(courseId)) {
       return true;
     }
-    return enrollments.some(
-      (e) => e.studentId === currentUser.id && e.courseId === courseId && e.status === 'approved'
-    );
+    const userPhoneClean = (currentUser.phone || '').replace(/\D/g, '');
+    return enrollments.some((e) => {
+      if (e.courseId !== courseId || e.status !== 'approved') return false;
+      if (currentUser.id && e.studentId === currentUser.id) return true;
+      if (userPhoneClean) {
+        const p1 = (e.studentPhone || '').replace(/\D/g, '');
+        const p2 = (e.senderPhone || '').replace(/\D/g, '');
+        if (p1 && p1 === userPhoneClean) return true;
+        if (p2 && p2 === userPhoneClean) return true;
+      }
+      return false;
+    });
   };
 
   const enrollInCourse = (
@@ -691,38 +742,91 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const approveEnrollment = (enrollmentId: string) => {
-    const enr = enrollments.find((e) => e.id === enrollmentId);
-    if (!enr) return;
+    let approvedCourseId = '';
+    let studentIdToUnlock = '';
+    let studentPhoneToUnlock = '';
+    let foundTrx = '';
 
-    const updated = enrollments.map((e) =>
-      e.id === enrollmentId ? { ...e, status: 'approved' as const } : e
-    );
+    const cleanId = String(enrollmentId).trim();
+    const updated = enrollments.map((e) => {
+      if (e.id === cleanId || (e.trxId && e.trxId.trim() === cleanId)) {
+        approvedCourseId = e.courseId;
+        studentIdToUnlock = e.studentId || '';
+        studentPhoneToUnlock = (e.studentPhone || e.senderPhone || '').replace(/\D/g, '');
+        foundTrx = e.trxId;
+        return { ...e, status: 'approved' as const };
+      }
+      return e;
+    });
     setEnrollments(updated);
-
-    // If approved student is current user, unlock course
-    if (enr.studentId === currentUser.id && !currentUser.enrolledCourseIds.includes(enr.courseId)) {
-      const updatedUser = {
-        ...currentUser,
-        enrolledCourseIds: [...currentUser.enrolledCourseIds, enr.courseId],
-      };
-      setCurrentUser(updatedUser);
-      localStorage.setItem('adommo_user', JSON.stringify(updatedUser));
-    }
 
     try {
       localStorage.setItem('adommo_enrollments', JSON.stringify(updated));
-    } catch {
-      // ignore
+    } catch {}
+
+    // 1. If currently logged in user is this student, unlock immediately in currentUser
+    if (approvedCourseId) {
+      const curPhoneClean = (currentUser.phone || '').replace(/\D/g, '');
+      const isCurrentStudent =
+        (studentIdToUnlock && currentUser.id === studentIdToUnlock) ||
+        (studentPhoneToUnlock && curPhoneClean && studentPhoneToUnlock === curPhoneClean);
+
+      if (isCurrentStudent) {
+        setCurrentUser((prev) => {
+          const nextEnrolled = Array.from(new Set([...(prev.enrolledCourseIds || []), approvedCourseId]));
+          const nextU = { ...prev, enrolledCourseIds: nextEnrolled };
+          try {
+            localStorage.setItem('adommo_user', JSON.stringify(nextU));
+          } catch {}
+          return nextU;
+        });
+      }
+
+      // 2. Also update student's record in localStorage if saved user matches
+      try {
+        const savedUserStr = localStorage.getItem('adommo_user');
+        if (savedUserStr) {
+          const savedU = JSON.parse(savedUserStr);
+          const savedPhoneClean = (savedU.phone || '').replace(/\D/g, '');
+          if (
+            (studentIdToUnlock && savedU.id === studentIdToUnlock) ||
+            (studentPhoneToUnlock && savedPhoneClean && studentPhoneToUnlock === savedPhoneClean)
+          ) {
+            const nextEnrolled = Array.from(new Set([...(savedU.enrolledCourseIds || []), approvedCourseId]));
+            savedU.enrolledCourseIds = nextEnrolled;
+            localStorage.setItem('adommo_user', JSON.stringify(savedU));
+          }
+        }
+      } catch {}
+
+      // 3. Notify other open tabs and components
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('adommo_enrollments_updated'));
+      }
     }
 
     // Live API Call to Admin Enrollments endpoint
     fetch('/api/admin/enrollments', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ enrollmentId, action: 'approve' }),
-    }).catch((err) => console.log('Admin enrollment approve completed', err));
+      body: JSON.stringify({ enrollmentId: cleanId, action: 'approve' }),
+    })
+      .then(() => {
+        fetch('/api/enrollments')
+          .then((res) => (res.ok ? res.json() : null))
+          .then((data) => {
+            if (data?.success && Array.isArray(data.enrollments)) {
+              setEnrollments(data.enrollments);
+              try {
+                localStorage.setItem('adommo_enrollments', JSON.stringify(data.enrollments));
+              } catch {}
+            }
+          })
+          .catch(() => {});
+      })
+      .catch((err) => console.log('Admin enrollment approve completed', err));
 
-    showToast(`✅ ট্রানজাকশন #${enr.trxId} সফলভাবে অ্যাপ্রুভ করা হয়েছে! স্টুডেন্ট এখন ক্লাসরুম এক্সেস করতে পারবে।`);
+    showToast(`✅ ট্রানজাকশন #${foundTrx || cleanId} সফলভাবে অ্যাপ্রুভ করা হয়েছে! স্টুডেন্ট এখন ক্লাসরুম এক্সেস করতে পারবে।`);
   };
 
   const rejectEnrollment = (enrollmentId: string) => {

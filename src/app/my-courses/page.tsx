@@ -19,14 +19,11 @@ import {
 } from 'lucide-react';
 
 export default function MyCoursesPage() {
-  const { currentUser, courses, liveClasses } = useApp();
+  const { currentUser, courses, liveClasses, isEnrolled } = useApp();
   const isGuest = !currentUser || !currentUser.id || currentUser.id === 'usr_guest';
 
-  // Filter only the courses the student is enrolled in
-  const enrolledCourseIds = currentUser.enrolledCourseIds || [];
-  const enrolledCourses = courses.filter((c) =>
-    enrolledCourseIds.includes(c.id)
-  );
+  // Filter only the courses the student is enrolled in (checked via isEnrolled)
+  const enrolledCourses = courses.filter((c) => isEnrolled(c.id));
 
   if (isGuest) {
     return (
