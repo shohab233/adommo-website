@@ -386,11 +386,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         .catch(() => {});
     };
 
+    const syncCourses = () => {
+      fetch('/api/courses')
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data && data.success && Array.isArray(data.courses)) {
+            setCourses((prev) => {
+              if (JSON.stringify(prev) !== JSON.stringify(data.courses)) {
+                try {
+                  localStorage.setItem('adommo_courses', JSON.stringify(data.courses));
+                } catch {}
+                return data.courses;
+              }
+              return prev;
+            });
+          }
+        })
+        .catch(() => {});
+    };
+
     syncConversations();
     syncEnrollments();
+    syncCourses();
     const livePollTimer = setInterval(() => {
       syncConversations();
       syncEnrollments();
+      syncCourses();
     }, 3000);
 
     return () => {
@@ -490,12 +511,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       } catch {}
     };
 
+    const handleLocalCoursesUpdate = () => {
+      try {
+        const saved = localStorage.getItem('adommo_courses');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) setCourses(parsed);
+        }
+      } catch {}
+    };
+
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('adommo_subs_updated', handleLocalSubsUpdate);
     window.addEventListener('adommo_live_updated', handleLocalLiveUpdate);
     window.addEventListener('adommo_notifications_updated', handleLocalNotifsUpdate);
     window.addEventListener('adommo_conversations_updated', handleLocalConvsUpdate);
     window.addEventListener('adommo_enrollments_updated', handleLocalEnrollmentsUpdate);
+    window.addEventListener('adommo_courses_updated', handleLocalCoursesUpdate);
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('adommo_subs_updated', handleLocalSubsUpdate);
@@ -503,6 +535,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       window.removeEventListener('adommo_notifications_updated', handleLocalNotifsUpdate);
       window.removeEventListener('adommo_conversations_updated', handleLocalConvsUpdate);
       window.removeEventListener('adommo_enrollments_updated', handleLocalEnrollmentsUpdate);
+      window.removeEventListener('adommo_courses_updated', handleLocalCoursesUpdate);
     };
   }, [currentUser.id, currentUser.phone]);
 
@@ -1107,6 +1140,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const addLectureToCourse = (courseId: string, moduleId: string, lecture: Omit<Lecture, 'id'>) => {
     setCourses((prevCourses) => {
+      let targetCourse: Course | undefined;
       const updated = prevCourses.map((course) => {
         if (course.id !== courseId) return course;
 
@@ -1134,15 +1168,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
         const totalLecs = updatedModules.reduce((sum, m) => sum + (m.lectures?.length || 0), 0);
 
-        return {
+        targetCourse = {
           ...course,
           totalLectures: totalLecs,
           modules: updatedModules,
         };
+        return targetCourse;
       });
+
       try {
         localStorage.setItem('adommo_courses', JSON.stringify(updated));
+        window.dispatchEvent(new Event('adommo_courses_updated'));
       } catch {}
+
+      if (targetCourse) {
+        fetch('/api/courses', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(targetCourse),
+        }).catch((err) => console.log('Course lecture sync error:', err));
+      }
+
       return updated;
     });
     showToast('✅ ক্লাসরুমে নতুন লেকচার ভিডিও সফলভাবে যুক্ত করা হয়েছে!');
@@ -1150,6 +1196,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const addResourceSheet = (courseId: string, moduleId: string, lectureId: string, note: Omit<ResourceNote, 'id' | 'downloadCount'>) => {
     setCourses((prevCourses) => {
+      let targetCourse: Course | undefined;
       const updated = prevCourses.map((course) => {
         if (course.id !== courseId) return course;
 
@@ -1193,15 +1240,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           return { ...mod, lectures: updatedLectures };
         });
 
-        return {
+        const calcSheets = updatedModules.reduce(
+          (sum, m) => sum + (m.lectures?.reduce((lSum, l) => lSum + (l.notes?.length || 0), 0) || 0),
+          0
+        );
+
+        targetCourse = {
           ...course,
-          totalSheets: (course.totalSheets || 0) + 1,
+          totalSheets: calcSheets,
           modules: updatedModules,
         };
+        return targetCourse;
       });
+
       try {
         localStorage.setItem('adommo_courses', JSON.stringify(updated));
+        window.dispatchEvent(new Event('adommo_courses_updated'));
       } catch {}
+
+      if (targetCourse) {
+        fetch('/api/courses', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(targetCourse),
+        }).catch((err) => console.log('Course sheet sync error:', err));
+      }
+
       return updated;
     });
     showToast('📄 পিডিএফ লেকচার/প্র্যাকটিস শিট সফলভাবে যুক্ত হয়েছে!');
@@ -1209,6 +1273,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const deleteResourceSheet = (courseId: string, sheetId: string) => {
     setCourses((prevCourses) => {
+      let targetCourse: Course | undefined;
       const updated = prevCourses.map((course) => {
         if (course.id !== courseId) return course;
 
@@ -1220,15 +1285,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           return { ...mod, lectures: updatedLectures };
         });
 
-        return {
+        const calcSheets = updatedModules.reduce(
+          (sum, m) => sum + (m.lectures?.reduce((lSum, l) => lSum + (l.notes?.length || 0), 0) || 0),
+          0
+        );
+
+        targetCourse = {
           ...course,
-          totalSheets: Math.max(0, (course.totalSheets || 1) - 1),
+          totalSheets: calcSheets,
           modules: updatedModules,
         };
+        return targetCourse;
       });
+
       try {
         localStorage.setItem('adommo_courses', JSON.stringify(updated));
+        window.dispatchEvent(new Event('adommo_courses_updated'));
       } catch {}
+
+      if (targetCourse) {
+        fetch('/api/courses', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(targetCourse),
+        }).catch((err) => console.log('Course sheet delete sync error:', err));
+      }
+
       return updated;
     });
     showToast('🗑️ শিট সফলভাবে মুছে ফেলা হয়েছে!');

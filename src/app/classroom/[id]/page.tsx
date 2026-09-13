@@ -31,7 +31,7 @@ import {
   AlertCircle,
   Tv
 } from 'lucide-react';
-import { CourseModule } from '@/types';
+import { CourseModule, ResourceNote } from '@/types';
 
 export default function ClassroomPage({
   params,
@@ -59,6 +59,7 @@ export default function ClassroomPage({
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [expandedDrawerSections, setExpandedDrawerSections] = useState<Record<string, boolean>>({});
   const [expandedDrawerChapters, setExpandedDrawerChapters] = useState<Record<string, boolean>>({});
+  const [selectedChapterForNotes, setSelectedChapterForNotes] = useState<string>('all');
 
   useEffect(() => {
     if (course && course.modules?.[0]?.lectures?.[0]?.id) {
@@ -125,6 +126,21 @@ export default function ClassroomPage({
 
     const isAmber = theme === 'amber';
 
+    const chapterNotes = (mod.lectures || []).flatMap((l) =>
+      (l.notes || []).map((n) => ({
+        ...n,
+        fromLectureId: l.id,
+        fromLectureTitle: l.title,
+      }))
+    );
+    const directNotes = (((mod as any).notes || []) as ResourceNote[]).map((n) => ({
+      ...n,
+      fromLectureId: '',
+      fromLectureTitle: mod.title,
+    }));
+    const allModNotes = [...chapterNotes, ...directNotes];
+    const totalSheetsCount = allModNotes.length;
+
     return (
       <div 
         key={mod.id} 
@@ -159,6 +175,11 @@ export default function ClassroomPage({
             }`}>
               {mod.lectures.length} ক্লাস
             </span>
+            {totalSheetsCount > 0 && (
+              <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+                {totalSheetsCount} শিট
+              </span>
+            )}
             {isExpanded ? (
               <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
             ) : (
@@ -167,48 +188,134 @@ export default function ClassroomPage({
           </div>
         </button>
 
-        {/* Lecture List */}
+        {/* Lecture & Sheets List */}
         {isExpanded && (
-          <div className={`p-2 pt-1 space-y-1 border-t ${
+          <div className={`p-2 pt-1 space-y-1.5 border-t ${
             isAmber ? 'border-amber-200/60 bg-white/70' : 'border-slate-100 bg-slate-50/50'
           }`}>
             {mod.lectures.map((lec) => {
               const isActive = lec.id === currentLectureId;
-              return (
-                <button
-                  key={lec.id}
-                  type="button"
-                  onClick={() => setCurrentLectureId(lec.id)}
-                  className={`w-full p-2 rounded-xl text-left flex items-center justify-between transition-all cursor-pointer ${
-                    isActive
-                      ? 'bg-[#fff2f7] border border-[#fecdd3] text-[#ed347d] font-bold shadow-xs'
-                      : isAmber
-                      ? 'bg-white hover:bg-amber-50/80 border border-amber-200/70 text-slate-700'
-                      : 'bg-white hover:bg-slate-100/80 border border-slate-200/80 text-slate-700'
-                  }`}
-                >
-                  <div className="flex items-center gap-1.5 overflow-hidden">
-                    <PlayCircle
-                      className={`w-3.5 h-3.5 shrink-0 ${
-                        isActive ? 'text-[#ed347d]' : isAmber ? 'text-amber-600' : 'text-slate-400'
-                      }`}
-                    />
-                    <span className="text-[11px] truncate">{lec.title}</span>
-                  </div>
+              const lecNotes = lec.notes || [];
 
-                  <div className="shrink-0 flex items-center gap-1 text-[9px]">
-                    {lec.duration && <span className="text-slate-400 mr-1">{lec.duration}</span>}
-                    {lec.isFreePreview ? (
-                      <span className="text-[#ed347d] font-bold">ফ্রি</span>
-                    ) : !enrolled ? (
-                      <Lock className="w-2.5 h-2.5 text-slate-400" />
-                    ) : null}
-                  </div>
-                </button>
+              return (
+                <div key={lec.id} className="space-y-1">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentLectureId(lec.id)}
+                    className={`w-full p-2 rounded-xl text-left flex items-center justify-between transition-all cursor-pointer ${
+                      isActive
+                        ? 'bg-[#fff2f7] border border-[#fecdd3] text-[#ed347d] font-bold shadow-xs'
+                        : isAmber
+                        ? 'bg-white hover:bg-amber-50/80 border border-amber-200/70 text-slate-700'
+                        : 'bg-white hover:bg-slate-100/80 border border-slate-200/80 text-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5 overflow-hidden">
+                      <PlayCircle
+                        className={`w-3.5 h-3.5 shrink-0 ${
+                          isActive ? 'text-[#ed347d]' : isAmber ? 'text-amber-600' : 'text-slate-400'
+                        }`}
+                      />
+                      <span className="text-[11px] truncate">{lec.title}</span>
+                    </div>
+
+                    <div className="shrink-0 flex items-center gap-1 text-[9px]">
+                      {lec.duration && <span className="text-slate-400 mr-1">{lec.duration}</span>}
+                      {lec.isFreePreview ? (
+                        <span className="text-[#ed347d] font-bold">ফ্রি</span>
+                      ) : !enrolled ? (
+                        <Lock className="w-2.5 h-2.5 text-slate-400" />
+                      ) : null}
+                    </div>
+                  </button>
+
+                  {/* Attached Sheets directly under this Lecture */}
+                  {lecNotes.length > 0 && (
+                    <div className="ml-4 pl-2 border-l-2 border-pink-200 space-y-1 py-0.5">
+                      {lecNotes.map((note) => (
+                        <div
+                          key={note.id}
+                          className="p-1.5 rounded-lg bg-white border border-slate-200/80 text-[10px] flex items-center justify-between gap-1 shadow-2xs hover:border-pink-200 transition-all"
+                        >
+                          <div className="flex items-center gap-1.5 overflow-hidden min-w-0">
+                            <FileText className="w-3 h-3 text-[#ed347d] shrink-0" />
+                            <span className="truncate font-semibold text-slate-800" title={note.title}>
+                              {note.title}
+                            </span>
+                            <span className="text-[8px] px-1 py-0.2 rounded bg-pink-50 text-[#ed347d] shrink-0 font-bold">
+                              {note.type === 'practice_sheet' ? 'প্র্যাকটিস' : note.type === 'handnote' ? 'নোট' : 'শিট'}
+                            </span>
+                          </div>
+
+                          <div className="shrink-0 flex items-center gap-1">
+                            {enrolled || lec.isFreePreview ? (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDownloadSheet(note.title, note.pdfUrl);
+                                }}
+                                className="px-2 py-0.5 rounded-full bg-[#fff2f7] hover:bg-[#ffe3ee] text-[#ed347d] font-bold text-[9px] border border-[#ffd2e2] flex items-center gap-0.5 cursor-pointer"
+                              >
+                                <Download className="w-2.5 h-2.5" />
+                                শিট
+                              </button>
+                            ) : (
+                              <Lock className="w-2.5 h-2.5 text-slate-400" />
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               );
             })}
-            {mod.lectures.length === 0 && (
-              <p className="text-[10px] text-slate-400 italic py-1 text-center">এই অধ্যায়ে এখনো ক্লাস নেই</p>
+
+            {/* Direct Module Sheets or When Module Has 0 Lectures */}
+            {mod.lectures.length === 0 && allModNotes.length > 0 && (
+              <div className="space-y-1.5 p-1">
+                <div className="text-[10px] font-black text-indigo-700 flex items-center gap-1 mb-1">
+                  <FileText className="w-3 h-3" />
+                  অধ্যায়ের ক্লাস শিট ও নোট ({allModNotes.length} টি)
+                </div>
+                {allModNotes.map((note) => (
+                  <div
+                    key={note.id}
+                    className="p-2 rounded-xl bg-white border border-slate-200 text-xs flex items-center justify-between gap-2 shadow-2xs hover:border-pink-200 transition-all"
+                  >
+                    <div className="flex items-center gap-2 overflow-hidden min-w-0">
+                      <FileText className="w-3.5 h-3.5 text-[#ed347d] shrink-0" />
+                      <div className="truncate">
+                        <span className="font-bold text-slate-800 text-[11px] block truncate">{note.title}</span>
+                        <span className="text-[9px] text-slate-400">{note.pages ? `${note.pages} পৃষ্ঠা • ` : ''}{note.size || '3.5 MB'}</span>
+                      </div>
+                    </div>
+
+                    <div className="shrink-0">
+                      {enrolled ? (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDownloadSheet(note.title, note.pdfUrl);
+                          }}
+                          className="px-2.5 py-1 rounded-full bg-[#fff2f7] hover:bg-[#ffe3ee] text-[#ed347d] font-bold text-[10px] border border-[#ffd2e2] flex items-center gap-1 cursor-pointer"
+                        >
+                          <Download className="w-3 h-3" />
+                          ডাউনলোড
+                        </button>
+                      ) : (
+                        <Lock className="w-3 h-3 text-slate-400" />
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {mod.lectures.length === 0 && allModNotes.length === 0 && (
+              <p className="text-[10px] text-slate-400 italic py-1 text-center">এই অধ্যায়ে এখনো ক্লাস বা শিট যুক্ত নেই</p>
             )}
           </div>
         )}
@@ -443,195 +550,267 @@ export default function ClassroomPage({
             {/* Content Tabs (Lecture Sheets / Discussion / Exams) */}
             <div className="space-y-4">
               
-              <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('notes')}
-                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
-                    activeTab === 'notes'
-                      ? 'bg-[#ed347d] text-white shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                  }`}
-                >
-                  <FileText className="w-3.5 h-3.5" />
-                  লেকচার ও শিট
-                  {activeLecture?.notes && (
-                    <span className="px-1.5 py-0.2 rounded-full bg-white/20 text-[10px]">
-                      {activeLecture.notes.length}
-                    </span>
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('discussion')}
-                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    activeTab === 'discussion'
-                      ? 'bg-[#ed347d] text-white shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                  }`}
-                >
-                  <MessageSquare className="w-3.5 h-3.5" />
-                  প্রশ্নোত্তর ({comments.length})
-                </button>
-              </div>
-
-              {/* Tab 1: Lecture & Practice Sheets */}
-              {activeTab === 'notes' && (() => {
-                const currentChapter = (course.modules || []).find((m) =>
-                  (m.lectures || []).some((l) => l.id === activeLecture?.id)
-                ) || (course.modules || [])[0];
-
-                const currentLectureNotes = activeLecture?.notes || [];
-                const otherChapterNotes = ((currentChapter?.lectures) || [])
-                  .filter((l) => l.id !== activeLecture?.id)
-                  .flatMap((l) =>
-                    (l.notes || []).map((n) => ({
-                      ...n,
-                      fromLectureTitle: l.title,
-                    }))
-                  );
-
-                const renderStudentSheetCard = (sheet: any, fromLec?: string) => {
-                  const isLecture = sheet.type === 'lecture_sheet';
-                  const isPractice = sheet.type === 'practice_sheet';
-                  const isHandnote = sheet.type === 'handnote';
-
-                  return (
-                    <div
-                      key={sheet.id}
-                      className="p-4 rounded-2xl bg-white border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs hover:border-pink-200 transition-all"
-                    >
-                      <div className="flex items-start gap-3 flex-1 min-w-0">
-                        <div
-                          className={`p-2.5 rounded-xl shrink-0 ${
-                            isLecture
-                              ? 'bg-pink-50 text-[#ed347d]'
-                              : isPractice
-                              ? 'bg-amber-50 text-amber-700'
-                              : 'bg-indigo-50 text-indigo-700'
-                          }`}
-                        >
-                          <FileText className="w-5 h-5" />
-                        </div>
-                        <div className="overflow-hidden min-w-0 flex-1">
-                          <div className="flex items-center gap-2 flex-wrap mb-1">
-                            <span
-                              className={`px-2 py-0.5 rounded-full text-[10px] font-black shrink-0 ${
-                                isLecture
-                                  ? 'bg-pink-100/70 text-[#ed347d] border border-pink-200'
-                                  : isPractice
-                                  ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                                  : 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                              }`}
-                            >
-                              {isLecture ? '📖 লেকচার শিট' : isPractice ? '📝 প্র্যাকটিস শিট' : '✍️ হ্যান্ডনোট'}
-                            </span>
-                            {fromLec && (
-                              <span className="text-[10px] text-slate-500 font-bold truncate max-w-[200px]" title={fromLec}>
-                                🏷️ {fromLec}
-                              </span>
-                            )}
-                            {sheet.pdfUrl && sheet.pdfUrl !== '#' && (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                                🌐 ড্রাইভ / অনলাইন শিট
-                              </span>
-                            )}
-                          </div>
-
-                          <h4 className="text-xs sm:text-sm font-bold text-slate-800 leading-snug">
-                            {sheet.title}
-                          </h4>
-
-                          <div className="flex items-center gap-2 text-xs text-slate-400 pt-1 flex-wrap">
-                            <span>সাইজ: {sheet.size || '3.5 MB'}</span>
-                            <span>•</span>
-                            <span>{sheet.pages} পৃষ্ঠা</span>
-                            <span>•</span>
-                            <span className="text-emerald-600 font-medium">
-                              {(sheet.downloadCount || 0).toLocaleString()} বার ডাউনলোড
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="shrink-0 flex items-center gap-2">
-                        {enrolled || activeLecture?.isFreePreview ? (
-                          <button
-                            type="button"
-                            onClick={() => handleDownloadSheet(sheet.title, sheet.pdfUrl)}
-                            className="px-4 py-2 rounded-full bg-[#fff2f7] hover:bg-[#ffe3ee] text-[#ed347d] font-bold text-xs border border-[#ffd2e2] flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
-                          >
-                            {sheet.pdfUrl && sheet.pdfUrl !== '#' ? (
-                              <>
-                                <ExternalLink className="w-3.5 h-3.5" />
-                                ওপেন / ভিউ PDF
-                              </>
-                            ) : (
-                              <>
-                                <Download className="w-3.5 h-3.5" />
-                                ডাউনলোড PDF
-                              </>
-                            )}
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => setShowPaymentModal(true)}
-                            className="px-3.5 py-1.5 rounded-full text-xs font-bold text-slate-400 bg-slate-100 flex items-center gap-1"
-                          >
-                            <Lock className="w-3 h-3" />
-                            আনলক
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                };
+              {(() => {
+                const totalCourseSheets = (course.modules || []).reduce(
+                  (sum, m) => sum + (m.lectures || []).reduce((lSum, l) => lSum + (l.notes?.length || 0), 0) + (((m as any).notes?.length) || 0),
+                  0
+                );
 
                 return (
-                  <div className="space-y-5">
-                    {/* Current Lecture Sheets */}
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                          <FileText className="w-4 h-4 text-[#ed347d]" />
-                          বর্তমান ক্লাসের শিট ও নোট ({activeLecture?.title || 'ক্লাস'})
+                  <>
+                    <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('notes')}
+                        className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                          activeTab === 'notes'
+                            ? 'bg-[#ed347d] text-white shadow-sm'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                        }`}
+                      >
+                        <FileText className="w-3.5 h-3.5" />
+                        লেকচার ও শিট
+                        <span className="px-1.5 py-0.2 rounded-full bg-white/20 text-[10px]">
+                          {totalCourseSheets}
                         </span>
-                        <span className="text-[11px] text-slate-400 font-medium">
-                          {currentLectureNotes.length} টি শিট
-                        </span>
-                      </div>
+                      </button>
 
-                      {currentLectureNotes.length > 0 ? (
-                        <div className="space-y-2.5">
-                          {currentLectureNotes.map((sheet) => renderStudentSheetCard(sheet))}
-                        </div>
-                      ) : (
-                        <div className="p-6 text-center rounded-2xl bg-white border border-slate-200 text-xs text-slate-400">
-                          এই ক্লাসের জন্য এখনো কোনো আলাদা শিট সংযুক্ত করা হয়নি।
-                        </div>
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('discussion')}
+                        className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                          activeTab === 'discussion'
+                            ? 'bg-[#ed347d] text-white shadow-sm'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                        }`}
+                      >
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        প্রশ্নোত্তর ({comments.length})
+                      </button>
                     </div>
 
-                    {/* Other Chapter Sheets / Practice Sheets */}
-                    {otherChapterNotes.length > 0 && (
-                      <div className="space-y-3 pt-4 border-t border-slate-200/90">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                            <BookOpen className="w-4 h-4 text-amber-600" />
-                            এই অধ্যায়ের অন্যান্য ক্লাসের শিট ও প্র্যাকটিস শিট
-                          </span>
-                          <span className="text-[11px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">
-                            {otherChapterNotes.length} টি অতিরিক্ত শিট
-                          </span>
+                    {/* Tab 1: Lecture & Practice Sheets */}
+                    {activeTab === 'notes' && (() => {
+                      const modules = course.modules || [];
+
+                      const renderStudentSheetCard = (sheet: any, fromLec?: string) => {
+                        const isLecture = sheet.type === 'lecture_sheet';
+                        const isPractice = sheet.type === 'practice_sheet';
+                        const isHandnote = sheet.type === 'handnote';
+
+                        return (
+                          <div
+                            key={sheet.id}
+                            className="p-4 rounded-2xl bg-white border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs hover:border-pink-200 transition-all"
+                          >
+                            <div className="flex items-start gap-3 flex-1 min-w-0">
+                              <div
+                                className={`p-2.5 rounded-xl shrink-0 ${
+                                  isLecture
+                                    ? 'bg-pink-50 text-[#ed347d]'
+                                    : isPractice
+                                    ? 'bg-amber-50 text-amber-700'
+                                    : 'bg-indigo-50 text-indigo-700'
+                                }`}
+                              >
+                                <FileText className="w-5 h-5" />
+                              </div>
+                              <div className="overflow-hidden min-w-0 flex-1">
+                                <div className="flex items-center gap-2 flex-wrap mb-1">
+                                  <span
+                                    className={`px-2 py-0.5 rounded-full text-[10px] font-black shrink-0 ${
+                                      isLecture
+                                        ? 'bg-pink-100/70 text-[#ed347d] border border-pink-200'
+                                        : isPractice
+                                        ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                                        : 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                                    }`}
+                                  >
+                                    {isLecture ? '📖 লেকচার শিট' : isPractice ? '📝 প্র্যাকটিস শিট' : '✍️ হ্যান্ডনোট'}
+                                  </span>
+                                  {fromLec && (
+                                    <span className="text-[10px] text-slate-500 font-bold truncate max-w-[200px]" title={fromLec}>
+                                      🏷️ {fromLec}
+                                    </span>
+                                  )}
+                                  {sheet.pdfUrl && sheet.pdfUrl !== '#' && (
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                                      🌐 ড্রাইভ / অনলাইন শিট
+                                    </span>
+                                  )}
+                                </div>
+
+                                <h4 className="text-xs sm:text-sm font-bold text-slate-800 leading-snug">
+                                  {sheet.title}
+                                </h4>
+
+                                <div className="flex items-center gap-2 text-xs text-slate-400 pt-1 flex-wrap">
+                                  <span>সাইজ: {sheet.size || '3.5 MB'}</span>
+                                  <span>•</span>
+                                  <span>{sheet.pages} পৃষ্ঠা</span>
+                                  <span>•</span>
+                                  <span className="text-emerald-600 font-medium">
+                                    {(sheet.downloadCount || 0).toLocaleString()} বার ডাউনলোড
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="shrink-0 flex items-center gap-2">
+                              {enrolled || activeLecture?.isFreePreview ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDownloadSheet(sheet.title, sheet.pdfUrl)}
+                                  className="px-4 py-2 rounded-full bg-[#fff2f7] hover:bg-[#ffe3ee] text-[#ed347d] font-bold text-xs border border-[#ffd2e2] flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                                >
+                                  {sheet.pdfUrl && sheet.pdfUrl !== '#' ? (
+                                    <>
+                                      <ExternalLink className="w-3.5 h-3.5" />
+                                      ওপেন / ভিউ PDF
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Download className="w-3.5 h-3.5" />
+                                      ডাউনলোড PDF
+                                    </>
+                                  )}
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => setShowPaymentModal(true)}
+                                  className="px-3.5 py-1.5 rounded-full text-xs font-bold text-slate-400 bg-slate-100 flex items-center gap-1"
+                                >
+                                  <Lock className="w-3 h-3" />
+                                  আনলক
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      };
+
+                      const currentLectureNotes = activeLecture?.notes || [];
+                      const displayedModules = selectedChapterForNotes === 'all'
+                        ? modules
+                        : modules.filter((m) => m.id === selectedChapterForNotes);
+
+                      return (
+                        <div className="space-y-6">
+                          {/* Current Lecture Attached Sheets Banner (if any) */}
+                          {currentLectureNotes.length > 0 && selectedChapterForNotes === 'all' && (
+                            <div className="p-4 rounded-2xl bg-[#fff5f8] border border-[#ffd2e2] space-y-2.5">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold text-[#ed347d] flex items-center gap-1.5">
+                                  <FileText className="w-4 h-4" />
+                                  বর্তমান প্লে হওয়া ক্লাসের শিট ({activeLecture?.title})
+                                </span>
+                                <span className="text-[11px] font-bold bg-white text-[#ed347d] px-2 py-0.5 rounded-full border border-pink-200">
+                                  {currentLectureNotes.length} টি শিট
+                                </span>
+                              </div>
+                              <div className="space-y-2">
+                                {currentLectureNotes.map((sheet) => renderStudentSheetCard(sheet, activeLecture?.title))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Chapter Selector Filter */}
+                          {modules.length > 1 && (
+                            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedChapterForNotes('all')}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all cursor-pointer ${
+                                  selectedChapterForNotes === 'all'
+                                    ? 'bg-[#ed347d] text-white shadow-2xs'
+                                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                                }`}
+                              >
+                                সব অধ্যায় ({totalCourseSheets})
+                              </button>
+                              {modules.map((m) => {
+                                const mSheetsCount = (m.lectures || []).reduce(
+                                  (sum, l) => sum + (l.notes?.length || 0),
+                                  0
+                                ) + (((m as any).notes?.length) || 0);
+
+                                return (
+                                  <button
+                                    key={m.id}
+                                    type="button"
+                                    onClick={() => setSelectedChapterForNotes(m.id)}
+                                    className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-1.5 ${
+                                      selectedChapterForNotes === m.id
+                                        ? 'bg-[#ed347d] text-white shadow-2xs'
+                                        : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                                    }`}
+                                  >
+                                    <span>{m.title}</span>
+                                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                                      selectedChapterForNotes === m.id ? 'bg-white/20' : 'bg-slate-100 text-slate-500'
+                                    }`}>
+                                      {mSheetsCount}
+                                    </span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {/* Sheets grouped by Chapter */}
+                          <div className="space-y-6">
+                            {displayedModules.map((m) => {
+                              const mSheets = (m.lectures || []).flatMap((l) =>
+                                (l.notes || []).map((n) => ({ ...n, fromLectureTitle: l.title }))
+                              ).concat(
+                                (((m as any).notes || []) as any[]).map((n) => ({ ...n, fromLectureTitle: m.title }))
+                              );
+
+                              if (mSheets.length === 0) {
+                                if (selectedChapterForNotes !== 'all') {
+                                  return (
+                                    <div key={m.id} className="p-8 text-center rounded-2xl bg-white border border-slate-200 text-xs text-slate-400 space-y-1">
+                                      <FileText className="w-6 h-6 text-slate-300 mx-auto" />
+                                      <p className="font-bold text-slate-600">{m.title}</p>
+                                      <p>এই অধ্যায়ে এখনো কোনো ক্লাস শিট বা নোট আপলোড করা হয়নি।</p>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              }
+
+                              return (
+                                <div key={m.id} className="space-y-3">
+                                  <div className="flex items-center justify-between pb-1 border-b border-slate-200/80">
+                                    <span className="text-xs font-black text-slate-800 flex items-center gap-1.5">
+                                      <BookOpen className="w-4 h-4 text-[#ed347d]" />
+                                      {m.title}
+                                    </span>
+                                    <span className="text-[11px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full">
+                                      {mSheets.length} টি শিট
+                                    </span>
+                                  </div>
+
+                                  <div className="space-y-2.5">
+                                    {mSheets.map((sheet) => renderStudentSheetCard(sheet, sheet.fromLectureTitle))}
+                                  </div>
+                                </div>
+                              );
+                            })}
+
+                            {totalCourseSheets === 0 && (
+                              <div className="p-8 text-center rounded-2xl bg-white border border-slate-200 text-xs text-slate-400 space-y-2">
+                                <FileText className="w-8 h-8 text-slate-300 mx-auto" />
+                                <p className="font-bold text-slate-700">কোনো লেকচার বা প্র্যাকটিস শিট পাওয়া যায়নি</p>
+                                <p>শিক্ষক এখনো এই কোর্সের কোনো অধ্যায়ে শিট আপলোড করেননি।</p>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <div className="space-y-2.5">
-                          {otherChapterNotes.map((sheet) => renderStudentSheetCard(sheet, sheet.fromLectureTitle))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                      );
+                    })()}
+                  </>
                 );
               })()}
 
