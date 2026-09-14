@@ -31,7 +31,13 @@ import {
   Globe,
   SlidersHorizontal,
   Edit3,
-  Bookmark
+  Bookmark,
+  FileQuestion,
+  Clock,
+  Award,
+  HelpCircle,
+  CheckSquare,
+  ListOrdered
 } from 'lucide-react';
 
 interface ParsedClass {
@@ -862,6 +868,86 @@ function parseTelegramDesktopExport(data: any): ParsedCourseData {
 
 const ACS_BOOKMARKLET_CODE = "javascript:(async%20function%20universalACSExtractor()%20%7B%20console.clear();%20console.log(%22%25c%F0%9F%9A%80%20ADOMMO%20%E2%80%94%20Universal%20ACS%20Multi-Subdomain%20Scraper%20%E0%A6%B6%E0%A7%81%E0%A6%B0%E0%A7%81%20%E0%A6%B9%E0%A6%9A%E0%A7%8D%E0%A6%9B%E0%A7%87...%22,%20%22color:%20#00c269;%20font-size:%2016px;%20font-weight:%20bold;%22);%20let%20token%20=%20'';%20let%20tokenSource%20=%20'';%20for%20(let%20i%20=%200;%20i%20%3C%20localStorage.length;%20i++)%20%7B%20const%20key%20=%20localStorage.key(i);%20const%20val%20=%20localStorage.getItem(key)%20%7C%7C%20'';%20const%20match%20=%20val.match(/ey%5BA-Za-z0-9-_=%5D+%5C.%5BA-Za-z0-9-_=%5D+%5C.?%5BA-Za-z0-9-_.+/=%5D*/);%20if%20(match)%20%7B%20token%20=%20match%5B0%5D;%20tokenSource%20=%20%60localStorage%20%5B$%7Bkey%7D%5D%60;%20break;%20%7D%20%7D%20if%20(!token)%20%7B%20for%20(let%20i%20=%200;%20i%20%3C%20sessionStorage.length;%20i++)%20%7B%20const%20key%20=%20sessionStorage.key(i);%20const%20val%20=%20sessionStorage.getItem(key)%20%7C%7C%20'';%20const%20match%20=%20val.match(/ey%5BA-Za-z0-9-_=%5D+%5C.%5BA-Za-z0-9-_=%5D+%5C.?%5BA-Za-z0-9-_.+/=%5D*/);%20if%20(match)%20%7B%20token%20=%20match%5B0%5D;%20tokenSource%20=%20%60sessionStorage%20%5B$%7Bkey%7D%5D%60;%20break;%20%7D%20%7D%20%7D%20if%20(!token)%20%7B%20const%20cookieMatch%20=%20document.cookie.match(/(?:token%7Caccess_token%7Cjwt)=(%5B%5E;%5D+)/i);%20if%20(cookieMatch)%20%7B%20token%20=%20cookieMatch%5B1%5D;%20tokenSource%20=%20'Cookies';%20%7D%20%7D%20console.log(token%20?%20%60%F0%9F%94%91%20%E0%A6%85%E0%A6%A5%E0%A7%87%E0%A6%A8%E0%A6%9F%E0%A6%BF%E0%A6%95%E0%A7%87%E0%A6%B6%E0%A6%A8%20%E0%A6%9F%E0%A7%8B%E0%A6%95%E0%A7%87%E0%A6%A8%20%E0%A6%AA%E0%A6%BE%E0%A6%93%E0%A7%9F%E0%A6%BE%20%E0%A6%97%E0%A7%87%E0%A6%9B%E0%A7%87%20($%7BtokenSource%7D)!%60%20:%20%60%E2%9A%A0%EF%B8%8F%20%E0%A6%B8%E0%A6%B0%E0%A6%BE%E0%A6%B8%E0%A6%B0%E0%A6%BF%20%E0%A6%9F%E0%A7%8B%E0%A6%95%E0%A7%87%E0%A6%A8%20%E0%A6%AA%E0%A6%BE%E0%A6%93%E0%A7%9F%E0%A6%BE%20%E0%A6%AF%E0%A6%BE%E0%A7%9F%E0%A6%A8%E0%A6%BF,%20%E0%A6%95%E0%A7%81%E0%A6%95%E0%A6%BF%20%E0%A6%A6%E0%A6%BF%E0%A7%9F%E0%A7%87%20%E0%A6%9A%E0%A7%87%E0%A6%B7%E0%A7%8D%E0%A6%9F%E0%A6%BE%20%E0%A6%95%E0%A6%B0%E0%A6%BE%20%E0%A6%B9%E0%A6%AC%E0%A7%87%E0%A5%A4%60);%20let%20API_BASE%20=%20'';%20try%20%7B%20const%20apiResources%20=%20performance.getEntriesByType('resource')%20.map(r%20=%3E%20r.name)%20.filter(n%20=%3E%20n.includes('/api/'));%20const%20detected%20=%20apiResources.find(n%20=%3E%20n.includes('/api/v1/'));%20if%20(detected)%20%7B%20const%20m%20=%20detected.match(/(https?:%5C/%5C/%5B%5E%5C/%5D+%5C/api%5C/v1)/);%20if%20(m)%20API_BASE%20=%20m%5B1%5D;%20%7D%20%7D%20catch%20(e)%20%7B%7D%20if%20(!API_BASE)%20%7B%20const%20host%20=%20location.hostname.toLowerCase();%20if%20(host.includes('engineering'))%20%7B%20API_BASE%20=%20'https://api.engineering.aparsclassroom.com/api/v1';%20%7D%20else%20if%20(host.includes('admission'))%20%7B%20API_BASE%20=%20'https://api.varsity.aparsclassroom.com/api/v1';%20%7D%20else%20if%20(host.includes('varsity')%20%7C%7C%20host.includes('frb'))%20%7B%20API_BASE%20=%20'https://api.varsity.aparsclassroom.com/api/v1';%20%7D%20else%20if%20(host.includes('medical'))%20%7B%20API_BASE%20=%20'https://api.medical.aparsclassroom.com/api/v1';%20%7D%20else%20%7B%20API_BASE%20=%20'https://api.varsity.aparsclassroom.com/api/v1';%20%7D%20%7D%20console.log(%60%F0%9F%8C%90%20%E0%A6%B6%E0%A6%A8%E0%A6%BE%E0%A6%95%E0%A7%8D%E0%A6%A4%E0%A6%95%E0%A7%83%E0%A6%A4%20API%20%E0%A6%8F%E0%A6%A8%E0%A7%8D%E0%A6%A1%E0%A6%AA%E0%A6%AF%E0%A6%BC%E0%A7%87%E0%A6%A8%E0%A7%8D%E0%A6%9F:%20$%7BAPI_BASE%7D%60);%20const%20urlMatch%20=%20location.href.match(/course%5C/(%5Ba-zA-Z0-9-%5D+)/i)%20%7C%7C%20location.href.match(/shop%5C/(%5Ba-zA-Z0-9-%5D+)/i);%20let%20defaultCourse%20=%20urlMatch%20?%20urlMatch%5B1%5D%20:%20'';%20let%20courseInput%20=%20prompt(%22%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8%20%E0%A6%86%E0%A6%87%E0%A6%A1%E0%A6%BF%20%E0%A6%AC%E0%A6%BE%20%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8%20%E0%A6%B2%E0%A6%BF%E0%A6%82%E0%A6%95%20%E0%A6%A6%E0%A6%BF%E0%A6%A8:%22,%20defaultCourse);%20if%20(!courseInput)%20return;%20const%20courseIdMatch%20=%20courseInput.trim().match(/(?:course%7Cshop)%5C/(%5B%5E%5C/?#%5D+)/i);%20const%20courseId%20=%20courseIdMatch%20?%20courseIdMatch%5B1%5D%20:%20courseInput.trim();%20let%20detectedArchiveId%20=%20'';%20try%20%7B%20const%20allLinks%20=%20Array.from(document.querySelectorAll('a%5Bhref*=%22/course/%22%5D,%20a%5Bhref*=%22/shop/%22%5D'));%20const%20archiveLink%20=%20allLinks.find(a%20=%3E%20/archive%7C%E0%A6%86%E0%A6%B0%E0%A7%8D%E0%A6%95%E0%A6%BE%E0%A6%87%E0%A6%AD%7Cprevious%7C%E0%A6%AA%E0%A7%82%E0%A6%B0%E0%A7%8D%E0%A6%AC%7C%E0%A6%AA%E0%A7%81%E0%A6%B0%E0%A7%8D%E0%A6%AC/i.test(a.textContent%20%7C%7C%20'')%20%7C%7C%20/archive%7Cprevious/i.test(a.getAttribute('href')%20%7C%7C%20'')%20);%20if%20(archiveLink)%20%7B%20const%20m%20=%20(archiveLink.getAttribute('href')%20%7C%7C%20'').match(/(?:course%7Cshop)%5C/(%5Ba-zA-Z0-9-%5D+)/i);%20if%20(m%20&&%20m%5B1%5D%20!==%20courseId)%20%7B%20detectedArchiveId%20=%20m%5B1%5D;%20%7D%20%7D%20%7D%20catch%20(e)%20%7B%7D%20if%20(!detectedArchiveId%20&&%20(courseId.includes('c82195b9')%20%7C%7C%20location.href.toLowerCase().includes('frb')))%20%7B%20detectedArchiveId%20=%20'52acc196-55a7-4499-9ca2-dc44ccab3568';%20%7D%20let%20archiveInput%20=%20prompt(%20%22%E0%A6%86%E0%A6%B0%E0%A7%8D%E0%A6%95%E0%A6%BE%E0%A6%87%E0%A6%AD%20%E0%A6%AC%E0%A7%8D%E0%A6%AF%E0%A6%BE%E0%A6%9A%E0%A7%87%E0%A6%B0%20%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8%20%E0%A6%86%E0%A6%87%E0%A6%A1%E0%A6%BF%20%E0%A6%AC%E0%A6%BE%20%E0%A6%B2%E0%A6%BF%E0%A6%82%E0%A6%95:%5C%5Cn(%E0%A6%AA%E0%A7%87%E0%A6%9C%E0%A7%87%20%E0%A6%AA%E0%A6%BE%E0%A6%93%E0%A7%9F%E0%A6%BE%20%E0%A6%86%E0%A6%87%E0%A6%A1%E0%A6%BF%20%E0%A6%A8%E0%A6%BF%E0%A6%9A%E0%A7%87%20%E0%A6%A6%E0%A7%87%E0%A7%9F%E0%A6%BE%20%E0%A6%B9%E0%A7%9F%E0%A7%87%E0%A6%9B%E0%A7%87%E0%A5%A4%20%E0%A6%86%E0%A6%B0%E0%A7%8D%E0%A6%95%E0%A6%BE%E0%A6%87%E0%A6%AD%20%E0%A6%A8%E0%A6%BF%E0%A6%A4%E0%A7%87%20%E0%A6%9A%E0%A6%BE%E0%A6%87%E0%A6%B2%E0%A7%87%20OK%20%E0%A6%A6%E0%A6%BF%E0%A6%A8,%20%E0%A6%A8%E0%A6%BE%20%E0%A6%A5%E0%A6%BE%E0%A6%95%E0%A6%B2%E0%A7%87%20%E0%A6%AB%E0%A6%BE%E0%A6%81%E0%A6%95%E0%A6%BE%20%E0%A6%B0%E0%A6%BE%E0%A6%96%E0%A7%81%E0%A6%A8):%22,%20detectedArchiveId%20);%20let%20archiveCourseId%20=%20'';%20if%20(archiveInput%20&&%20archiveInput.trim())%20%7B%20const%20m%20=%20archiveInput.trim().match(/(?:course%7Cshop)%5C/(%5Ba-zA-Z0-9-%5D+)/i);%20archiveCourseId%20=%20m%20?%20m%5B1%5D%20:%20archiveInput.trim();%20%7D%20const%20headers%20=%20%7B%20'accept':%20'application/json,%20text/plain,%20*/*',%20'x-access-token':%20token,%20'authorization':%20token%20?%20%60Bearer%20$%7Btoken%7D%60%20:%20''%20%7D;%20console.log(%60%F0%9F%93%A6%20%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8%20%E0%A6%86%E0%A6%87%E0%A6%A1%E0%A6%BF:%20$%7BcourseId%7D%60);%20if%20(archiveCourseId)%20%7B%20console.log(%60%F0%9F%97%84%EF%B8%8F%20%E0%A6%86%E0%A6%B0%E0%A7%8D%E0%A6%95%E0%A6%BE%E0%A6%87%E0%A6%AD%20%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8%20%E0%A6%86%E0%A6%87%E0%A6%A1%E0%A6%BF:%20$%7BarchiveCourseId%7D%60);%20%7D%20let%20courseTitle%20=%20'';%20try%20%7B%20const%20cRes%20=%20await%20fetch(%60$%7BAPI_BASE%7D/course/$%7BcourseId%7D%60,%20%7B%20headers,%20credentials:%20'include'%20%7D);%20const%20cJson%20=%20await%20cRes.json();%20if%20(cJson.data?.title%20%7C%7C%20cJson.data?.name)%20%7B%20courseTitle%20=%20cJson.data.title%20%7C%7C%20cJson.data.name;%20%7D%20%7D%20catch(e)%20%7B%7D%20if%20(!courseTitle)%20%7B%20try%20%7B%20const%20h1%20=%20document.querySelector('h1')?.textContent?.trim();%20if%20(h1%20&&%20h1.length%20%3E%202%20&&%20!/apars%7Cdashboard%7Clogin%7Cwelcome/i.test(h1))%20%7B%20courseTitle%20=%20h1;%20%7D%20%7D%20catch%20(e)%20%7B%7D%20%7D%20if%20(!courseTitle%20%7C%7C%20courseTitle%20===%20'ACS%20Admission%20Special%20Private%20Programme')%20%7B%20const%20docTitle%20=%20document.title?.trim();%20if%20(docTitle%20&&%20!/apars%5Cs*classroom/i.test(docTitle))%20%7B%20courseTitle%20=%20docTitle;%20%7D%20%7D%20if%20(!courseTitle)%20%7B%20const%20userTitle%20=%20prompt(%22%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8%E0%A7%87%E0%A6%B0%20%E0%A6%A8%E0%A6%BE%E0%A6%AE%20%E0%A6%A8%E0%A6%BF%E0%A6%B6%E0%A7%8D%E0%A6%9A%E0%A6%BF%E0%A6%A4%20%E0%A6%95%E0%A6%B0%E0%A7%81%E0%A6%A8:%22,%20%22ACS%20Course%22);%20courseTitle%20=%20userTitle?.trim()%20%7C%7C%20%22ACS%20Course%22;%20%7D%20function%20formatDrivePdf(val)%20%7B%20if%20(!val)%20return%20null;%20if%20(typeof%20val%20===%20'string'%20&&%20val.startsWith('http'))%20return%20val;%20return%20%60https://drive.google.com/file/d/$%7Bval%7D/view%60;%20%7D%20async%20function%20scrapeCourseStructure(cId,%20isArchive%20=%20false)%20%7B%20const%20label%20=%20isArchive%20?%20%22%F0%9F%97%84%EF%B8%8F%20%E0%A6%86%E0%A6%B0%E0%A7%8D%E0%A6%95%E0%A6%BE%E0%A6%87%E0%A6%AD%22%20:%20%22%F0%9F%93%9A%20%E0%A6%AE%E0%A7%87%E0%A6%87%E0%A6%A8%22;%20console.log(%60$%7Blabel%7D%20%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8%20%E0%A6%A1%E0%A7%87%E0%A6%9F%E0%A6%BE%20%E0%A6%AB%E0%A7%87%E0%A6%9A%20%E0%A6%95%E0%A6%B0%E0%A6%BE%20%E0%A6%B9%E0%A6%9A%E0%A7%8D%E0%A6%9B%E0%A7%87...%20%5BID:%20$%7BcId%7D%5D%60);%20const%20subRes%20=%20await%20fetch(%60$%7BAPI_BASE%7D/course-subject/subjects/$%7BcId%7D?limit=100%60,%20%7B%20headers,%20credentials:%20'include'%20%7D);%20const%20subJson%20=%20await%20subRes.json();%20const%20rawSubjects%20=%20subJson.data%20%7C%7C%20%5B%5D;%20if%20(!rawSubjects.length)%20%7B%20console.warn(%60%E2%9A%A0%EF%B8%8F%20$%7Blabel%7D%20%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8%E0%A7%87%20%E0%A6%95%E0%A7%8B%E0%A6%A8%E0%A7%8B%20%E0%A6%AC%E0%A6%BF%E0%A6%B7%E0%A7%9F%20%E0%A6%AA%E0%A6%BE%E0%A6%93%E0%A7%9F%E0%A6%BE%20%E0%A6%AF%E0%A6%BE%E0%A7%9F%E0%A6%A8%E0%A6%BF!%60);%20return%20%7B%20subjects:%20%5B%5D,%20totalClasses:%200%20%7D;%20%7D%20console.log(%60%25c%E2%9C%85%20$%7Blabel%7D%20%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8%E0%A7%87%20$%7BrawSubjects.length%7D%20%E0%A6%9F%E0%A6%BF%20%E0%A6%AC%E0%A6%BF%E0%A6%B7%E0%A7%9F%20%E0%A6%AA%E0%A6%BE%E0%A6%93%E0%A7%9F%E0%A6%BE%20%E0%A6%97%E0%A7%87%E0%A6%9B%E0%A7%87!%60,%20%22color:%20#00c269;%20font-weight:%20bold;%22);%20const%20formattedSubjects%20=%20%5B%5D;%20let%20classesCount%20=%200;%20for%20(let%20sIdx%20=%200;%20sIdx%20%3C%20rawSubjects.length;%20sIdx++)%20%7B%20const%20sub%20=%20rawSubjects%5BsIdx%5D;%20const%20subTitle%20=%20sub.title%20%7C%7C%20sub.name%20%7C%7C%20sub.subjectName%20%7C%7C%20sub.courseSubject?.title%20%7C%7C%20sub.courseSubjectName%20%7C%7C%20%60%E0%A6%AC%E0%A6%BF%E0%A6%B7%E0%A7%9F%20$%7BsIdx%20+%201%7D%60;%20console.log(%60%F0%9F%91%89%20%5B$%7BsIdx%20+%201%7D/$%7BrawSubjects.length%7D%5D%20%E0%A6%AC%E0%A6%BF%E0%A6%B7%E0%A7%9F:%20$%7BsubTitle%7D%60);%20const%20chapRes%20=%20await%20fetch(%60$%7BAPI_BASE%7D/course/subject/chapter/course-subject/$%7Bsub.id%7D?courseSubjectId=$%7Bsub.id%7D&limit=1000%60,%20%7B%20headers,%20credentials:%20'include'%20%7D);%20const%20chapJson%20=%20await%20chapRes.json();%20const%20rawChapters%20=%20chapJson.data%20%7C%7C%20%5B%5D;%20const%20isBangla%20=%20/%E0%A6%AC%E0%A6%BE%E0%A6%82%E0%A6%B2%E0%A6%BE%7Cbangla/i.test(subTitle);%20const%20isEnglish%20=%20/english%7C%E0%A6%87%E0%A6%82%E0%A6%B0%E0%A7%87%E0%A6%9C%E0%A6%BF/i.test(subTitle);%20const%20subjectObj%20=%20%7B%20id:%20sub.id,%20title:%20subTitle,%20isArchive:%20isArchive,%20isMultiPaper:%20(isBangla%20%7C%7C%20isEnglish)%20&&%20rawChapters.length%20%3E=%202,%20chapters:%20%5B%5D%20%7D;%20for%20(let%20cIdx%20=%200;%20cIdx%20%3C%20rawChapters.length;%20cIdx++)%20%7B%20const%20ch%20=%20rawChapters%5BcIdx%5D;%20const%20chapTitle%20=%20ch.title%20%7C%7C%20ch.name%20%7C%7C%20ch.chapterName%20%7C%7C%20ch.courseSubjectChapterName%20%7C%7C%20%60%E0%A6%85%E0%A6%A7%E0%A7%8D%E0%A6%AF%E0%A6%BE%E0%A6%AF%E0%A6%BC%20$%7BcIdx%20+%201%7D%60;%20let%20paperTag%20=%20'';%20if%20(isBangla)%20%7B%20paperTag%20=%20cIdx%20===%200%20?%20'%E0%A6%AC%E0%A6%BE%E0%A6%82%E0%A6%B2%E0%A6%BE%20%E0%A7%A7%E0%A6%AE%20%E0%A6%AA%E0%A6%A4%E0%A7%8D%E0%A6%B0%20(%E0%A6%B8%E0%A6%BE%E0%A6%B9%E0%A6%BF%E0%A6%A4%E0%A7%8D%E0%A6%AF)'%20:%20'%E0%A6%AC%E0%A6%BE%E0%A6%82%E0%A6%B2%E0%A6%BE%20%E0%A7%A8%E0%A7%9F%20%E0%A6%AA%E0%A6%A4%E0%A7%8D%E0%A6%B0%20(%E0%A6%AC%E0%A7%8D%E0%A6%AF%E0%A6%BE%E0%A6%95%E0%A6%B0%E0%A6%A3)';%20%7D%20else%20if%20(isEnglish)%20%7B%20paperTag%20=%20cIdx%20===%200%20?%20'English%201st%20Paper'%20:%20'English%202nd%20Paper';%20%7D%20try%20%7B%20const%20classRes%20=%20await%20fetch(%60$%7BAPI_BASE%7D/class/all/videos/$%7Bch.id%7D?limit=1000%60,%20%7B%20headers,%20credentials:%20'include'%20%7D);%20const%20classJson%20=%20await%20classRes.json();%20const%20rawClasses%20=%20classJson.data%20%7C%7C%20%5B%5D;%20const%20classes%20=%20rawClasses.map((cl,%20i)%20=%3E%20%7B%20classesCount++;%20return%20%7B%20id:%20cl.id,%20classNo:%20cl.classNo%20%7C%7C%20(i%20+%201).toString(),%20title:%20cl.classTitle%20%7C%7C%20cl.title%20%7C%7C%20cl.description%20%7C%7C%20%60Class%20$%7Bi%20+%201%7D:%20$%7BchapTitle%7D%60,%20description:%20cl.description%20%7C%7C%20'',%20instructor:%20cl.instructor%20%7C%7C%20cl.instructorName%20%7C%7C%20'ACS%20Instructor',%20hostingType:%20cl.hostingType%20%7C%7C%20'',%20videoId:%20cl.videoId%20%7C%7C%20'',%20videoUrl:%20cl.videoUrl%20%7C%7C%20'',%20hlsPlaylistUrl:%20cl.hlsPlaylistUrl%20%7C%7C%20null,%20iframePlayerUrl:%20cl.iframePlayerUrl%20%7C%7C%20null,%20libraryId:%20cl.libraryId%20%7C%7C%20'610687',%20lectureSheetPdf:%20formatDrivePdf(cl.lectureSheet%20%7C%7C%20cl.lectureSheetPdf),%20practiceSheetPdf:%20formatDrivePdf(cl.practiceSheet%20%7C%7C%20cl.practiceSheetPdf),%20solutionSheetPdf:%20formatDrivePdf(cl.solutionSheet%20%7C%7C%20cl.solutionSheetPdf),%20markedBookPdf:%20formatDrivePdf(cl.markedBook%20%7C%7C%20cl.markedBookPdf),%20paperTag:%20paperTag%20%7C%7C%20null%20%7D;%20%7D);%20subjectObj.chapters.push(%7B%20id:%20ch.id,%20title:%20chapTitle,%20paperTag:%20paperTag%20%7C%7C%20null,%20classes%20%7D);%20%7D%20catch(cErr)%20%7B%20subjectObj.chapters.push(%7B%20id:%20ch.id,%20title:%20chapTitle,%20paperTag:%20paperTag%20%7C%7C%20null,%20classes:%20%5B%5D%20%7D);%20%7D%20%7D%20formattedSubjects.push(subjectObj);%20%7D%20return%20%7B%20subjects:%20formattedSubjects,%20totalClasses:%20classesCount%20%7D;%20%7D%20try%20%7B%20console.log(%22%E0%A7%A7%E0%A6%AE%20%E0%A6%A7%E0%A6%BE%E0%A6%AA:%20%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8%E0%A7%87%E0%A6%B0%20%E0%A6%95%E0%A7%8D%E0%A6%B2%E0%A6%BE%E0%A6%B8%20%E0%A6%B8%E0%A6%82%E0%A6%97%E0%A7%8D%E0%A6%B0%E0%A6%B9%20%E0%A6%B6%E0%A7%81%E0%A6%B0%E0%A7%81%20%E0%A6%B9%E0%A6%9A%E0%A7%8D%E0%A6%9B%E0%A7%87...%22);%20const%20mainData%20=%20await%20scrapeCourseStructure(courseId,%20false);%20const%20fullCourseData%20=%20%7B%20courseId,%20courseTitle,%20extractedAt:%20new%20Date().toISOString(),%20apiBaseUsed:%20API_BASE,%20subdomain:%20location.hostname,%20totalSubjects:%20mainData.subjects.length,%20totalClasses:%20mainData.totalClasses,%20subjects:%20mainData.subjects%20%7D;%20if%20(archiveCourseId)%20%7B%20console.log(%22%E0%A7%A8%E0%A6%AF%E0%A6%BC%20%E0%A6%A7%E0%A6%BE%E0%A6%AA:%20%E0%A6%86%E0%A6%B0%E0%A7%8D%E0%A6%95%E0%A6%BE%E0%A6%87%E0%A6%AD%20%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8%E0%A7%87%E0%A6%B0%20%E0%A6%95%E0%A7%8D%E0%A6%B2%E0%A6%BE%E0%A6%B8%20%E0%A6%B8%E0%A6%82%E0%A6%97%E0%A7%8D%E0%A6%B0%E0%A6%B9%20%E0%A6%B6%E0%A7%81%E0%A6%B0%E0%A7%81%20%E0%A6%B9%E0%A6%9A%E0%A7%8D%E0%A6%9B%E0%A7%87...%22);%20let%20archiveTitle%20=%20%22%E0%A6%86%E0%A6%B0%E0%A7%8D%E0%A6%95%E0%A6%BE%E0%A6%87%E0%A6%AD%20%E0%A6%AC%E0%A7%8D%E0%A6%AF%E0%A6%BE%E0%A6%9A%20(Previous%20Batch%20Archive)%22;%20try%20%7B%20const%20aRes%20=%20await%20fetch(%60$%7BAPI_BASE%7D/course/$%7BarchiveCourseId%7D%60,%20%7B%20headers,%20credentials:%20'include'%20%7D);%20const%20aJson%20=%20await%20aRes.json();%20if%20(aJson.data?.title%20%7C%7C%20aJson.data?.name)%20%7B%20archiveTitle%20=%20%60%E0%A6%86%E0%A6%B0%E0%A7%8D%E0%A6%95%E0%A6%BE%E0%A6%87%E0%A6%AD:%20$%7BaJson.data.title%20%7C%7C%20aJson.data.name%7D%60;%20%7D%20%7D%20catch%20(e)%20%7B%7D%20const%20archiveData%20=%20await%20scrapeCourseStructure(archiveCourseId,%20true);%20fullCourseData.archive%20=%20%7B%20courseId:%20archiveCourseId,%20title:%20archiveTitle,%20totalSubjects:%20archiveData.subjects.length,%20totalClasses:%20archiveData.totalClasses,%20subjects:%20archiveData.subjects%20%7D;%20console.log(%60%25c%F0%9F%97%84%EF%B8%8F%20%E0%A6%86%E0%A6%B0%E0%A7%8D%E0%A6%95%E0%A6%BE%E0%A6%87%E0%A6%AD%20%E0%A6%B8%E0%A6%AB%E0%A6%B2%E0%A6%AD%E0%A6%BE%E0%A6%AC%E0%A7%87%20%E0%A6%8F%E0%A6%95%E0%A7%8D%E0%A6%B8%E0%A6%9F%E0%A7%8D%E0%A6%B0%E0%A7%8D%E0%A6%AF%E0%A6%BE%E0%A6%95%E0%A7%8D%E0%A6%9F%20%E0%A6%B9%E0%A7%9F%E0%A7%87%E0%A6%9B%E0%A7%87!%20($%7BarchiveData.totalClasses%7D%20%E0%A6%9F%E0%A6%BF%20%E0%A6%95%E0%A7%8D%E0%A6%B2%E0%A6%BE%E0%A6%B8)%60,%20%22color:%20#eab308;%20font-weight:%20bold;%22);%20%7D%20const%20totalCombinedClasses%20=%20fullCourseData.totalClasses%20+%20(fullCourseData.archive?.totalClasses%20%7C%7C%200);%20const%20blob%20=%20new%20Blob(%5BJSON.stringify(fullCourseData,%20null,%202)%5D,%20%7B%20type:%20'application/json'%20%7D);%20const%20a%20=%20document.createElement('a');%20a.href%20=%20URL.createObjectURL(blob);%20const%20cleanName%20=%20(courseTitle.replace(/%5B%5Ea-zA-Z0-9%5Cu0980-%5Cu09FF%5D/g,%20'_')%20%7C%7C%20'course')%20+%20'.json';%20a.download%20=%20cleanName;%20document.body.appendChild(a);%20a.click();%20document.body.removeChild(a);%20alert(%60%F0%9F%8E%89%20%E0%A6%B8%E0%A6%AE%E0%A7%8D%E0%A6%AA%E0%A7%82%E0%A6%B0%E0%A7%8D%E0%A6%A3%20%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8%20%E0%A6%B8%E0%A6%AB%E0%A6%B2%E0%A6%AD%E0%A6%BE%E0%A6%AC%E0%A7%87%20%E0%A6%8F%E0%A6%95%E0%A7%8D%E0%A6%B8%E0%A6%AA%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%9F%20%E0%A6%B9%E0%A7%9F%E0%A7%87%E0%A6%9B%E0%A7%87!%5C%5Cn%5C%5Cn%F0%9F%93%8C%20%E0%A6%AE%E0%A7%87%E0%A6%87%E0%A6%A8%20%E0%A6%95%E0%A7%8D%E0%A6%B2%E0%A6%BE%E0%A6%B8:%20$%7BfullCourseData.totalClasses%7D%20%E0%A6%9F%E0%A6%BF%5C%5Cn%F0%9F%93%8C%20%E0%A6%86%E0%A6%B0%E0%A7%8D%E0%A6%95%E0%A6%BE%E0%A6%87%E0%A6%AD%20%E0%A6%95%E0%A7%8D%E0%A6%B2%E0%A6%BE%E0%A6%B8:%20$%7BfullCourseData.archive?.totalClasses%20%7C%7C%200%7D%20%E0%A6%9F%E0%A6%BF%5C%5Cn%F0%9F%93%8C%20%E0%A6%B8%E0%A6%B0%E0%A7%8D%E0%A6%AC%E0%A6%AE%E0%A7%8B%E0%A6%9F%20%E0%A6%95%E0%A7%8D%E0%A6%B2%E0%A6%BE%E0%A6%B8:%20$%7BtotalCombinedClasses%7D%20%E0%A6%9F%E0%A6%BF%5C%5Cn%5C%5Cn%E0%A6%AB%E0%A6%BE%E0%A6%87%E0%A6%B2%20($%7BcleanName%7D)%20%E0%A6%A1%E0%A6%BE%E0%A6%89%E0%A6%A8%E0%A6%B2%E0%A7%8B%E0%A6%A1%20%E0%A6%B9%E0%A7%9F%E0%A7%87%E0%A6%9B%E0%A7%87%E0%A5%A4%20%E0%A6%8F%E0%A6%AC%E0%A6%BE%E0%A6%B0%20%E0%A6%8F%E0%A6%9F%E0%A6%BF%20%E0%A6%86%E0%A6%AE%E0%A6%BE%E0%A6%A6%E0%A7%87%E0%A6%B0%20%E0%A6%93%E0%A7%9F%E0%A7%87%E0%A6%AC%E0%A6%B8%E0%A6%BE%E0%A6%87%E0%A6%9F%E0%A7%87%20%E0%A6%86%E0%A6%AA%E0%A6%B2%E0%A7%8B%E0%A6%A1%20%E0%A6%95%E0%A6%B0%E0%A7%81%E0%A6%A8%E0%A5%A4%60);%20console.log(%22=========================================%22);%20console.log(%60%25c%F0%9F%8E%89%20%E0%A6%B8%E0%A6%AE%E0%A7%8D%E0%A6%AA%E0%A7%82%E0%A6%B0%E0%A7%8D%E0%A6%A3%20%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8%20%E0%A6%B8%E0%A6%AB%E0%A6%B2%E0%A6%AD%E0%A6%BE%E0%A6%AC%E0%A7%87%20%E0%A6%8F%E0%A6%95%E0%A7%8D%E0%A6%B8%E0%A6%AA%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%9F%20%E0%A6%B9%E0%A7%9F%E0%A7%87%E0%A6%9B%E0%A7%87!%60,%20%22color:%20#00c269;%20font-size:%2018px;%20font-weight:%20bold;%22);%20console.log(%60%F0%9F%93%8C%20%E0%A6%AE%E0%A7%87%E0%A6%87%E0%A6%A8%20%E0%A6%95%E0%A7%8D%E0%A6%B2%E0%A6%BE%E0%A6%B8:%20$%7BfullCourseData.totalClasses%7D%20%E0%A6%9F%E0%A6%BF%60);%20if%20(fullCourseData.archive)%20%7B%20console.log(%60%F0%9F%93%8C%20%E0%A6%86%E0%A6%B0%E0%A7%8D%E0%A6%95%E0%A6%BE%E0%A6%87%E0%A6%AD%20%E0%A6%95%E0%A7%8D%E0%A6%B2%E0%A6%BE%E0%A6%B8:%20$%7BfullCourseData.archive.totalClasses%7D%20%E0%A6%9F%E0%A6%BF%60);%20%7D%20console.log(%60%F0%9F%93%8C%20%E0%A6%B8%E0%A6%B0%E0%A7%8D%E0%A6%AC%E0%A6%AE%E0%A7%8B%E0%A6%9F%20%E0%A6%95%E0%A7%8D%E0%A6%B2%E0%A6%BE%E0%A6%B8:%20$%7BtotalCombinedClasses%7D%20%E0%A6%9F%E0%A6%BF%60);%20console.log(%60%F0%9F%93%81%20%E0%A6%AB%E0%A6%BE%E0%A6%87%E0%A6%B2%E0%A6%9F%E0%A6%BF%20%E0%A6%A1%E0%A6%BE%E0%A6%89%E0%A6%A8%E0%A6%B2%E0%A7%8B%E0%A6%A1%20%E0%A6%B9%E0%A7%9F%E0%A7%87%E0%A6%9B%E0%A7%87:%20$%7BcleanName%7D%60);%20console.log(%22=========================================%22);%20%7D%20catch%20(err)%20%7B%20console.error(%22%E2%9D%8C%20%E0%A6%8F%E0%A6%95%E0%A7%8D%E0%A6%B8%E0%A6%9F%E0%A7%8D%E0%A6%B0%E0%A6%BE%E0%A6%95%E0%A6%B6%E0%A6%A8%20%E0%A6%A4%E0%A7%8D%E0%A6%B0%E0%A7%81%E0%A6%9F%E0%A6%BF:%22,%20err);%20alert(%22%E0%A6%8F%E0%A6%95%E0%A7%8D%E0%A6%B8%E0%A6%9F%E0%A7%8D%E0%A6%B0%E0%A7%8D%E0%A6%AF%E0%A6%BE%E0%A6%95%E0%A7%8D%E0%A6%9F%20%E0%A6%95%E0%A6%B0%E0%A6%A4%E0%A7%87%20%E0%A6%B8%E0%A6%AE%E0%A6%B8%E0%A7%8D%E0%A6%AF%E0%A6%BE%20%E0%A6%B9%E0%A7%9F%E0%A7%87%E0%A6%9B%E0%A7%87:%20%22%20+%20err.message);%20%7D%20%7D)();";
 
+
+const ACS_EXAM_BOOKMARKLET_CODE = "javascript:(async%20function%20extractAcsMasterUniversalV4()%20%7B%20console.clear()%3B%20console.log(%22%25c%F0%9F%9A%80%20ADOMMO%20%E2%80%94%20ACS%20Universal%20Master%20Exam%20Scraper%20v4%20%E0%A6%B6%E0%A7%81%E0%A6%B0%E0%A7%81%20%E0%A6%B9%E0%A6%9A%E0%A7%8D%E0%A6%9B%E0%A7%87...%22%2C%20%22color%3A%20%2300c269%3B%20font-size%3A%2016px%3B%20font-weight%3A%20bold%3B%22)%3B%20let%20banner%20%3D%20document.getElementById('adommo-exam-banner')%3B%20if%20(!banner)%20%7B%20banner%20%3D%20document.createElement('div')%3B%20banner.id%20%3D%20'adommo-exam-banner'%3B%20banner.style.position%20%3D%20'fixed'%3B%20banner.style.top%20%3D%20'20px'%3B%20banner.style.right%20%3D%20'20px'%3B%20banner.style.zIndex%20%3D%20'999999'%3B%20banner.style.padding%20%3D%20'16px%2020px'%3B%20banner.style.borderRadius%20%3D%20'16px'%3B%20banner.style.background%20%3D%20'%23161b22'%3B%20banner.style.color%20%3D%20'%23fff'%3B%20banner.style.boxShadow%20%3D%20'0%2010px%2030px%20rgba(0%2C0%2C0%2C0.5)'%3B%20banner.style.border%20%3D%20'2px%20solid%20%238b5cf6'%3B%20banner.style.fontFamily%20%3D%20'system-ui%2C%20sans-serif'%3B%20banner.style.fontSize%20%3D%20'14px'%3B%20banner.style.maxWidth%20%3D%20'380px'%3B%20banner.innerHTML%20%3D%20'%3Cdiv%20style%3D%22font-weight%3Abold%3Bcolor%3A%23a78bfa%3Bmargin-bottom%3A4px%3B%22%3E%F0%9F%9A%80%20ADOMMO%20Master%20Scraper%20v4%3C%2Fdiv%3E%3Cdiv%3E%E0%A6%B8%E0%A6%AC%20%E0%A6%89%E0%A6%A4%E0%A7%8D%E0%A6%A4%E0%A6%B0%20%E0%A6%93%20%E0%A6%AA%E0%A7%8D%E0%A6%B0%E0%A6%B6%E0%A7%8D%E0%A6%A8%20%E0%A6%B2%E0%A7%8B%E0%A6%A1%20%E0%A6%95%E0%A6%B0%E0%A6%BE%20%E0%A6%B9%E0%A6%9A%E0%A7%8D%E0%A6%9B%E0%A7%87...%3C%2Fdiv%3E'%3B%20document.body.appendChild(banner)%3B%20%7D%20function%20updateBanner(html%2C%20isSuccess)%20%7B%20if%20(!banner)%20return%3B%20if%20(isSuccess)%20banner.style.borderColor%20%3D%20'%2310b981'%3B%20banner.innerHTML%20%3D%20html%3B%20%7D%20try%20%7B%20const%20showAnswerButtons%20%3D%20Array.from(document.querySelectorAll('button%2C%20a%2C%20div%5Brole%3D%22button%22%5D')).filter(b%20%3D%3E%20%7B%20const%20t%20%3D%20(b.textContent%20%7C%7C%20'').trim().toLowerCase()%3B%20return%20t%20%3D%3D%3D%20'show%20answer'%20%7C%7C%20t%20%3D%3D%3D%20'view%20answer'%20%7C%7C%20t%20%3D%3D%3D%20'%E0%A6%B8%E0%A6%AE%E0%A6%BE%E0%A6%A7%E0%A6%BE%E0%A6%A8%20%E0%A6%A6%E0%A7%87%E0%A6%96%E0%A7%81%E0%A6%A8'%20%7C%7C%20t%20%3D%3D%3D%20'%E0%A6%89%E0%A6%A4%E0%A7%8D%E0%A6%A4%E0%A6%B0%20%E0%A6%A6%E0%A7%87%E0%A6%96%E0%A7%81%E0%A6%A8'%3B%20%7D)%3B%20if%20(showAnswerButtons.length%20%3E%200)%20%7B%20console.log(%60%F0%9F%94%93%20%24%7BshowAnswerButtons.length%7D%20%E0%A6%9F%E0%A6%BF%20%22show%20answer%22%20%E0%A6%AC%E0%A6%BE%E0%A6%9F%E0%A6%A8%E0%A7%87%20%E0%A6%95%E0%A7%8D%E0%A6%B2%E0%A6%BF%E0%A6%95%20%E0%A6%95%E0%A6%B0%E0%A7%87%20%E0%A6%B8%E0%A6%AE%E0%A6%BE%E0%A6%A7%E0%A6%BE%E0%A6%A8%20%E0%A6%89%E0%A6%A8%E0%A7%8D%E0%A6%AE%E0%A7%8B%E0%A6%9A%E0%A6%A8%20%E0%A6%95%E0%A6%B0%E0%A6%BE%20%E0%A6%B9%E0%A6%9A%E0%A7%8D%E0%A6%9B%E0%A7%87...%60)%3B%20updateBanner(%60%3Cdiv%20style%3D%22font-weight%3Abold%3Bcolor%3A%23a78bfa%3B%22%3E%F0%9F%94%93%20%E0%A6%B8%E0%A6%AE%E0%A6%BE%E0%A6%A7%E0%A6%BE%E0%A6%A8%20%E0%A6%89%E0%A6%A8%E0%A7%8D%E0%A6%AE%E0%A7%8B%E0%A6%9A%E0%A6%A8%20%E0%A6%95%E0%A6%B0%E0%A6%BE%20%E0%A6%B9%E0%A6%9A%E0%A7%8D%E0%A6%9B%E0%A7%87...%3C%2Fdiv%3E%3Cdiv%3E%24%7BshowAnswerButtons.length%7D%20%E0%A6%9F%E0%A6%BF%20%E0%A6%AA%E0%A7%8D%E0%A6%B0%E0%A6%B6%E0%A7%8D%E0%A6%A8%E0%A7%87%E0%A6%B0%20%E0%A6%89%E0%A6%A4%E0%A7%8D%E0%A6%A4%E0%A6%B0%20%E0%A6%B2%E0%A7%8B%E0%A6%A1%20%E0%A6%B9%E0%A6%9A%E0%A7%8D%E0%A6%9B%E0%A7%87%3C%2Fdiv%3E%60)%3B%20showAnswerButtons.forEach(btn%20%3D%3E%20btn.click())%3B%20await%20new%20Promise(r%20%3D%3E%20setTimeout(r%2C%20600))%3B%20%7D%20%7D%20catch%20(e)%20%7B%20console.warn(%22Auto-expand%20show%20answer%20warning%3A%22%2C%20e)%3B%20%7D%20let%20token%20%3D%20''%3B%20for%20(let%20i%20%3D%200%3B%20i%20%3C%20localStorage.length%3B%20i%2B%2B)%20%7B%20const%20k%20%3D%20localStorage.key(i)%3B%20const%20v%20%3D%20localStorage.getItem(k)%20%7C%7C%20''%3B%20const%20m%20%3D%20v.match(%2Fey%5BA-Za-z0-9-_%3D%5D%2B%5C.%5BA-Za-z0-9-_%3D%5D%2B%5C.%3F%5BA-Za-z0-9-_.%2B%2F%3D%5D*%2F)%3B%20if%20(m)%20%7B%20token%20%3D%20m%5B0%5D%3B%20break%3B%20%7D%20%7D%20const%20urlMatch%20%3D%20location.href.match(%2F(%3F%3Amcq%7Cwritten%7Cexam%7Ctest%7Ctest-details)%5C%2F(%5Ba-zA-Z0-9-%5D%2B)%2Fi)%3B%20const%20testId%20%3D%20urlMatch%20%3F%20urlMatch%5B1%5D%20%3A%20''%3B%20let%20examTitle%20%3D%20''%3B%20const%20titleEl%20%3D%20document.querySelector('h1%2C%20h2%2C%20%5Bclass*%3D%22title%22%5D%2C%20%5Bclass*%3D%22Title%22%5D')%3B%20if%20(titleEl%20%26%26%20titleEl.textContent%20%26%26%20titleEl.textContent.trim().length%20%3E%203%20%26%26%20!%2Fapars%7Cexam%20portal%7C%E0%A6%B6%E0%A6%BF%E0%A6%95%E0%A7%8D%E0%A6%B7%E0%A6%BE%E0%A6%B0%E0%A7%8D%E0%A6%A5%E0%A7%80%E0%A6%A6%E0%A7%87%E0%A6%B0%2Fi.test(titleEl.textContent))%20%7B%20examTitle%20%3D%20titleEl.textContent.trim()%3B%20%7D%20else%20%7B%20examTitle%20%3D%20document.title.replace(%2Fapars%5Cs*classroom%2Fi%2C%20'').trim()%20%7C%7C%20'ACS%20Exam%20'%20%2B%20(testId%20%3F%20testId.slice(0%2C%208)%20%3A%20'')%3B%20%7D%20updateBanner(%60%3Cdiv%20style%3D%22font-weight%3Abold%3Bcolor%3A%23a78bfa%3B%22%3E%F0%9F%93%9D%20%24%7BexamTitle%7D%3C%2Fdiv%3E%3Cdiv%3E%E0%A6%AA%E0%A7%8D%E0%A6%B0%E0%A6%B6%E0%A7%8D%E0%A6%A8%20%E0%A6%93%20%E0%A6%89%E0%A6%A4%E0%A7%8D%E0%A6%A4%E0%A6%B0%20%E0%A6%86%E0%A6%B2%E0%A6%BE%E0%A6%A6%E0%A6%BE%20%E0%A6%95%E0%A6%B0%E0%A6%BE%20%E0%A6%B9%E0%A6%9A%E0%A7%8D%E0%A6%9B%E0%A7%87...%3C%2Fdiv%3E%60)%3B%20function%20detectSubjectFromText(text)%20%7B%20const%20s%20%3D%20(text%20%7C%7C%20'').toLowerCase()%3B%20if%20(s.includes('%E0%A6%B0%E0%A6%B8%E0%A6%BE%E0%A7%9F%E0%A6%A8')%20%7C%7C%20s.includes('chemistry')%20%7C%7C%20s.includes('%E0%A6%B9%E0%A6%BE%E0%A6%9C%E0%A6%BE%E0%A6%B0%E0%A7%80'))%20return%20'%E0%A6%B0%E0%A6%B8%E0%A6%BE%E0%A7%9F%E0%A6%A8'%3B%20if%20(s.includes('%E0%A6%AA%E0%A6%A6%E0%A6%BE%E0%A6%B0%E0%A7%8D%E0%A6%A5')%20%7C%7C%20s.includes('physics')%20%7C%7C%20s.includes('%E0%A6%87%E0%A6%B8%E0%A6%B9%E0%A6%BE%E0%A6%95')%20%7C%7C%20s.includes('%E0%A6%A4%E0%A6%AA%E0%A6%A8'))%20return%20'%E0%A6%AA%E0%A6%A6%E0%A6%BE%E0%A6%B0%E0%A7%8D%E0%A6%A5%E0%A6%AC%E0%A6%BF%E0%A6%9C%E0%A7%8D%E0%A6%9E%E0%A6%BE%E0%A6%A8'%3B%20if%20(s.includes('%E0%A6%89%E0%A6%9A%E0%A7%8D%E0%A6%9A%E0%A6%A4%E0%A6%B0%20%E0%A6%97%E0%A6%A3%E0%A6%BF%E0%A6%A4')%20%7C%7C%20s.includes('math')%20%7C%7C%20s.includes('%E0%A6%95%E0%A7%87%E0%A6%A4%E0%A6%BE%E0%A6%AC')%20%7C%7C%20s.includes('%E0%A6%85%E0%A6%B8%E0%A7%80%E0%A6%AE'))%20return%20'%E0%A6%89%E0%A6%9A%E0%A7%8D%E0%A6%9A%E0%A6%A4%E0%A6%B0%20%E0%A6%97%E0%A6%A3%E0%A6%BF%E0%A6%A4'%3B%20if%20(s.includes('%E0%A6%9C%E0%A7%80%E0%A6%AC%E0%A6%AC%E0%A6%BF%E0%A6%9C%E0%A7%8D%E0%A6%9E%E0%A6%BE%E0%A6%A8')%20%7C%7C%20s.includes('biology')%20%7C%7C%20s.includes('%E0%A6%86%E0%A6%9C%E0%A6%AE%E0%A6%B2')%20%7C%7C%20s.includes('%E0%A6%B9%E0%A6%BE%E0%A6%B8%E0%A6%BE%E0%A6%A8')%20%7C%7C%20s.includes('%E0%A6%89%E0%A6%A6%E0%A7%8D%E0%A6%AD%E0%A6%BF%E0%A6%A6')%20%7C%7C%20s.includes('%E0%A6%AA%E0%A7%8D%E0%A6%B0%E0%A6%BE%E0%A6%A3%E0%A7%80'))%20return%20'%E0%A6%9C%E0%A7%80%E0%A6%AC%E0%A6%AC%E0%A6%BF%E0%A6%9C%E0%A7%8D%E0%A6%9E%E0%A6%BE%E0%A6%A8'%3B%20if%20(s.includes('%E0%A6%AC%E0%A6%BE%E0%A6%82%E0%A6%B2%E0%A6%BE%20%E0%A7%A8%E0%A7%9F')%20%7C%7C%20s.includes('bangla%202nd')%20%7C%7C%20s.includes('%E0%A6%86%E0%A6%AC%E0%A7%87%E0%A6%A6%E0%A6%A8')%20%7C%7C%20s.includes('%E0%A6%A6%E0%A6%BF%E0%A6%A8%E0%A6%B2%E0%A6%BF%E0%A6%AA%E0%A6%BF')%20%7C%7C%20s.includes('%E0%A6%AC%E0%A7%88%E0%A6%A6%E0%A7%8D%E0%A6%AF%E0%A7%81%E0%A6%A4%E0%A6%BF%E0%A6%A8%20%E0%A6%9A%E0%A6%BF%E0%A6%A0%E0%A6%BF')%20%7C%7C%20s.includes('%E0%A6%AA%E0%A7%8D%E0%A6%B0%E0%A6%A4%E0%A6%BF%E0%A6%AC%E0%A7%87%E0%A6%A6%E0%A6%A8')%20%7C%7C%20s.includes('%E0%A6%B8%E0%A6%BE%E0%A6%B0%E0%A6%BE%E0%A6%82%E0%A6%B6')%20%7C%7C%20s.includes('%E0%A6%AD%E0%A6%BE%E0%A6%AC%E0%A6%B8%E0%A6%AE%E0%A7%8D%E0%A6%AA%E0%A7%8D%E0%A6%B0%E0%A6%B8%E0%A6%BE%E0%A6%B0%E0%A6%A3'))%20return%20'%E0%A6%AC%E0%A6%BE%E0%A6%82%E0%A6%B2%E0%A6%BE%20%E0%A7%A8%E0%A7%9F%20%E0%A6%AA%E0%A6%A4%E0%A7%8D%E0%A6%B0'%3B%20if%20(s.includes('%E0%A6%AC%E0%A6%BE%E0%A6%82%E0%A6%B2%E0%A6%BE')%20%7C%7C%20s.includes('bangla'))%20return%20'%E0%A6%AC%E0%A6%BE%E0%A6%82%E0%A6%B2%E0%A6%BE%20%E0%A7%A7%E0%A6%AE%20%E0%A6%AA%E0%A6%A4%E0%A7%8D%E0%A6%B0'%3B%20if%20(s.includes('english')%20%7C%7C%20s.includes('%E0%A6%87%E0%A6%82%E0%A6%B0%E0%A7%87%E0%A6%9C%E0%A6%BF'))%20return%20'English'%3B%20if%20(s.includes('ict')%20%7C%7C%20s.includes('%E0%A6%A4%E0%A6%A5%E0%A7%8D%E0%A6%AF'))%20return%20'%E0%A6%A4%E0%A6%A5%E0%A7%8D%E0%A6%AF%20%E0%A6%93%20%E0%A6%AF%E0%A7%8B%E0%A6%97%E0%A6%BE%E0%A6%AF%E0%A7%8B%E0%A6%97%20%E0%A6%AA%E0%A7%8D%E0%A6%B0%E0%A6%AF%E0%A7%81%E0%A6%95%E0%A7%8D%E0%A6%A4%E0%A6%BF%20(ICT)'%3B%20return%20'General'%3B%20%7D%20function%20parseCreativeQuestionBlock(qText%2C%20solText)%20%7B%20const%20solParts%20%3D%20%7B%7D%3B%20const%20solRegex%20%3D%20%2F(%3F%3A%E0%A6%A8%E0%A6%AE%E0%A7%81%E0%A6%A8%E0%A6%BE%5Cs*%E0%A6%89%E0%A6%A4%E0%A7%8D%E0%A6%A4%E0%A6%B0%5B%3A%5Cs%5D*%7C%E0%A6%89%E0%A6%A4%E0%A7%8D%E0%A6%A4%E0%A6%B0%5B%3A%5Cs%5D*)%5C((%5B%E0%A6%95-%E0%A6%98a-dA-D%5Cd%5D)%5C)%7C(%3F%3A%E0%A6%A8%E0%A6%AE%E0%A7%81%E0%A6%A8%E0%A6%BE%5Cs*%E0%A6%89%E0%A6%A4%E0%A7%8D%E0%A6%A4%E0%A6%B0%5B%3A%5Cs%5D*%7C%E0%A6%89%E0%A6%A4%E0%A7%8D%E0%A6%A4%E0%A6%B0%5B%3A%5Cs%5D*)(%5B%E0%A6%95-%E0%A6%98a-dA-D%5Cd%5D)%5B%5C.%5C)%5D%2Fg%3B%20let%20match%3B%20let%20indices%20%3D%20%5B%5D%3B%20while%20((match%20%3D%20solRegex.exec(solText))%20!%3D%3D%20null)%20%7B%20indices.push(%7B%20part%3A%20match%5B1%5D%20%7C%7C%20match%5B2%5D%2C%20index%3A%20match.index%2C%20length%3A%20match%5B0%5D.length%20%7D)%3B%20%7D%20if%20(indices.length%20%3E%200)%20%7B%20for%20(let%20i%20%3D%200%3B%20i%20%3C%20indices.length%3B%20i%2B%2B)%20%7B%20const%20start%20%3D%20indices%5Bi%5D.index%20%2B%20indices%5Bi%5D.length%3B%20const%20end%20%3D%20(i%20%2B%201%20%3C%20indices.length)%20%3F%20indices%5Bi%2B1%5D.index%20%3A%20solText.length%3B%20solParts%5Bindices%5Bi%5D.part%5D%20%3D%20solText.slice(start%2C%20end).trim()%3B%20%7D%20%7D%20const%20cleanedQ%20%3D%20qText.replace(%2Fshow%20answer%7Chide%20answer%7Canswered%7Cnot%20answered%2Fgi%2C%20'').trim()%3B%20const%20subQRegex%20%3D%20%2F(%3F%3A%5E%7C%5Cn%7C%5Cs)(%3F%3A%E0%A6%85%E0%A6%A5%E0%A6%AC%E0%A6%BE%2C%5Cs*)%3F(%3F%3A%5C((%5B%E0%A6%95-%E0%A6%98a-dA-D%5Cd%5D%2B)%5C)%7C(%5B%E0%A6%95-%E0%A6%98a-dA-D%5Cd%5D)%5B%5C.%5C)%5D)%5Cs*%2Fg%3B%20const%20subMatches%20%3D%20%5B%5D%3B%20while%20((match%20%3D%20subQRegex.exec(cleanedQ))%20!%3D%3D%20null)%20%7B%20subMatches.push(%7B%20part%3A%20match%5B1%5D%20%7C%7C%20match%5B2%5D%2C%20index%3A%20match.index%2C%20length%3A%20match%5B0%5D.length%20%7D)%3B%20%7D%20let%20stem%20%3D%20''%3B%20const%20subQuestions%20%3D%20%5B%5D%3B%20if%20(subMatches.length%20%3E%200)%20%7B%20stem%20%3D%20cleanedQ.slice(0%2C%20subMatches%5B0%5D.index).trim()%3B%20for%20(let%20i%20%3D%200%3B%20i%20%3C%20subMatches.length%3B%20i%2B%2B)%20%7B%20const%20start%20%3D%20subMatches%5Bi%5D.index%20%2B%20subMatches%5Bi%5D.length%3B%20const%20end%20%3D%20(i%20%2B%201%20%3C%20subMatches.length)%20%3F%20subMatches%5Bi%2B1%5D.index%20%3A%20cleanedQ.length%3B%20const%20text%20%3D%20cleanedQ.slice(start%2C%20end).trim()%3B%20const%20markMatch%20%3D%20text.match(%2F%5C%5B(%5Cd%2B)%5C%5D%2F)%20%7C%7C%20text.match(%2F%5C((%5Cd%2B)%5C)%2F)%3B%20let%20marks%20%3D%2010%3B%20if%20(markMatch)%20%7B%20marks%20%3D%20parseInt(markMatch%5B1%5D%2C%2010)%3B%20%7D%20else%20if%20(subMatches.length%20%3D%3D%3D%204)%20%7B%20marks%20%3D%20%5B1%2C%202%2C%203%2C%204%5D%5Bi%5D%20%7C%7C%202%3B%20%7D%20else%20if%20(subMatches.length%20%3D%3D%3D%202)%20%7B%20marks%20%3D%2010%3B%20%7D%20const%20partKey%20%3D%20subMatches%5Bi%5D.part%3B%20subQuestions.push(%7B%20part%3A%20partKey%2C%20text%3A%20text%2C%20marks%3A%20marks%2C%20sampleAnswer%3A%20solParts%5BpartKey%5D%20%7C%7C%20''%20%7D)%3B%20%7D%20%7D%20else%20%7B%20const%20markMatch%20%3D%20cleanedQ.match(%2F%5C%5B(%5Cd%2B)%5C%5D%2F)%20%7C%7C%20cleanedQ.match(%2F%5C((%5Cd%2B)%5C)%2F)%3B%20const%20marks%20%3D%20markMatch%20%3F%20parseInt(markMatch%5B1%5D%2C%2010)%20%3A%2010%3B%20subQuestions.push(%7B%20part%3A%20'%E0%A7%A7'%2C%20text%3A%20cleanedQ%2C%20marks%3A%20marks%2C%20sampleAnswer%3A%20solText%20%7C%7C%20''%20%7D)%3B%20%7D%20return%20%7B%20stem%2C%20subQuestions%20%7D%3B%20%7D%20let%20extractedMcqs%20%3D%20%5B%5D%3B%20let%20extractedCqs%20%3D%20%5B%5D%3B%20const%20allElements%20%3D%20Array.from(document.querySelectorAll('*'))%3B%20const%20quesBadges%20%3D%20allElements.filter(el%20%3D%3E%20%7B%20const%20t%20%3D%20(el.textContent%20%7C%7C%20'').trim()%3B%20return%20el.children.length%20%3D%3D%3D%200%20%26%26%20%2F%5EQues%3A%5Cs*%5Cd%2B%2Fi.test(t)%3B%20%7D)%3B%20const%20cqBadges%20%3D%20allElements.filter(el%20%3D%3E%20%7B%20const%20t%20%3D%20(el.textContent%20%7C%7C%20'').trim()%3B%20return%20el.children.length%20%3D%3D%3D%200%20%26%26%20%2F%5EQuestion%3A%5Cs*%5Cd%2B%2Fi.test(t)%3B%20%7D)%3B%20console.log(%60%F0%9F%94%8E%20%E0%A6%B6%E0%A6%A8%E0%A6%BE%E0%A6%95%E0%A7%8D%E0%A6%A4%E0%A6%95%E0%A6%B0%E0%A6%A3%20%E0%A6%AB%E0%A6%B2%E0%A6%BE%E0%A6%AB%E0%A6%B2%3A%20MCQ%20%E0%A6%AC%E0%A7%8D%E0%A6%AF%E0%A6%BE%E0%A6%9C%20%3D%20%24%7BquesBadges.length%7D%20%E0%A6%9F%E0%A6%BF%2C%20CQ%20%E0%A6%AC%E0%A7%8D%E0%A6%AF%E0%A6%BE%E0%A6%9C%20%3D%20%24%7BcqBadges.length%7D%20%E0%A6%9F%E0%A6%BF%60)%3B%20if%20(cqBadges.length%20%3E%200)%20%7B%20cqBadges.forEach((badge%2C%20idx)%20%3D%3E%20%7B%20try%20%7B%20const%20qNoMatch%20%3D%20badge.textContent.trim().match(%2F%5EQuestion%3A%5Cs*(%5Cd%2B)%2Fi)%3B%20const%20qNo%20%3D%20qNoMatch%20%3F%20parseInt(qNoMatch%5B1%5D%2C%2010)%20%3A%20idx%20%2B%201%3B%20let%20card%20%3D%20badge.parentElement%3B%20let%20depth%20%3D%200%3B%20while%20(card%20%26%26%20depth%20%3C%206)%20%7B%20const%20hasButton%20%3D%20card.querySelector('button%2C%20%5Bclass*%3D%22button%22%5D')%3B%20const%20hasBorder%20%3D%20card.className%20%26%26%20(card.className.includes('border')%20%7C%7C%20card.className.includes('rounded')%20%7C%7C%20card.className.includes('shadow')%20%7C%7C%20card.className.includes('card'))%3B%20const%20otherBadges%20%3D%20Array.from(card.querySelectorAll('*')).filter(el%20%3D%3E%20%7B%20const%20t%20%3D%20(el.textContent%20%7C%7C%20'').trim()%3B%20return%20el%20!%3D%3D%20badge%20%26%26%20el.children.length%20%3D%3D%3D%200%20%26%26%20%2F%5EQuestion%3A%5Cs*%5Cd%2B%2Fi.test(t)%3B%20%7D)%3B%20if%20(otherBadges.length%20%3D%3D%3D%200%20%26%26%20(hasButton%20%7C%7C%20hasBorder)%20%26%26%20card.children.length%20%3E%3D%202)%20%7B%20break%3B%20%7D%20if%20(otherBadges.length%20%3E%200)%20%7B%20card%20%3D%20card.children%5B0%5D%20%7C%7C%20badge.parentElement%3B%20break%3B%20%7D%20if%20(!card.parentElement%20%7C%7C%20card.parentElement%20%3D%3D%3D%20document.body)%20break%3B%20card%20%3D%20card.parentElement%3B%20depth%2B%2B%3B%20%7D%20if%20(!card)%20card%20%3D%20badge.parentElement%3F.parentElement%20%7C%7C%20badge.parentElement%3B%20let%20cardText%20%3D%20card.innerText%20%7C%7C%20''%3B%20if%20(cardText.includes('%E0%A6%B6%E0%A6%BF%E0%A6%95%E0%A7%8D%E0%A6%B7%E0%A6%BE%E0%A6%B0%E0%A7%8D%E0%A6%A5%E0%A7%80%E0%A6%A6%E0%A7%87%E0%A6%B0%20%E0%A6%9C%E0%A6%A8%E0%A7%8D%E0%A6%AF%20%E0%A6%A8%E0%A6%BF%E0%A6%B0%E0%A7%8D%E0%A6%A6%E0%A7%87%E0%A6%B6%E0%A6%BF%E0%A6%95%E0%A6%BE'))%20%7B%20const%20parts%20%3D%20cardText.split(%2FQuestion%3A%5Cs*%5Cd%2B%2Fi)%3B%20if%20(parts.length%20%3E%201)%20%7B%20cardText%20%3D%20'Question%3A%20'%20%2B%20qNo%20%2B%20'%5Cn'%20%2B%20parts%5Bparts.length%20-%201%5D%3B%20%7D%20%7D%20let%20explanation%20%3D%20''%3B%20let%20questionRawText%20%3D%20''%3B%20const%20solParts%20%3D%20cardText.split(%2FSolution%3A%5Cs*%2Fi)%3B%20if%20(solParts.length%20%3E%201)%20%7B%20questionRawText%20%3D%20solParts%5B0%5D.replace(%2F%5EQuestion%3A%5Cs*%5Cd%2B%2Fi%2C%20'').trim()%3B%20explanation%20%3D%20solParts%5B1%5D.split(%2F(%3F%3DQuestion%3A%5Cs*%5Cd%2B)%2Fi)%5B0%5D.trim()%3B%20%7D%20else%20%7B%20questionRawText%20%3D%20cardText.replace(%2F%5EQuestion%3A%5Cs*%5Cd%2B%2Fi%2C%20'').trim()%3B%20%7D%20const%20parsedCq%20%3D%20parseCreativeQuestionBlock(questionRawText%2C%20explanation)%3B%20let%20cleanStem%20%3D%20parsedCq.stem%3B%20if%20(cleanStem.includes('My%20Profile')%20%7C%7C%20cleanStem.includes('%E0%A6%B6%E0%A6%BF%E0%A6%95%E0%A7%8D%E0%A6%B7%E0%A6%BE%E0%A6%B0%E0%A7%8D%E0%A6%A5%E0%A7%80%E0%A6%A6%E0%A7%87%E0%A6%B0%20%E0%A6%9C%E0%A6%A8%E0%A7%8D%E0%A6%AF'))%20%7B%20cleanStem%20%3D%20''%3B%20%7D%20extractedCqs.push(%7B%20id%3A%20%60cq_%24%7BqNo%7D%60%2C%20title%3A%20%60%E0%A6%B8%E0%A7%83%E0%A6%9C%E0%A6%A8%E0%A6%B6%E0%A7%80%E0%A6%B2%20%E0%A6%AA%E0%A7%8D%E0%A6%B0%E0%A6%B6%E0%A7%8D%E0%A6%A8%20%E0%A7%A6%24%7BqNo%7D%60%2C%20stem%3A%20cleanStem%2C%20marks%3A%2010%2C%20subject%3A%20detectSubjectFromText(questionRawText%20%2B%20'%20'%20%2B%20explanation%20%2B%20'%20'%20%2B%20examTitle)%2C%20subQuestions%3A%20parsedCq.subQuestions%2C%20rawSolution%3A%20explanation%20%7D)%3B%20%7D%20catch%20(err)%20%7B%20console.error(%22CQ%20%E0%A6%AA%E0%A6%BE%E0%A6%B0%E0%A7%8D%E0%A6%B8%E0%A6%BF%E0%A6%82%20%E0%A6%A4%E0%A7%8D%E0%A6%B0%E0%A7%81%E0%A6%9F%E0%A6%BF%3A%22%2C%20err)%3B%20%7D%20%7D)%3B%20%7D%20if%20(quesBadges.length%20%3E%200)%20%7B%20quesBadges.forEach((badge%2C%20idx)%20%3D%3E%20%7B%20try%20%7B%20const%20qNoMatch%20%3D%20badge.textContent.trim().match(%2F%5EQues%3A%5Cs*(%5Cd%2B)%2Fi)%3B%20const%20qNo%20%3D%20qNoMatch%20%3F%20parseInt(qNoMatch%5B1%5D%2C%2010)%20%3A%20idx%20%2B%201%3B%20let%20card%20%3D%20badge.parentElement%3B%20let%20depth%20%3D%200%3B%20while%20(card%20%26%26%20depth%20%3C%206)%20%7B%20const%20otherBadges%20%3D%20Array.from(card.querySelectorAll('*')).filter(el%20%3D%3E%20%7B%20const%20t%20%3D%20(el.textContent%20%7C%7C%20'').trim()%3B%20return%20el%20!%3D%3D%20badge%20%26%26%20el.children.length%20%3D%3D%3D%200%20%26%26%20%2F%5EQues%3A%5Cs*%5Cd%2B%2Fi.test(t)%3B%20%7D)%3B%20if%20(otherBadges.length%20%3D%3D%3D%200%20%26%26%20(card.innerText%20%7C%7C%20'').includes('Solution%3A')%20%26%26%20card.children.length%20%3E%3D%203)%20break%3B%20if%20(!card.parentElement%20%7C%7C%20card.parentElement%20%3D%3D%3D%20document.body)%20break%3B%20card%20%3D%20card.parentElement%3B%20depth%2B%2B%3B%20%7D%20if%20(!card)%20card%20%3D%20badge.parentElement%3F.parentElement%20%7C%7C%20badge.parentElement%3B%20let%20questionText%20%3D%20''%3B%20const%20pOrH%20%3D%20card.querySelectorAll('p%2C%20h3%2C%20h4%2C%20h5%2C%20%5Bclass*%3D%22question%22%5D%2C%20%5Bclass*%3D%22ques%22%5D%2C%20%5Bclass*%3D%22title%22%5D')%3B%20for%20(const%20el%20of%20pOrH)%20%7B%20const%20t%20%3D%20el.innerText%3F.trim()%20%7C%7C%20''%3B%20if%20(t%20%26%26%20!%2F%5EQues%3A%2Fi.test(t)%20%26%26%20!%2FNot%20Answered%7CAnswered%2Fi.test(t)%20%26%26%20!%2FSolution%3A%2Fi.test(t)%20%26%26%20t.length%20%3E%202)%20%7B%20questionText%20%3D%20t%3B%20break%3B%20%7D%20%7D%20let%20explanation%20%3D%20''%3B%20const%20solHeader%20%3D%20Array.from(card.querySelectorAll('*')).find(el%20%3D%3E%20(el.textContent%20%7C%7C%20'').trim()%20%3D%3D%3D%20'Solution%3A')%3B%20if%20(solHeader%20%26%26%20solHeader.parentElement)%20%7B%20const%20solBox%20%3D%20solHeader.parentElement.querySelector('%5Bclass*%3D%22green%22%5D%2C%20%5Bclass*%3D%22border%22%5D%2C%20div%3Anth-child(2)')%3B%20if%20(solBox%20%26%26%20solBox%20!%3D%3D%20solHeader)%20explanation%20%3D%20solBox.innerText%3F.trim()%20%7C%7C%20''%3B%20%7D%20if%20(!explanation)%20%7B%20const%20solParts%20%3D%20(card.innerText%20%7C%7C%20'').split(%2FSolution%3A%5Cs*%2Fi)%3B%20if%20(solParts.length%20%3E%201)%20explanation%20%3D%20solParts%5B1%5D.split(%2F(%3F%3DQues%3A%5Cs*%5Cd%2B)%2Fi)%5B0%5D.trim()%3B%20%7D%20const%20lines%20%3D%20(card.innerText%20%7C%7C%20'').split('%5Cn').map(l%20%3D%3E%20l.trim()).filter(Boolean)%3B%20let%20qLineIdx%20%3D%20-1%3B%20let%20solLineIdx%20%3D%20-1%3B%20for%20(let%20i%20%3D%200%3B%20i%20%3C%20lines.length%3B%20i%2B%2B)%20%7B%20const%20line%20%3D%20lines%5Bi%5D%3B%20if%20(qLineIdx%20%3D%3D%3D%20-1%20%26%26%20(line.includes('%3F')%20%7C%7C%20line.includes('%E0%A6%95%E0%A6%BF')%20%7C%7C%20line.includes('%E0%A6%95%E0%A7%80')%20%7C%7C%20line%20%3D%3D%3D%20questionText))%20qLineIdx%20%3D%20i%3B%20if%20(%2F%5ESolution%5B%3A%5Cs%5D%2Fi.test(line))%20%7B%20solLineIdx%20%3D%20i%3B%20break%3B%20%7D%20%7D%20if%20(qLineIdx%20%3D%3D%3D%20-1)%20%7B%20const%20bIdx%20%3D%20lines.findIndex(l%20%3D%3E%20%2F%5EQues%3A%5Cs*%5Cd%2B%2Fi.test(l))%3B%20if%20(bIdx%20!%3D%3D%20-1)%20%7B%20for%20(let%20j%20%3D%20bIdx%20%2B%201%3B%20j%20%3C%20lines.length%3B%20j%2B%2B)%20%7B%20if%20(!%2FNot%20Answered%7CAnswered%2Fi.test(lines%5Bj%5D))%20%7B%20qLineIdx%20%3D%20j%3B%20if%20(!questionText)%20questionText%20%3D%20lines%5Bj%5D%3B%20break%3B%20%7D%20%7D%20%7D%20%7D%20if%20(solLineIdx%20%3D%3D%3D%20-1)%20solLineIdx%20%3D%20lines.length%3B%20let%20rawOptionLines%20%3D%20%5B%5D%3B%20if%20(qLineIdx%20!%3D%3D%20-1%20%26%26%20solLineIdx%20%3E%20qLineIdx)%20rawOptionLines%20%3D%20lines.slice(qLineIdx%20%2B%201%2C%20solLineIdx)%3B%20const%20candidateOptions%20%3D%20%5B%5D%3B%20let%20currentOptionText%20%3D%20''%3B%20for%20(const%20l%20of%20rawOptionLines)%20%7B%20if%20(!l%20%7C%7C%20%2F%5E(Ques%3A%7CNot%20Answered%7CAnswered)%2Fi.test(l))%20continue%3B%20if%20(%2F%5E%5BA-D%E2%9C%93%E2%9C%94%E2%80%A2%5C(%5C)%5C.%5Cs%5D%7B1%2C4%7D%24%2Fi.test(l))%20%7B%20if%20(currentOptionText)%20%7B%20candidateOptions.push(currentOptionText)%3B%20currentOptionText%20%3D%20''%3B%20%7D%20continue%3B%20%7D%20const%20cleaned%20%3D%20l.replace(%2F%5E%5BA-D%E2%9C%93%E2%9C%94%E2%80%A2%5C(%5C)%5C.%5Cs%5D%7B1%2C4%7D%2Fi%2C%20'').trim()%3B%20if%20(cleaned)%20%7B%20if%20(currentOptionText)%20candidateOptions.push(currentOptionText)%3B%20currentOptionText%20%3D%20cleaned%3B%20%7D%20%7D%20if%20(currentOptionText)%20candidateOptions.push(currentOptionText)%3B%20let%20options%20%3D%20candidateOptions.slice(0%2C%204)%3B%20let%20correctOption%20%3D%200%3B%20const%20greenElements%20%3D%20Array.from(card.querySelectorAll('*')).filter(el%20%3D%3E%20%7B%20const%20cls%20%3D%20(el.className%20%7C%7C%20'').toString().toLowerCase()%3B%20const%20style%20%3D%20(el.getAttribute('style')%20%7C%7C%20'').toLowerCase()%3B%20const%20txt%20%3D%20(el.textContent%20%7C%7C%20'').trim()%3B%20return%20(cls.includes('green')%20%7C%7C%20cls.includes('emerald')%20%7C%7C%20style.includes('green')%20%7C%7C%20txt.includes('%E2%9C%93')%20%7C%7C%20txt.includes('%E2%9C%94')%20%7C%7C%20!!el.querySelector('svg'))%20%26%26%20!txt.includes('Solution%3A')%3B%20%7D)%3B%20if%20(greenElements.length%20%3E%200)%20%7B%20for%20(let%20o%20%3D%200%3B%20o%20%3C%20options.length%3B%20o%2B%2B)%20%7B%20if%20(greenElements.some(gel%20%3D%3E%20(gel.innerText%20%7C%7C%20'').includes(options%5Bo%5D)))%20%7B%20correctOption%20%3D%20o%3B%20break%3B%20%7D%20%7D%20%7D%20extractedMcqs.push(%7B%20id%3A%20%60q_%24%7BqNo%7D%60%2C%20questionNo%3A%20qNo%2C%20text%3A%20questionText%20%7C%7C%20%60%E0%A6%AA%E0%A7%8D%E0%A6%B0%E0%A6%B6%E0%A7%8D%E0%A6%A8%20%24%7BqNo%7D%60%2C%20subject%3A%20detectSubjectFromText(explanation%20%2B%20'%20'%20%2B%20examTitle)%2C%20options%3A%20options.length%20%3E%3D%202%20%3F%20options%20%3A%20%5B'%E0%A6%95'%2C%20'%E0%A6%96'%2C%20'%E0%A6%97'%2C%20'%E0%A6%98'%5D%2C%20correctOption%3A%20correctOption%2C%20explanation%3A%20explanation%20%7D)%3B%20%7D%20catch%20(err)%20%7B%20console.error(%22MCQ%20%E0%A6%AA%E0%A6%BE%E0%A6%B0%E0%A7%8D%E0%A6%B8%E0%A6%BF%E0%A6%82%20%E0%A6%A4%E0%A7%8D%E0%A6%B0%E0%A7%81%E0%A6%9F%E0%A6%BF%3A%22%2C%20err)%3B%20%7D%20%7D)%3B%20%7D%20const%20totalQuestions%20%3D%20extractedMcqs.length%20%2B%20extractedCqs.length%3B%20if%20(totalQuestions%20%3D%3D%3D%200)%20%7B%20updateBanner('%3Cdiv%20style%3D%22font-weight%3Abold%3Bcolor%3A%23f87171%3B%22%3E%E2%9A%A0%EF%B8%8F%20%E0%A6%95%E0%A7%8B%E0%A6%A8%E0%A7%8B%20%E0%A6%AA%E0%A7%8D%E0%A6%B0%E0%A6%B6%E0%A7%8D%E0%A6%A8%20%E0%A6%AA%E0%A6%BE%E0%A6%93%E0%A7%9F%E0%A6%BE%20%E0%A6%AF%E0%A6%BE%E0%A7%9F%E0%A6%A8%E0%A6%BF%3C%2Fdiv%3E'%2C%20false)%3B%20alert(%22%E2%9A%A0%EF%B8%8F%20%E0%A6%95%E0%A7%8B%E0%A6%A8%E0%A7%8B%20%E0%A6%AA%E0%A7%8D%E0%A6%B0%E0%A6%B6%E0%A7%8D%E0%A6%A8%20%E0%A6%AA%E0%A6%BE%E0%A6%93%E0%A7%9F%E0%A6%BE%20%E0%A6%AF%E0%A6%BE%E0%A7%9F%E0%A6%A8%E0%A6%BF!%20%E0%A6%85%E0%A6%A8%E0%A7%81%E0%A6%97%E0%A7%8D%E0%A6%B0%E0%A6%B9%20%E0%A6%95%E0%A6%B0%E0%A7%87%20%E0%A6%AA%E0%A6%B0%E0%A7%80%E0%A6%95%E0%A7%8D%E0%A6%B7%E0%A6%BE%E0%A6%B0%20%E0%A6%AA%E0%A7%8D%E0%A6%B0%E0%A6%B6%E0%A7%8D%E0%A6%A8%20%E0%A6%AC%E0%A6%BE%20%E0%A6%B0%E0%A7%87%E0%A6%9C%E0%A6%BE%E0%A6%B2%E0%A7%8D%E0%A6%9F%20%E0%A6%AA%E0%A7%87%E0%A6%9C%E0%A7%87%20%E0%A6%A5%E0%A6%BE%E0%A6%95%E0%A6%BE%20%E0%A6%85%E0%A6%AC%E0%A6%B8%E0%A7%8D%E0%A6%A5%E0%A6%BE%E0%A7%9F%20%E0%A6%B8%E0%A7%8D%E0%A6%95%E0%A7%8D%E0%A6%B0%E0%A6%BF%E0%A6%AA%E0%A7%8D%E0%A6%9F%E0%A6%9F%E0%A6%BF%20%E0%A6%9A%E0%A6%BE%E0%A6%B2%E0%A6%BE%E0%A6%A8%E0%A5%A4%22)%3B%20return%3B%20%7D%20let%20examType%20%3D%20'mcq'%3B%20if%20(extractedMcqs.length%20%3E%200%20%26%26%20extractedCqs.length%20%3E%200)%20examType%20%3D%20'combined'%3B%20else%20if%20(extractedCqs.length%20%3E%200)%20examType%20%3D%20'cq'%3B%20console.log(%60%25c%F0%9F%8E%89%20%E0%A6%B8%E0%A6%AB%E0%A6%B2%E0%A6%AD%E0%A6%BE%E0%A6%AC%E0%A7%87%20%E0%A6%8F%E0%A6%95%E0%A7%8D%E0%A6%B8%E0%A6%9F%E0%A7%8D%E0%A6%B0%E0%A7%8D%E0%A6%AF%E0%A6%BE%E0%A6%95%E0%A7%8D%E0%A6%9F%20%E0%A6%B9%E0%A7%9F%E0%A7%87%E0%A6%9B%E0%A7%87!%20%E0%A6%AE%E0%A7%8B%E0%A6%9F%3A%20%24%7BtotalQuestions%7D%20%E0%A6%9F%E0%A6%BF%20(%24%7BextractedMcqs.length%7D%20MCQ%2C%20%24%7BextractedCqs.length%7D%20CQ)%60%2C%20%22color%3A%20%2300c269%3B%20font-weight%3A%20bold%3B%20font-size%3A%2016px%3B%22)%3B%20const%20fullExamData%20%3D%20%7B%20id%3A%20'exam_acs_'%20%2B%20(testId%20%3F%20testId.replace(%2F-%2Fg%2C%20'').slice(0%2C%2012)%20%3A%20Date.now())%2C%20title%3A%20examTitle%2C%20testId%3A%20testId%2C%20courseTitle%3A%20'ACS%20Exam%20Portal'%2C%20extractedAt%3A%20new%20Date().toISOString()%2C%20sourceUrl%3A%20location.href%2C%20examType%3A%20examType%2C%20durationMinutes%3A%20examType%20%3D%3D%3D%20'combined'%20%3F%20190%20%3A%20(examType%20%3D%3D%3D%20'cq'%20%3F%20190%20%3A%2030)%2C%20mcqDurationMinutes%3A%20extractedMcqs.length%20%3E%200%20%3F%2030%20%3A%200%2C%20cqDurationMinutes%3A%20extractedCqs.length%20%3E%200%20%3F%20160%20%3A%200%2C%20totalMarks%3A%20(extractedMcqs.length%20*%201)%20%2B%20(extractedCqs.length%20*%2010)%2C%20mcqMarks%3A%20extractedMcqs.length%2C%20cqMarks%3A%20extractedCqs.length%20*%2010%2C%20passMarks%3A%20Math.ceil(((extractedMcqs.length%20*%201)%20%2B%20(extractedCqs.length%20*%2010))%20*%200.33)%2C%20negativeMarkPerWrong%3A%200.25%2C%20questionsCount%3A%20extractedMcqs.length%2C%20status%3A%20'live'%2C%20questions%3A%20extractedMcqs%2C%20creativeQuestions%3A%20extractedCqs%20%7D%3B%20const%20blob%20%3D%20new%20Blob(%5BJSON.stringify(fullExamData%2C%20null%2C%202)%5D%2C%20%7B%20type%3A%20'application%2Fjson'%20%7D)%3B%20const%20a%20%3D%20document.createElement('a')%3B%20a.href%20%3D%20URL.createObjectURL(blob)%3B%20const%20cleanFileName%20%3D%20(examTitle.replace(%2F%5B%5Ea-zA-Z0-9%5Cu0980-%5Cu09FF%5D%2Fg%2C%20'_')%20%7C%7C%20'acs_master_exam')%20%2B%20'.json'%3B%20a.download%20%3D%20cleanFileName%3B%20document.body.appendChild(a)%3B%20a.click()%3B%20document.body.removeChild(a)%3B%20updateBanner(%60%3Cdiv%20style%3D%22font-weight%3Abold%3Bcolor%3A%2334d399%3B%22%3E%F0%9F%8E%89%20%E0%A6%AE%E0%A6%BE%E0%A6%B8%E0%A7%8D%E0%A6%9F%E0%A6%BE%E0%A6%B0%20%E0%A6%A1%E0%A6%BE%E0%A6%89%E0%A6%A8%E0%A6%B2%E0%A7%8B%E0%A6%A1%20%E0%A6%B8%E0%A6%AE%E0%A7%8D%E0%A6%AA%E0%A6%A8%E0%A7%8D%E0%A6%A8!%3C%2Fdiv%3E%3Cdiv%20style%3D%22font-size%3A12px%3Bcolor%3A%23cbd5e1%3Bmargin-top%3A4px%3B%22%3EMCQ%3A%20%3Cstrong%3E%24%7BextractedMcqs.length%7D%3C%2Fstrong%3E%20%E0%A6%9F%E0%A6%BF%20%7C%20CQ%3A%20%3Cstrong%3E%24%7BextractedCqs.length%7D%3C%2Fstrong%3E%20%E0%A6%9F%E0%A6%BF%20%E0%A6%86%E0%A6%B2%E0%A6%BE%E0%A6%A6%E0%A6%BE%20%E0%A6%86%E0%A6%B2%E0%A6%BE%E0%A6%A6%E0%A6%BE%20%E0%A6%B8%E0%A6%BE%E0%A6%9C%E0%A6%BE%E0%A6%A8%E0%A7%8B%20%E0%A6%B9%E0%A7%9F%E0%A7%87%E0%A6%9B%E0%A7%87%E0%A5%A4%3C%2Fdiv%3E%60%2C%20true)%3B%20setTimeout(()%20%3D%3E%20%7B%20alert(%60%F0%9F%8E%89%20%E0%A6%B8%E0%A7%83%E0%A6%9C%E0%A6%A8%E0%A6%B6%E0%A7%80%E0%A6%B2%20(CQ)%20%E0%A6%8F%E0%A6%95%E0%A7%8D%E0%A6%B8%E0%A6%BE%E0%A6%AE%20%E0%A6%B8%E0%A6%AB%E0%A6%B2%E0%A6%AD%E0%A6%BE%E0%A6%AC%E0%A7%87%20%E0%A6%8F%E0%A6%95%E0%A7%8D%E0%A6%B8%E0%A6%AA%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%9F%20%E0%A6%B9%E0%A7%9F%E0%A7%87%E0%A6%9B%E0%A7%87!%5Cn%5Cn%F0%9F%93%8C%20%E0%A6%AA%E0%A6%B0%E0%A7%80%E0%A6%95%E0%A7%8D%E0%A6%B7%E0%A6%BE%E0%A6%B0%20%E0%A6%A8%E0%A6%BE%E0%A6%AE%3A%20%24%7BexamTitle%7D%5Cn%F0%9F%93%8C%20%E0%A6%AE%E0%A7%8B%E0%A6%9F%20%E0%A6%B8%E0%A7%83%E0%A6%9C%E0%A6%A8%E0%A6%B6%E0%A7%80%E0%A6%B2%20(CQ)%20%E0%A6%AA%E0%A7%8D%E0%A6%B0%E0%A6%B6%E0%A7%8D%E0%A6%A8%3A%20%24%7BextractedCqs.length%7D%20%E0%A6%9F%E0%A6%BF%5Cn%F0%9F%93%8C%20%E0%A6%AA%E0%A7%8D%E0%A6%B0%E0%A6%A4%E0%A6%BF%E0%A6%9F%E0%A6%BF%20%E0%A6%AA%E0%A7%8D%E0%A6%B0%E0%A6%B6%E0%A7%8D%E0%A6%A8%20%E0%A6%86%E0%A6%B2%E0%A6%BE%E0%A6%A6%E0%A6%BE%20%E0%A6%86%E0%A6%B2%E0%A6%BE%E0%A6%A6%E0%A6%BE%20%E0%A6%95%E0%A6%BE%E0%A6%B0%E0%A7%8D%E0%A6%A1%20%E0%A6%B9%E0%A6%BF%E0%A6%B8%E0%A7%87%E0%A6%AC%E0%A7%87%20%E0%A6%B8%E0%A7%87%E0%A6%AD%20%E0%A6%B9%E0%A7%9F%E0%A7%87%E0%A6%9B%E0%A7%87%E0%A5%A4%5Cn%F0%9F%93%8C%20%E0%A6%AB%E0%A6%BE%E0%A6%87%E0%A6%B2%3A%20%24%7BcleanFileName%7D%60)%3B%20%7D%2C%20500)%3B%20%7D)()%3B";
+
+const ACS_EXAM_CONSOLE_CODE = "/**\n * ADOMMO (অদম্য) — Ultimate ACS Exam Master Scraper v4 (MCQ + CQ + Combined)\n * Specifically handles:\n *  - Individual Question Cards (Separates Question 1, Question 2, Question 3...)\n *  - Auto-clicks \"show answer\" buttons so full Solution & Model Answers are revealed\n *  - Excludes page-level headers/instructions (e.g. \"শিক্ষার্থীদের জন্য নির্দেশিকা\")\n *  - Accurately splits (ক) and (খ) / (ক), (খ), (গ), (ঘ) for each CQ separately!\n */\n(async function extractAcsMasterUniversalV4() {\n  console.clear();\n  console.log(\"%c🚀 ADOMMO — ACS Universal Master Exam Scraper v4 শুরু হচ্ছে...\", \"color: #00c269; font-size: 16px; font-weight: bold;\");\n\n  // Visual Overlay Banner\n  let banner = document.getElementById('adommo-exam-banner');\n  if (!banner) {\n    banner = document.createElement('div');\n    banner.id = 'adommo-exam-banner';\n    banner.style.position = 'fixed';\n    banner.style.top = '20px';\n    banner.style.right = '20px';\n    banner.style.zIndex = '999999';\n    banner.style.padding = '16px 20px';\n    banner.style.borderRadius = '16px';\n    banner.style.background = '#161b22';\n    banner.style.color = '#fff';\n    banner.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';\n    banner.style.border = '2px solid #8b5cf6';\n    banner.style.fontFamily = 'system-ui, sans-serif';\n    banner.style.fontSize = '14px';\n    banner.style.maxWidth = '380px';\n    banner.innerHTML = '<div style=\"font-weight:bold;color:#a78bfa;margin-bottom:4px;\">🚀 ADOMMO Master Scraper v4</div><div>সব উত্তর ও প্রশ্ন লোড করা হচ্ছে...</div>';\n    document.body.appendChild(banner);\n  }\n\n  function updateBanner(html, isSuccess) {\n    if (!banner) return;\n    if (isSuccess) banner.style.borderColor = '#10b981';\n    banner.innerHTML = html;\n  }\n\n  // ১. সব \"show answer\" বাটনে স্বয়ংক্রিয় ক্লিক করা যেন সব সলিউশন দৃশ্যমান হয়\n  try {\n    const showAnswerButtons = Array.from(document.querySelectorAll('button, a, div[role=\"button\"]')).filter(b => {\n      const t = (b.textContent || '').trim().toLowerCase();\n      return t === 'show answer' || t === 'view answer' || t === 'সমাধান দেখুন' || t === 'উত্তর দেখুন';\n    });\n    if (showAnswerButtons.length > 0) {\n      console.log(`🔓 ${showAnswerButtons.length} টি \"show answer\" বাটনে ক্লিক করে সমাধান উন্মোচন করা হচ্ছে...`);\n      updateBanner(`<div style=\"font-weight:bold;color:#a78bfa;\">🔓 সমাধান উন্মোচন করা হচ্ছে...</div><div>${showAnswerButtons.length} টি প্রশ্নের উত্তর লোড হচ্ছে</div>`);\n      showAnswerButtons.forEach(btn => btn.click());\n      // DOM আপডেটের জন্য ৫০০ মিলি-সেকেন্ড অপেক্ষা\n      await new Promise(r => setTimeout(r, 600));\n    }\n  } catch (e) {\n    console.warn(\"Auto-expand show answer warning:\", e);\n  }\n\n  // ২. অথেনটিকেশন টোকেন বের করা\n  let token = '';\n  for (let i = 0; i < localStorage.length; i++) {\n    const k = localStorage.key(i);\n    const v = localStorage.getItem(k) || '';\n    const m = v.match(/ey[A-Za-z0-9-_=]+\\.[A-Za-z0-9-_=]+\\.?[A-Za-z0-9-_.+/=]*/);\n    if (m) { token = m[0]; break; }\n  }\n\n  // ৩. টেস্ট আইডি ও টাইটেল শনাক্ত করা\n  const urlMatch = location.href.match(/(?:mcq|written|exam|test|test-details)\\/([a-zA-Z0-9-]+)/i);\n  const testId = urlMatch ? urlMatch[1] : '';\n\n  let examTitle = '';\n  const titleEl = document.querySelector('h1, h2, [class*=\"title\"], [class*=\"Title\"]');\n  if (titleEl && titleEl.textContent && titleEl.textContent.trim().length > 3 && !/apars|exam portal|শিক্ষার্থীদের/i.test(titleEl.textContent)) {\n    examTitle = titleEl.textContent.trim();\n  } else {\n    examTitle = document.title.replace(/apars\\s*classroom/i, '').trim() || 'ACS Exam ' + (testId ? testId.slice(0, 8) : '');\n  }\n\n  updateBanner(`<div style=\"font-weight:bold;color:#a78bfa;\">📝 ${examTitle}</div><div>প্রশ্ন ও উত্তর আলাদা করা হচ্ছে...</div>`);\n\n  // ৪. সাবজেক্ট ডিটেকশন হেল্পার\n  function detectSubjectFromText(text) {\n    const s = (text || '').toLowerCase();\n    if (s.includes('রসায়ন') || s.includes('chemistry') || s.includes('হাজারী')) return 'রসায়ন';\n    if (s.includes('পদার্থ') || s.includes('physics') || s.includes('ইসহাক') || s.includes('তপন')) return 'পদার্থবিজ্ঞান';\n    if (s.includes('উচ্চতর গণিত') || s.includes('math') || s.includes('কেতাব') || s.includes('অসীম')) return 'উচ্চতর গণিত';\n    if (s.includes('জীববিজ্ঞান') || s.includes('biology') || s.includes('আজমল') || s.includes('হাসান') || s.includes('উদ্ভিদ') || s.includes('প্রাণী')) return 'জীববিজ্ঞান';\n    if (s.includes('বাংলা ২য়') || s.includes('bangla 2nd') || s.includes('আবেদন') || s.includes('দিনলিপি') || s.includes('বৈদ্যুতিন চিঠি') || s.includes('প্রতিবেদন') || s.includes('সারাংশ') || s.includes('ভাবসম্প্রসারণ')) return 'বাংলা ২য় পত্র';\n    if (s.includes('বাংলা') || s.includes('bangla')) return 'বাংলা ১ম পত্র';\n    if (s.includes('english') || s.includes('ইংরেজি')) return 'English';\n    if (s.includes('ict') || s.includes('তথ্য')) return 'তথ্য ও যোগাযোগ প্রযুক্তি (ICT)';\n    return 'General';\n  }\n\n  // ৫. সৃজনশীল প্রশ্নের (ক), (খ) ইত্যাদি এবং নমুনা উত্তর পার্সিং\n  function parseCreativeQuestionBlock(qText, solText) {\n    const solParts = {};\n    const solRegex = /(?:নমুনা\\s*উত্তর[:\\s]*|উত্তর[:\\s]*)\\(([ক-ঘa-dA-D\\d])\\)|(?:নমুনা\\s*উত্তর[:\\s]*|উত্তর[:\\s]*)([ক-ঘa-dA-D\\d])[\\.\\)]/g;\n    let match;\n    let indices = [];\n    while ((match = solRegex.exec(solText)) !== null) {\n      indices.push({ part: match[1] || match[2], index: match.index, length: match[0].length });\n    }\n\n    if (indices.length > 0) {\n      for (let i = 0; i < indices.length; i++) {\n        const start = indices[i].index + indices[i].length;\n        const end = (i + 1 < indices.length) ? indices[i+1].index : solText.length;\n        solParts[indices[i].part] = solText.slice(start, end).trim();\n      }\n    }\n\n    const cleanedQ = qText.replace(/show answer|hide answer|answered|not answered/gi, '').trim();\n    const subQRegex = /(?:^|\\n|\\s)(?:অথবা,\\s*)?(?:\\(([ক-ঘa-dA-D\\d]+)\\)|([ক-ঘa-dA-D\\d])[\\.\\)])\\s*/g;\n    const subMatches = [];\n    while ((match = subQRegex.exec(cleanedQ)) !== null) {\n      subMatches.push({ part: match[1] || match[2], index: match.index, length: match[0].length });\n    }\n\n    let stem = '';\n    const subQuestions = [];\n\n    if (subMatches.length > 0) {\n      stem = cleanedQ.slice(0, subMatches[0].index).trim();\n      for (let i = 0; i < subMatches.length; i++) {\n        const start = subMatches[i].index + subMatches[i].length;\n        const end = (i + 1 < subMatches.length) ? subMatches[i+1].index : cleanedQ.length;\n        const text = cleanedQ.slice(start, end).trim();\n        const markMatch = text.match(/\\[(\\d+)\\]/) || text.match(/\\((\\d+)\\)/);\n        let marks = 10;\n        if (markMatch) {\n          marks = parseInt(markMatch[1], 10);\n        } else if (subMatches.length === 4) {\n          marks = [1, 2, 3, 4][i] || 2;\n        } else if (subMatches.length === 2) {\n          marks = 10;\n        }\n\n        const partKey = subMatches[i].part;\n        subQuestions.push({\n          part: partKey,\n          text: text,\n          marks: marks,\n          sampleAnswer: solParts[partKey] || ''\n        });\n      }\n    } else {\n      const markMatch = cleanedQ.match(/\\[(\\d+)\\]/) || cleanedQ.match(/\\((\\d+)\\)/);\n      const marks = markMatch ? parseInt(markMatch[1], 10) : 10;\n      subQuestions.push({\n        part: '১',\n        text: cleanedQ,\n        marks: marks,\n        sampleAnswer: solText || ''\n      });\n    }\n\n    return { stem, subQuestions };\n  }\n\n  let extractedMcqs = [];\n  let extractedCqs = [];\n\n  // =========================================================================\n  // ৬. DOM ভিত্তিক প্রতিটি প্রশ্ন কার্ড আলাদা করে নিষ্কাশন\n  // =========================================================================\n  const allElements = Array.from(document.querySelectorAll('*'));\n\n  // ১) MCQ কার্ড খোঁজা: 'Ques: 1'\n  const quesBadges = allElements.filter(el => {\n    const t = (el.textContent || '').trim();\n    return el.children.length === 0 && /^Ques:\\s*\\d+/i.test(t);\n  });\n\n  // ২) CQ ব্যাজ খোঁজা: 'Question: 1', 'Question: 2'\n  const cqBadges = allElements.filter(el => {\n    const t = (el.textContent || '').trim();\n    return el.children.length === 0 && /^Question:\\s*\\d+/i.test(t);\n  });\n\n  console.log(`🔎 শনাক্তকরণ ফলাফল: MCQ ব্যাজ = ${quesBadges.length} টি, CQ ব্যাজ = ${cqBadges.length} টি`);\n\n  // --- CQ (সৃজনশীল) কার্ড বাই কার্ড নির্ভুল নিষ্কাশন ---\n  if (cqBadges.length > 0) {\n    cqBadges.forEach((badge, idx) => {\n      try {\n        const qNoMatch = badge.textContent.trim().match(/^Question:\\s*(\\d+)/i);\n        const qNo = qNoMatch ? parseInt(qNoMatch[1], 10) : idx + 1;\n\n        // কার্ড খোঁজার জন্য সুনির্দিষ্ট লজিক:\n        // এমন ক্ষুদ্রতম প্যারেন্ট এলিমেন্ট যার ভেতরে \"Question: X\" আছে এবং যাতে পরবর্তী \"Question: Y\" নেই!\n        let card = badge.parentElement;\n        let depth = 0;\n        while (card && depth < 6) {\n          const hasButton = card.querySelector('button, [class*=\"button\"]');\n          const hasBorder = card.className && (card.className.includes('border') || card.className.includes('rounded') || card.className.includes('shadow') || card.className.includes('card'));\n          // পরবর্তী Question এর ব্যাজ যেন না থাকে\n          const otherBadges = Array.from(card.querySelectorAll('*')).filter(el => {\n            const t = (el.textContent || '').trim();\n            return el !== badge && el.children.length === 0 && /^Question:\\s*\\d+/i.test(t);\n          });\n\n          if (otherBadges.length === 0 && (hasButton || hasBorder) && card.children.length >= 2) {\n            break;\n          }\n          if (otherBadges.length > 0) {\n            // যদি প্যারেন্টে অন্য প্রশ্নও ঢুকে যায়, তবে আগের চাইল্ডেই থামতে হবে\n            card = card.children[0] || badge.parentElement;\n            break;\n          }\n          if (!card.parentElement || card.parentElement === document.body) break;\n          card = card.parentElement;\n          depth++;\n        }\n        if (!card) card = badge.parentElement?.parentElement || badge.parentElement;\n\n        // প্রশ্ন কার্ডের টেক্সট\n        let cardText = card.innerText || '';\n\n        // যদি কোনো কারণে কার্ডে উপরের পেজের হেডার বা অন্য টেক্সট ঢুকে থাকে, তা ছাঁটাই করা:\n        // যেমন \"শিক্ষার্থীদের জন্য নির্দেশিকা\" বা \"My Profile\"\n        if (cardText.includes('শিক্ষার্থীদের জন্য নির্দেশিকা')) {\n          const parts = cardText.split(/Question:\\s*\\d+/i);\n          if (parts.length > 1) {\n            cardText = 'Question: ' + qNo + '\\n' + parts[parts.length - 1];\n          }\n        }\n\n        // Solution ব্লক আলাদা করা\n        let explanation = '';\n        let questionRawText = '';\n\n        const solParts = cardText.split(/Solution:\\s*/i);\n        if (solParts.length > 1) {\n          questionRawText = solParts[0].replace(/^Question:\\s*\\d+/i, '').trim();\n          explanation = solParts[1].split(/(?=Question:\\s*\\d+)/i)[0].trim();\n        } else {\n          questionRawText = cardText.replace(/^Question:\\s*\\d+/i, '').trim();\n        }\n\n        // সৃজনশীল প্রশ্নের (ক) ও (খ) অংশ আলাদা করা\n        const parsedCq = parseCreativeQuestionBlock(questionRawText, explanation);\n\n        // উদ্দীপক যদি ভুলক্রমে পুরো পেজের টেক্সট হয়ে থাকে তা সাফ করা\n        let cleanStem = parsedCq.stem;\n        if (cleanStem.includes('My Profile') || cleanStem.includes('শিক্ষার্থীদের জন্য')) {\n          cleanStem = '';\n        }\n\n        extractedCqs.push({\n          id: `cq_${qNo}`,\n          title: `সৃজনশীল প্রশ্ন ০${qNo}`,\n          stem: cleanStem,\n          marks: 10,\n          subject: detectSubjectFromText(questionRawText + ' ' + explanation + ' ' + examTitle),\n          subQuestions: parsedCq.subQuestions,\n          rawSolution: explanation\n        });\n      } catch (err) {\n        console.error(\"CQ পার্সিং ত্রুটি:\", err);\n      }\n    });\n  }\n\n  // --- MCQ নিষ্কাশন (যদি থাকে) ---\n  if (quesBadges.length > 0) {\n    quesBadges.forEach((badge, idx) => {\n      try {\n        const qNoMatch = badge.textContent.trim().match(/^Ques:\\s*(\\d+)/i);\n        const qNo = qNoMatch ? parseInt(qNoMatch[1], 10) : idx + 1;\n\n        let card = badge.parentElement;\n        let depth = 0;\n        while (card && depth < 6) {\n          const otherBadges = Array.from(card.querySelectorAll('*')).filter(el => {\n            const t = (el.textContent || '').trim();\n            return el !== badge && el.children.length === 0 && /^Ques:\\s*\\d+/i.test(t);\n          });\n          if (otherBadges.length === 0 && (card.innerText || '').includes('Solution:') && card.children.length >= 3) break;\n          if (!card.parentElement || card.parentElement === document.body) break;\n          card = card.parentElement;\n          depth++;\n        }\n        if (!card) card = badge.parentElement?.parentElement || badge.parentElement;\n\n        let questionText = '';\n        const pOrH = card.querySelectorAll('p, h3, h4, h5, [class*=\"question\"], [class*=\"ques\"], [class*=\"title\"]');\n        for (const el of pOrH) {\n          const t = el.innerText?.trim() || '';\n          if (t && !/^Ques:/i.test(t) && !/Not Answered|Answered/i.test(t) && !/Solution:/i.test(t) && t.length > 2) {\n            questionText = t;\n            break;\n          }\n        }\n\n        let explanation = '';\n        const solHeader = Array.from(card.querySelectorAll('*')).find(el => (el.textContent || '').trim() === 'Solution:');\n        if (solHeader && solHeader.parentElement) {\n          const solBox = solHeader.parentElement.querySelector('[class*=\"green\"], [class*=\"border\"], div:nth-child(2)');\n          if (solBox && solBox !== solHeader) explanation = solBox.innerText?.trim() || '';\n        }\n        if (!explanation) {\n          const solParts = (card.innerText || '').split(/Solution:\\s*/i);\n          if (solParts.length > 1) explanation = solParts[1].split(/(?=Ques:\\s*\\d+)/i)[0].trim();\n        }\n\n        const lines = (card.innerText || '').split('\\n').map(l => l.trim()).filter(Boolean);\n        let qLineIdx = -1;\n        let solLineIdx = -1;\n        for (let i = 0; i < lines.length; i++) {\n          const line = lines[i];\n          if (qLineIdx === -1 && (line.includes('?') || line.includes('কি') || line.includes('কী') || line === questionText)) qLineIdx = i;\n          if (/^Solution[:\\s]/i.test(line)) { solLineIdx = i; break; }\n        }\n        if (qLineIdx === -1) {\n          const bIdx = lines.findIndex(l => /^Ques:\\s*\\d+/i.test(l));\n          if (bIdx !== -1) {\n            for (let j = bIdx + 1; j < lines.length; j++) {\n              if (!/Not Answered|Answered/i.test(lines[j])) { qLineIdx = j; if (!questionText) questionText = lines[j]; break; }\n            }\n          }\n        }\n        if (solLineIdx === -1) solLineIdx = lines.length;\n\n        let rawOptionLines = [];\n        if (qLineIdx !== -1 && solLineIdx > qLineIdx) rawOptionLines = lines.slice(qLineIdx + 1, solLineIdx);\n\n        const candidateOptions = [];\n        let currentOptionText = '';\n        for (const l of rawOptionLines) {\n          if (!l || /^(Ques:|Not Answered|Answered)/i.test(l)) continue;\n          if (/^[A-D✓✔•\\(\\)\\.\\s]{1,4}$/i.test(l)) {\n            if (currentOptionText) { candidateOptions.push(currentOptionText); currentOptionText = ''; }\n            continue;\n          }\n          const cleaned = l.replace(/^[A-D✓✔•\\(\\)\\.\\s]{1,4}/i, '').trim();\n          if (cleaned) {\n            if (currentOptionText) candidateOptions.push(currentOptionText);\n            currentOptionText = cleaned;\n          }\n        }\n        if (currentOptionText) candidateOptions.push(currentOptionText);\n\n        let options = candidateOptions.slice(0, 4);\n        let correctOption = 0;\n\n        const greenElements = Array.from(card.querySelectorAll('*')).filter(el => {\n          const cls = (el.className || '').toString().toLowerCase();\n          const style = (el.getAttribute('style') || '').toLowerCase();\n          const txt = (el.textContent || '').trim();\n          return (cls.includes('green') || cls.includes('emerald') || style.includes('green') || txt.includes('✓') || txt.includes('✔') || !!el.querySelector('svg')) && !txt.includes('Solution:');\n        });\n\n        if (greenElements.length > 0) {\n          for (let o = 0; o < options.length; o++) {\n            if (greenElements.some(gel => (gel.innerText || '').includes(options[o]))) {\n              correctOption = o;\n              break;\n            }\n          }\n        }\n\n        extractedMcqs.push({\n          id: `q_${qNo}`,\n          questionNo: qNo,\n          text: questionText || `প্রশ্ন ${qNo}`,\n          subject: detectSubjectFromText(explanation + ' ' + examTitle),\n          options: options.length >= 2 ? options : ['ক', 'খ', 'গ', 'ঘ'],\n          correctOption: correctOption,\n          explanation: explanation\n        });\n      } catch (err) {\n        console.error(\"MCQ পার্সিং ত্রুটি:\", err);\n      }\n    });\n  }\n\n  // ৭. রেজাল্ট যাচাই\n  const totalQuestions = extractedMcqs.length + extractedCqs.length;\n  if (totalQuestions === 0) {\n    updateBanner('<div style=\"font-weight:bold;color:#f87171;\">⚠️ কোনো প্রশ্ন পাওয়া যায়নি</div>', false);\n    alert(\"⚠️ কোনো প্রশ্ন পাওয়া যায়নি! অনুগ্রহ করে পরীক্ষার প্রশ্ন বা রেজাল্ট পেজে থাকা অবস্থায় স্ক্রিপ্টটি চালান।\");\n    return;\n  }\n\n  let examType = 'mcq';\n  if (extractedMcqs.length > 0 && extractedCqs.length > 0) examType = 'combined';\n  else if (extractedCqs.length > 0) examType = 'cq';\n\n  console.log(`%c🎉 সফলভাবে এক্সট্র্যাক্ট হয়েছে! মোট: ${totalQuestions} টি (${extractedMcqs.length} MCQ, ${extractedCqs.length} CQ)`, \"color: #00c269; font-weight: bold; font-size: 16px;\");\n\n  const fullExamData = {\n    id: 'exam_acs_' + (testId ? testId.replace(/-/g, '').slice(0, 12) : Date.now()),\n    title: examTitle,\n    testId: testId,\n    courseTitle: 'ACS Exam Portal',\n    extractedAt: new Date().toISOString(),\n    sourceUrl: location.href,\n    examType: examType,\n    durationMinutes: examType === 'combined' ? 190 : (examType === 'cq' ? 190 : 30),\n    mcqDurationMinutes: extractedMcqs.length > 0 ? 30 : 0,\n    cqDurationMinutes: extractedCqs.length > 0 ? 160 : 0,\n    totalMarks: (extractedMcqs.length * 1) + (extractedCqs.length * 10),\n    mcqMarks: extractedMcqs.length,\n    cqMarks: extractedCqs.length * 10,\n    passMarks: Math.ceil(((extractedMcqs.length * 1) + (extractedCqs.length * 10)) * 0.33),\n    negativeMarkPerWrong: 0.25,\n    questionsCount: extractedMcqs.length,\n    status: 'live',\n    questions: extractedMcqs,\n    creativeQuestions: extractedCqs\n  };\n\n  const blob = new Blob([JSON.stringify(fullExamData, null, 2)], { type: 'application/json' });\n  const a = document.createElement('a');\n  a.href = URL.createObjectURL(blob);\n  const cleanFileName = (examTitle.replace(/[^a-zA-Z0-9\\u0980-\\u09FF]/g, '_') || 'acs_master_exam') + '.json';\n  a.download = cleanFileName;\n  document.body.appendChild(a);\n  a.click();\n  document.body.removeChild(a);\n\n  updateBanner(`<div style=\"font-weight:bold;color:#34d399;\">🎉 মাস্টার ডাউনলোড সম্পন্ন!</div><div style=\"font-size:12px;color:#cbd5e1;margin-top:4px;\">MCQ: <strong>${extractedMcqs.length}</strong> টি | CQ: <strong>${extractedCqs.length}</strong> টি আলাদা আলাদা সাজানো হয়েছে।</div>`, true);\n\n  setTimeout(() => {\n    alert(`🎉 সৃজনশীল (CQ) এক্সাম সফলভাবে এক্সপোর্ট হয়েছে!\\n\\n📌 পরীক্ষার নাম: ${examTitle}\\n📌 মোট সৃজনশীল (CQ) প্রশ্ন: ${extractedCqs.length} টি\\n📌 প্রতিটি প্রশ্ন আলাদা আলাদা কার্ড হিসেবে সেভ হয়েছে।\\n📌 ফাইল: ${cleanFileName}`);\n  }, 500);\n})();\n";
+
+const SAMPLE_ACS_EXAM_DATA = {
+  id: "exam_frb26_bangla_1st",
+  title: "FRB 26 Final Model Test || Bangla 1st Paper (Practice)",
+  courseTitle: "ACS HSC 26 Final Revision Batch || FRB-26",
+  subject: "Bangla 1st Paper",
+  examType: "combined",
+  durationMinutes: 190,
+  mcqDurationMinutes: 30,
+  cqDurationMinutes: 160,
+  totalMarks: 100,
+  mcqMarks: 30,
+  cqMarks: 70,
+  passMarks: 33,
+  negativeMarkPerWrong: 0.25,
+  questionsCount: 30,
+  status: "live",
+  questions: [
+    {
+      id: "q_1",
+      questionNo: 1,
+      text: "'সিরাজউদ্দৌলা' নাটকের শেষ দৃশ্যের স্থানিক পটভূমি কোথায়?",
+      subject: "Bangla",
+      options: [
+        "জাফরগঞ্জের কয়েদখানা",
+        "নবাবের দরবার",
+        "ফোর্ট উইলিয়াম দুর্গ",
+        "ক্লাইভের বাসভবন"
+      ],
+      correctOption: 0,
+      explanation: "সিরাজউদ্দৌলা নাটকের ৪র্থ অঙ্ক, ৮ম দৃশ্য (শেষ দৃশ্য) জাফরগঞ্জের কয়েদখানায় সংঘটিত হয়, যেখানে মীরনের নির্দেশে মোহাম্মদী বেগ সিরাজউদ্দৌলাকে নির্মমভাবে হত্যা করে।"
+    },
+    {
+      id: "q_2",
+      questionNo: 2,
+      text: "'লালসালু' উপন্যাসে মজিদ গ্রামে প্রবেশ করেছিল কোন বেশে?",
+      subject: "Bangla",
+      options: [
+        "পীরের বেশে",
+        "ভিক্ষুকের বেশে",
+        "ভণ্ড ফকিরের বেশে",
+        "সাধারণ কৃষকের বেশে"
+      ],
+      correctOption: 2,
+      explanation: "মজিদ মহব্বতনগর গ্রামে প্রবেশ করেছিল নাটুকে ভঙ্গিতে মোদাচ্ছের পীরের মাজারের খাদেম হিসেবে ভণ্ড ফকিরের বেশে।"
+    },
+    {
+      id: "q_3",
+      questionNo: 3,
+      text: "'রেইনকোট' গল্পে নুরুল হুদার গায়ে রেইনকোটটি চাপিয়ে দিয়েছিলেন কে?",
+      subject: "Bangla",
+      options: [
+        "আসমাত",
+        "আকবর সাজিদ",
+        "আসমা",
+        "প্রিন্সিপাল ড. আফাজ আহমদ"
+      ],
+      correctOption: 2,
+      explanation: "নুরুল হুদার স্ত্রী আসমা তার মুক্তিযোদ্ধা ভাই মিন্টুর ফেলে যাওয়া রেইনকোটটি নুরুল হুদার গায়ে পরিয়ে দিয়েছিলেন।"
+    }
+  ],
+  creativeQuestions: [
+    {
+      id: "cq_1",
+      title: "সৃজনশীল প্রশ্ন ০১: অপরিচিতা",
+      stem: "আনিস সাহেব যৌতুক ছাড়া তার একমাত্র কন্যার বিয়ে দিতে চেয়েছিলেন। কিন্তু বরের পিতা বিয়ের আসরে কন্যার স্বর্ণালঙ্কারের খাঁটিত্ব নিয়ে অপমানজনক মন্তব্য করায় আনিস সাহেব নিজেই বিয়ে ভেঙে দেন এবং কন্যাকে উচ্চশিক্ষায় শিক্ষিত করার সিদ্ধান্ত নেন।",
+      subQuestions: [
+        { part: "ক", text: "অনুপমের পিতার পেশা কী ছিল?", marks: 1, sampleAnswer: "অনুপমের পিতা পেশায় ওকালতি করতেন।" },
+        { part: "খ", text: "'তাহাকে সুন্দর বলিলে সুন্দরকে খাটো করা হয়' — উক্তিটি ব্যাখ্যা করো।", marks: 2, sampleAnswer: "কল্যাণীর অসাধারণ লাবণ্য ও ব্যক্তিত্বকে সাধারণ রূপচর্চার সীমানার ঊর্ধ্বে তুলে ধরতে অনুপম এ মন্তব্য করেছে।" },
+        { part: "গ", text: "উদ্দীপকের আনিস সাহেবের আচরণ 'অপরিচিতা' গল্পের শম্ভুনাথ সেনের সাথে কীভাবে সাদৃশ্যপূর্ণ? বুঝিয়ে লেখো।", marks: 3, sampleAnswer: "উভয়েই কন্যাদায়গ্রস্ত পিতার চিরাচরিত অসহায়ত্ব ভেঙে আত্মমর্যাদাবোধের পরাকাষ্ঠা প্রদর্শন করেছেন।" },
+        { part: "ঘ", text: "উদ্দীপকটি যেন 'অপরিচিতা' গল্পের শম্ভুনাথ সেনের দৃঢ় আত্মমর্যাদাবোধের প্রতীকী প্রতিফলন — উক্তিটি বিশ্লেষণ করো।", marks: 4, sampleAnswer: "যৌতুকলোভী সমাজের বিরুদ্ধে শম্ভুনাথ সেন যেভাবে নীরব প্রতিরোধ গড়ে তুলেছিলেন, উদ্দীপকের আনিস সাহেবও অনুরূপ বলিষ্ঠ পদক্ষেপ গ্রহণ করেছেন।" }
+      ]
+    }
+  ]
+};
+
 export default function AutomationToolsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -881,6 +967,117 @@ export default function AutomationToolsPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [copiedTgCode, setCopiedTgCode] = useState(false);
   const [isImportingToSite, setIsImportingToSite] = useState(false);
+  const [toolMode, setToolMode] = useState<'course' | 'exam'>('course');
+  const examFileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedExamFile, setSelectedExamFile] = useState<File | null>(null);
+  const [parsedExamData, setParsedExamData] = useState<any | null>(null);
+  const [copiedExamBookmarklet, setCopiedExamBookmarklet] = useState(false);
+  const [copiedExamConsole, setCopiedExamConsole] = useState(false);
+  const [examSearchQuery, setExamSearchQuery] = useState('');
+  const [selectedExamSubject, setSelectedExamSubject] = useState<string>('all');
+  const [isImportingExamToSite, setIsImportingExamToSite] = useState(false);
+  const [examImportSuccessMsg, setExamImportSuccessMsg] = useState<string | null>(null);
+  const [examErrorMsg, setExamErrorMsg] = useState<string | null>(null);
+  const [expandedExamQuestions, setExpandedExamQuestions] = useState<Record<string, boolean>>({});
+
+  const handleCopyExamBookmarklet = () => {
+    try {
+      navigator.clipboard.writeText(ACS_EXAM_BOOKMARKLET_CODE);
+      setCopiedExamBookmarklet(true);
+      setTimeout(() => setCopiedExamBookmarklet(false), 3000);
+    } catch {
+      alert('ক্লিপবোর্ডে কপি করতে সমস্যা হয়েছে!');
+    }
+  };
+
+  const handleCopyExamConsole = () => {
+    try {
+      navigator.clipboard.writeText(ACS_EXAM_CONSOLE_CODE);
+      setCopiedExamConsole(true);
+      setTimeout(() => setCopiedExamConsole(false), 3000);
+    } catch {
+      alert('ক্লিপবোর্ডে কপি করতে সমস্যা হয়েছে!');
+    }
+  };
+
+  const handleExamFile = (file: File) => {
+    setSelectedExamFile(file);
+    setExamErrorMsg(null);
+    setExamImportSuccessMsg(null);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target?.result as string;
+        const parsed = JSON.parse(text);
+        if (parsed.questions || parsed.exam || parsed.title) {
+          const formatted = {
+            ...parsed,
+            title: parsed.title || parsed.examTitle || file.name.replace('.json', ''),
+            questions: parsed.questions || parsed.exam?.questions || [],
+            creativeQuestions: parsed.creativeQuestions || parsed.cqQuestions || []
+          };
+          setParsedExamData(formatted);
+        } else {
+          throw new Error('ফাইলটিতে কোনো বৈধ এক্সাম বা প্রশ্ন তালিকা পাওয়া যায়নি!');
+        }
+      } catch (err: any) {
+        setExamErrorMsg('JSON ফাইলটি পার্স করতে সমস্যা হয়েছে: ' + err.message);
+        setParsedExamData(null);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleLoadSampleExam = () => {
+    setParsedExamData(SAMPLE_ACS_EXAM_DATA);
+    setSelectedExamFile(null);
+    setExamErrorMsg(null);
+    setExamImportSuccessMsg(null);
+  };
+
+  const handleDownloadCleanExamJson = () => {
+    if (!parsedExamData) return;
+    const blob = new Blob([JSON.stringify(parsedExamData, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    const cleanFileName = ((parsedExamData.title || 'acs_exam').replace(/[^a-zA-Z0-9ঀ-৿]/g, '_')) + '.json';
+    a.download = cleanFileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  const handleImportExamToMainWebsite = async () => {
+    if (!parsedExamData) return;
+    try {
+      setIsImportingExamToSite(true);
+      setExamErrorMsg(null);
+      setExamImportSuccessMsg(null);
+
+      const res = await fetch('/api/exams', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...parsedExamData,
+          courseId: parsedExamData.courseId || 'course_acs_frb26',
+          courseTitle: parsedExamData.courseTitle || 'ACS HSC 26 Final Revision Batch || FRB-26',
+          status: 'live'
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || data.message || 'এক্সাম সেভ করতে সমস্যা হয়েছে!');
+      }
+
+      setExamImportSuccessMsg('🎉 এক্সামটি সফলভাবে আমাদের মেইন ওয়েবসাইটে যুক্ত হয়েছে! শিক্ষার্থীরা এখন পরীক্ষাটি দিতে পারবে।');
+    } catch (err: any) {
+      setExamErrorMsg(err.message || 'মেইন ওয়েবসাইটে এক্সাম সেভ করতে সমস্যা হয়েছে!');
+    } finally {
+      setIsImportingExamToSite(false);
+    }
+  };
+
   const [importSuccessMsg, setImportSuccessMsg] = useState<string | null>(null);
 
 
@@ -1300,6 +1497,40 @@ const CHAPTER_SYNONYMS: Record<string, string> = {
 
       {/* Main Container */}
       <div className="max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-6">
+{/* Top-level Mode Switcher: Course Scraper vs ACS Exam Scraper */}
+        <div className="flex items-center gap-3 p-1.5 bg-[#161b22] rounded-2xl border border-slate-800 w-fit max-w-full overflow-x-auto shadow-md">
+          <button
+            type="button"
+            onClick={() => setToolMode('course')}
+            className={`px-5 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all cursor-pointer ${
+              toolMode === 'course'
+                ? 'bg-gradient-to-r from-[#ff1361] to-[#ed347d] text-white shadow-lg shadow-pink-500/20'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <BookOpen className="w-4 h-4" />
+            <span>📚 কোর্স ক্লাস ও শিট এক্সট্রাক্টর</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setToolMode('exam')}
+            className={`px-5 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all cursor-pointer ${
+              toolMode === 'exam'
+                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/20'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <FileQuestion className="w-4 h-4" />
+            <span>📝 ACS এক্সাম ও প্রশ্নপত্র এক্সট্রাক্টর</span>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-400 text-slate-950 animate-pulse">
+              NEW ⭐
+            </span>
+          </button>
+        </div>
+
+        {toolMode === 'course' && (
+          <div className="space-y-6">
 
         {/* Hero Banner */}
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-[#18182b] to-[#121624] border border-slate-800 p-6 sm:p-8 shadow-2xl">
@@ -2407,9 +2638,479 @@ const CHAPTER_SYNONYMS: Record<string, string> = {
             </pre>
           </div>
         )}
+          </div>
+        )}
 
+        {/* ========================================================================= */}
+        {/* ACS EXAM & QUESTION EXTRACTOR SECTION */}
+        {/* ========================================================================= */}
+        {toolMode === 'exam' && (
+          <div className="space-y-6">
+            {/* Exam Hero Banner */}
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-[#1e1533] to-[#121624] border border-purple-900/40 p-6 sm:p-8 shadow-2xl">
+              <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="space-y-2 max-w-2xl">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-bold">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>ACS Exam Portal Automation (Zero-Loss v1)</span>
+                  </div>
+                  <h1 className="text-xl sm:text-3xl font-extrabold tracking-tight text-white flex items-center gap-3">
+                    <span>ACS এক্সাম ও প্রশ্নপত্র ডাউনলোডার</span>
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                      LIVE EXAM
+                    </span>
+                  </h1>
+                  <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+                    <code className="text-purple-300 font-mono">https://exam.aparsclassroom.com/</code> এর যেকোনো লাইভ পরীক্ষা, প্র্যাকটিস এক্সাম, ফাইনাল মডেল টেস্ট অথবা রেজাল্ট পেজ থেকে ১-ক্লিকে সকল MCQ ও CQ প্রশ্নপত্র JSON আকারে ডাউনলোড করুন এবং প্রিভিউ দেখে সরাসরি আমাদের ওয়েবসাইটে লাইভ এক্সাম হিসেবে যুক্ত করুন।
+                  </p>
+                </div>
+
+                {/* Quick Action Buttons */}
+                <div className="shrink-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                  <input
+                    ref={examFileInputRef}
+                    type="file"
+                    accept=".json"
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        handleExamFile(e.target.files[0]);
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => examFileInputRef.current?.click()}
+                    className="px-5 py-3 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs sm:text-sm font-black flex items-center justify-center gap-2 hover:opacity-95 shadow-lg shadow-purple-500/20 cursor-pointer transition-all"
+                  >
+                    <UploadCloud className="w-4 h-4" />
+                    <span>এক্সাম JSON আপলোড</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleLoadSampleExam}
+                    className="px-4 py-3 rounded-2xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-200 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 cursor-pointer transition-all"
+                  >
+                    <Eye className="w-4 h-4 text-purple-400" />
+                    <span>ডেমো ACS এক্সাম দেখুন</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Notification / Success / Error */}
+            {examImportSuccessMsg && (
+              <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>{examImportSuccessMsg}</span>
+              </div>
+            )}
+            {examErrorMsg && (
+              <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{examErrorMsg}</span>
+              </div>
+            )}
+
+            {/* Master 1-Click Bookmarklet & Console Code Box */}
+            <div className="p-5 rounded-3xl bg-gradient-to-r from-[#171329] via-[#1c1836] to-[#14182b] border border-purple-800/40 space-y-4 shadow-xl">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-600 to-pink-600 text-white flex items-center justify-center font-black shadow-md shrink-0">
+                    <Bookmark className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-extrabold text-white flex items-center gap-2">
+                      <span>১-ক্লিক ACS এক্সাম স্ক্র্যাপার (Bookmarklet & Console)</span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                        AUTOMATION TOOL
+                      </span>
+                    </h3>
+                    <p className="text-xs text-slate-400">
+                      ACS এক্সাম পোর্টালে (পরীক্ষার স্ক্রিন বা রেজাল্ট পেজে) ১-ক্লিকেই সকল প্রশ্ন সহ JSON ডাউনলোড হয়ে যাবে
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={handleCopyExamBookmarklet}
+                    className={`px-4 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all shadow-md cursor-pointer ${
+                      copiedExamBookmarklet
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-gradient-to-r from-amber-500 via-rose-500 to-pink-600 text-white hover:opacity-95'
+                    }`}
+                  >
+                    {copiedExamBookmarklet ? <Check className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
+                    <span>{copiedExamBookmarklet ? 'বুকমার্কলেট কপি হয়েছে!' : '⭐ ১-ক্লিক এক্সাম বুকমার্কলেট'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleCopyExamConsole}
+                    className={`px-4 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all shadow-md cursor-pointer ${
+                      copiedExamConsole
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-slate-800 hover:bg-slate-700 text-white border border-slate-700'
+                    }`}
+                  >
+                    {copiedExamConsole ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    <span>{copiedExamConsole ? 'কোড কপি হয়েছে!' : '📋 কনসোল কোড'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Step by step instructions */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
+                <div className="p-3.5 rounded-2xl bg-[#0f121d]/80 border border-slate-800 space-y-1">
+                  <div className="flex items-center gap-2 text-amber-400 font-bold text-xs">
+                    <span className="w-5 h-5 rounded-full bg-amber-400/20 flex items-center justify-center text-[10px]">১</span>
+                    <span>বুকমার্ক সংরক্ষণ</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    ব্রাউজারের বুকমার্ক বারে রাইট ক্লিক করে <strong>Add bookmark</strong> দিন এবং URL বক্সে উপরের <strong>&quot;⭐ ১-ক্লিক এক্সাম বুকমার্কলেট&quot;</strong> পেস্ট করুন।
+                  </p>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-[#0f121d]/80 border border-slate-800 space-y-1">
+                  <div className="flex items-center gap-2 text-pink-400 font-bold text-xs">
+                    <span className="w-5 h-5 rounded-full bg-pink-400/20 flex items-center justify-center text-[10px]">২</span>
+                    <span>ACS এক্সাম পেজে ১-ক্লিক</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    <code className="text-pink-300">exam.aparsclassroom.com</code> এ যেকোনো পরীক্ষা শুরু করার পর বা রেজাল্ট পেজে বুকমার্কে ক্লিক করুন — সাথে সাথে সম্পূর্ণ প্রশ্নপত্র ডাউনলোড হবে!
+                  </p>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-[#0f121d]/80 border border-slate-800 space-y-1">
+                  <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs">
+                    <span className="w-5 h-5 rounded-full bg-emerald-400/20 flex items-center justify-center text-[10px]">৩</span>
+                    <span>টুলস পেজে প্রিভিউ ও লাইভ</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    ডাউনলোড করা JSON ফাইলটি নিচের বক্সে আপলোড করুন। সকল প্রশ্ন, অপশন ও মার্কস পরীক্ষা করে ১-ক্লিকেই আপনার মেইন ওয়েবসাইটে যুক্ত করুন।
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* If Exam Data is Loaded */}
+            {parsedExamData ? (
+              <div className="space-y-6">
+                {/* Exam Metadata Summary Card */}
+                <div className="p-6 rounded-3xl bg-[#161b22] border border-slate-800 space-y-5 shadow-xl">
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                          {parsedExamData.subject || 'Bangla 1st Paper'}
+                        </span>
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                          MCQ & CQ COMBINED
+                        </span>
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-400">
+                          {parsedExamData.courseTitle || 'ACS Exam'}
+                        </span>
+                      </div>
+                      <h2 className="text-lg sm:text-xl font-black text-white">
+                        {parsedExamData.title}
+                      </h2>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={handleDownloadCleanExamJson}
+                        className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-black flex items-center gap-2 border border-slate-700 cursor-pointer transition-all"
+                      >
+                        <UploadCloud className="w-4 h-4 text-purple-400" />
+                        <span>📥 ক্লিন এক্সাম JSON ডাউনলোড</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleImportExamToMainWebsite}
+                        disabled={isImportingExamToSite}
+                        className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs font-black flex items-center gap-2 shadow-lg shadow-purple-600/30 hover:opacity-95 cursor-pointer disabled:opacity-50 transition-all"
+                      >
+                        {isImportingExamToSite ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                        <span>{isImportingExamToSite ? 'সংরক্ষণ হচ্ছে...' : '🚀 মেইন সাইটে এক্সাম হিসেবে সেভ করুন'}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setParsedExamData(null);
+                          setSelectedExamFile(null);
+                        }}
+                        className="px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-bold transition-all cursor-pointer"
+                      >
+                        আরেকটি আপলোড
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 4 Stats Grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="p-3.5 rounded-2xl bg-[#0d1117] border border-slate-800/80">
+                      <div className="flex items-center gap-2 text-slate-400 text-xs font-bold mb-1">
+                        <FileQuestion className="w-3.5 h-3.5 text-purple-400" />
+                        <span>মোট প্রশ্ন</span>
+                      </div>
+                      <div className="text-lg font-black text-white">
+                        {parsedExamData.questions?.length || 0} টি MCQ
+                        {parsedExamData.creativeQuestions?.length ? ` • ${parsedExamData.creativeQuestions.length} টি CQ` : ''}
+                      </div>
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-[#0d1117] border border-slate-800/80">
+                      <div className="flex items-center gap-2 text-slate-400 text-xs font-bold mb-1">
+                        <Award className="w-3.5 h-3.5 text-amber-400" />
+                        <span>পূর্ণমান (Full Marks)</span>
+                      </div>
+                      <div className="text-lg font-black text-amber-400">
+                        {parsedExamData.totalMarks || 100} নম্বর
+                      </div>
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-[#0d1117] border border-slate-800/80">
+                      <div className="flex items-center gap-2 text-slate-400 text-xs font-bold mb-1">
+                        <Clock className="w-3.5 h-3.5 text-pink-400" />
+                        <span>সময় (Duration)</span>
+                      </div>
+                      <div className="text-lg font-black text-pink-400">
+                        {parsedExamData.durationMinutes || 30} মিনিট
+                      </div>
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-[#0d1117] border border-slate-800/80">
+                      <div className="flex items-center gap-2 text-slate-400 text-xs font-bold mb-1">
+                        <AlertCircle className="w-3.5 h-3.5 text-rose-400" />
+                        <span>নেগেটিভ মার্কিং</span>
+                      </div>
+                      <div className="text-lg font-black text-rose-400">
+                        -{parsedExamData.negativeMarkPerWrong || 0.25} (প্রতি ভুল)
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Search and Filters */}
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+                    <div className="relative w-full sm:w-80">
+                      <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        placeholder="প্রশ্ন দিয়ে সার্চ করুন..."
+                        value={examSearchQuery}
+                        onChange={(e) => setExamSearchQuery(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 rounded-xl bg-[#0d1117] border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-500"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      <span className="text-xs text-slate-400 font-bold">বিষয়:</span>
+                      <select
+                        value={selectedExamSubject}
+                        onChange={(e) => setSelectedExamSubject(e.target.value)}
+                        className="px-3 py-2 rounded-xl bg-[#0d1117] border border-slate-800 text-xs text-white focus:outline-none focus:border-purple-500 cursor-pointer"
+                      >
+                        <option value="all">সকল বিষয় ({(parsedExamData.questions || []).length})</option>
+                        {Array.from(new Set((parsedExamData.questions || []).map((q: any) => q.subject || 'General'))).map((sub: any) => (
+                          <option key={sub} value={sub}>{sub}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Questions List */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-black text-white flex items-center gap-2">
+                    <span>বহুনির্বাচনী প্রশ্নপত্র (MCQ Questions List)</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-purple-500/20 text-purple-300">
+                      {(parsedExamData.questions || []).length} টি প্রশ্ন
+                    </span>
+                  </h3>
+
+                  <div className="space-y-3">
+                    {(parsedExamData.questions || [])
+                      .filter((q: any) => {
+                        if (selectedExamSubject !== 'all' && q.subject !== selectedExamSubject) return false;
+                        if (examSearchQuery && !q.text.toLowerCase().includes(examSearchQuery.toLowerCase())) return false;
+                        return true;
+                      })
+                      .map((q: any, qIdx: number) => (
+                        <div
+                          key={q.id || qIdx}
+                          className="p-5 rounded-2xl bg-[#161b22] border border-slate-800 hover:border-purple-800/60 transition-all space-y-3 shadow-md"
+                        >
+                          {/* Question Header */}
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-2">
+                              <span className="px-2.5 py-1 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20 text-xs font-black">
+                                Ques: {q.questionNo || qIdx + 1}
+                              </span>
+                              {q.subject && (
+                                <span className="px-2 py-0.5 rounded-lg bg-slate-800 text-slate-300 text-[11px] font-bold">
+                                  {q.subject}
+                                </span>
+                              )}
+                            </div>
+
+                            <span className="text-[11px] font-bold text-slate-500">
+                              ১.০ মার্ক • নেগেটিভ ০.২৫
+                            </span>
+                          </div>
+
+                          {/* Question Text */}
+                          <h4 className="text-sm font-bold text-white leading-relaxed">
+                            {q.text}
+                          </h4>
+
+                          {/* Options Grid (4 options) */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                            {(q.options || []).map((opt: string, optIdx: number) => {
+                              const letters = ['A', 'B', 'C', 'D'];
+                              const isCorrect = q.correctOption === optIdx;
+                              return (
+                                <div
+                                  key={optIdx}
+                                  className={`p-3 rounded-xl border flex items-center gap-3 text-xs transition-all ${
+                                    isCorrect
+                                      ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-300 font-bold shadow-xs'
+                                      : 'bg-[#0d1117] border-slate-800 text-slate-300'
+                                  }`}
+                                >
+                                  <span
+                                    className={`w-6 h-6 rounded-full flex items-center justify-center font-black text-xs shrink-0 ${
+                                      isCorrect
+                                        ? 'bg-emerald-500 text-slate-950 shadow-xs'
+                                        : 'bg-slate-800 text-slate-400 border border-slate-700'
+                                    }`}
+                                  >
+                                    {letters[optIdx] || optIdx + 1}
+                                  </span>
+                                  <span className="flex-1 leading-snug">{opt}</span>
+                                  {isCorrect && (
+                                    <span className="text-[10px] font-black px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 shrink-0">
+                                      সঠিক উত্তর
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          {/* Explanation if available */}
+                          {q.explanation && (
+                            <div className="p-3 rounded-xl bg-purple-950/20 border border-purple-900/30 text-xs text-purple-200/90 leading-relaxed">
+                              <span className="font-black text-purple-300 block mb-0.5">💡 ব্যাখ্যা / সমাধান:</span>
+                              {q.explanation}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                  </div>
+                </div>
+
+                {/* Creative Questions (CQ) if available */}
+                {parsedExamData.creativeQuestions && parsedExamData.creativeQuestions.length > 0 && (
+                  <div className="space-y-4 pt-4">
+                    <h3 className="text-sm font-black text-white flex items-center gap-2">
+                      <span>সৃজনশীল প্রশ্নপত্র (Creative Written Questions)</span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300">
+                        {parsedExamData.creativeQuestions.length} টি সৃজনশীল
+                      </span>
+                    </h3>
+
+                    <div className="space-y-4">
+                      {parsedExamData.creativeQuestions.map((cq: any, cqIdx: number) => (
+                        <div
+                          key={cq.id || cqIdx}
+                          className="p-5 rounded-2xl bg-[#161b22] border border-slate-800 space-y-4 shadow-md"
+                        >
+                          <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                            <span className="font-extrabold text-amber-400 text-sm">
+                              {cq.title || `সৃজনশীল প্রশ্ন ০${cqIdx + 1}`}
+                            </span>
+                            <span className="text-xs font-bold text-slate-400">
+                              পূর্ণমান: ১০
+                            </span>
+                          </div>
+
+                          {/* Stem / দৃশ্যকল্প */}
+                          <div className="p-4 rounded-xl bg-[#0d1117] border border-slate-800/80 text-xs leading-relaxed text-slate-200">
+                            <strong className="text-purple-400 block mb-1">উদ্দীপক / দৃশ্যকল্প:</strong>
+                            {cq.stem}
+                          </div>
+
+                          {/* Sub Questions (ক, খ, গ, ঘ) */}
+                          <div className="space-y-2">
+                            {(cq.subQuestions || []).map((subQ: any, sIdx: number) => (
+                              <div
+                                key={sIdx}
+                                className="p-3 rounded-xl bg-[#0d1117]/60 border border-slate-800/60 flex items-start justify-between gap-3 text-xs"
+                              >
+                                <div className="space-y-1 flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="w-5 h-5 rounded-lg bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center text-xs shrink-0">
+                                      {subQ.part}
+                                    </span>
+                                    <span className="text-white font-medium">{subQ.text}</span>
+                                  </div>
+                                  {subQ.sampleAnswer && (
+                                    <div className="text-[11px] text-slate-400 pl-7">
+                                      <span className="text-emerald-400 font-bold">নমুনা উত্তর: </span>
+                                      {subQ.sampleAnswer}
+                                    </div>
+                                  )}
+                                </div>
+                                <span className="px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 text-[10px] font-bold shrink-0">
+                                  {subQ.marks} নম্বর
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* Dropzone when no exam is loaded */
+              <div
+                onClick={() => examFileInputRef.current?.click()}
+                className="p-12 rounded-3xl border-2 border-dashed border-purple-800/40 hover:border-purple-500 bg-[#161b22]/50 hover:bg-purple-950/10 transition-all flex flex-col items-center justify-center gap-3 cursor-pointer text-center group shadow-xl"
+              >
+                <div className="w-16 h-16 rounded-2xl bg-purple-500/10 group-hover:bg-purple-500/20 border border-purple-500/20 text-purple-400 flex items-center justify-center transition-transform group-hover:scale-110">
+                  <FileQuestion className="w-8 h-8" />
+                </div>
+                <h3 className="text-base font-bold text-white">
+                  ACS এক্সাম JSON ফাইলটি ড্র্যাগ করে এখানে ছাড়ুন
+                </h3>
+                <p className="text-xs text-slate-400 max-w-md">
+                  অথবা ব্রাউজ করতে এখানে ক্লিক করুন। যেকোনো ACS Live Exam, Practice Exam বা Model Test এর ডাউনলোড করা JSON ফাইল সাপোর্ট করে।
+                </p>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleLoadSampleExam();
+                  }}
+                  className="mt-2 px-4 py-2 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 text-xs font-bold transition-all cursor-pointer"
+                >
+                  📋 অথবা ডেমো ACS এক্সাম প্রিভিউ লোড করুন
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
     </div>
   );
 }
+

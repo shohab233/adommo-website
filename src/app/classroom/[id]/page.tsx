@@ -59,7 +59,6 @@ export default function ClassroomPage({
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [expandedDrawerSections, setExpandedDrawerSections] = useState<Record<string, boolean>>({});
   const [expandedDrawerChapters, setExpandedDrawerChapters] = useState<Record<string, boolean>>({});
-  const [selectedChapterForNotes, setSelectedChapterForNotes] = useState<string>('all');
 
   useEffect(() => {
     if (course && course.modules?.[0]?.lectures?.[0]?.id) {
@@ -551,10 +550,7 @@ export default function ClassroomPage({
             <div className="space-y-4">
               
               {(() => {
-                const totalCourseSheets = (course.modules || []).reduce(
-                  (sum, m) => sum + (m.lectures || []).reduce((lSum, l) => lSum + (l.notes?.length || 0), 0) + (((m as any).notes?.length) || 0),
-                  0
-                );
+                const currentLectureNotes = activeLecture?.notes || [];
 
                 return (
                   <>
@@ -569,9 +565,9 @@ export default function ClassroomPage({
                         }`}
                       >
                         <FileText className="w-3.5 h-3.5" />
-                        লেকচার ও শিট
+                        ক্লাসের শিট ও নোট
                         <span className="px-1.5 py-0.2 rounded-full bg-white/20 text-[10px]">
-                          {totalCourseSheets}
+                          {currentLectureNotes.length}
                         </span>
                       </button>
 
@@ -589,10 +585,8 @@ export default function ClassroomPage({
                       </button>
                     </div>
 
-                    {/* Tab 1: Lecture & Practice Sheets */}
+                    {/* Tab 1: Lecture & Practice Sheets for Current Playing Class */}
                     {activeTab === 'notes' && (() => {
-                      const modules = course.modules || [];
-
                       const renderStudentSheetCard = (sheet: any, fromLec?: string) => {
                         const isLecture = sheet.type === 'lecture_sheet';
                         const isPractice = sheet.type === 'practice_sheet';
@@ -629,7 +623,7 @@ export default function ClassroomPage({
                                     {isLecture ? '📖 লেকচার শিট' : isPractice ? '📝 প্র্যাকটিস শিট' : '✍️ হ্যান্ডনোট'}
                                   </span>
                                   {fromLec && (
-                                    <span className="text-[10px] text-slate-500 font-bold truncate max-w-[200px]" title={fromLec}>
+                                    <span className="text-[10px] text-slate-500 font-bold truncate max-w-[220px]" title={fromLec}>
                                       🏷️ {fromLec}
                                     </span>
                                   )}
@@ -690,123 +684,32 @@ export default function ClassroomPage({
                         );
                       };
 
-                      const currentLectureNotes = activeLecture?.notes || [];
-                      const displayedModules = selectedChapterForNotes === 'all'
-                        ? modules
-                        : modules.filter((m) => m.id === selectedChapterForNotes);
-
                       return (
-                        <div className="space-y-6">
-                          {/* Current Lecture Attached Sheets Banner (if any) */}
-                          {currentLectureNotes.length > 0 && selectedChapterForNotes === 'all' && (
-                            <div className="p-4 rounded-2xl bg-[#fff5f8] border border-[#ffd2e2] space-y-2.5">
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs font-bold text-[#ed347d] flex items-center gap-1.5">
-                                  <FileText className="w-4 h-4" />
-                                  বর্তমান প্লে হওয়া ক্লাসের শিট ({activeLecture?.title})
-                                </span>
-                                <span className="text-[11px] font-bold bg-white text-[#ed347d] px-2 py-0.5 rounded-full border border-pink-200">
-                                  {currentLectureNotes.length} টি শিট
-                                </span>
-                              </div>
-                              <div className="space-y-2">
-                                {currentLectureNotes.map((sheet) => renderStudentSheetCard(sheet, activeLecture?.title))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Chapter Selector Filter */}
-                          {modules.length > 1 && (
-                            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-                              <button
-                                type="button"
-                                onClick={() => setSelectedChapterForNotes('all')}
-                                className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all cursor-pointer ${
-                                  selectedChapterForNotes === 'all'
-                                    ? 'bg-[#ed347d] text-white shadow-2xs'
-                                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-                                }`}
-                              >
-                                সব অধ্যায় ({totalCourseSheets})
-                              </button>
-                              {modules.map((m) => {
-                                const mSheetsCount = (m.lectures || []).reduce(
-                                  (sum, l) => sum + (l.notes?.length || 0),
-                                  0
-                                ) + (((m as any).notes?.length) || 0);
-
-                                return (
-                                  <button
-                                    key={m.id}
-                                    type="button"
-                                    onClick={() => setSelectedChapterForNotes(m.id)}
-                                    className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-1.5 ${
-                                      selectedChapterForNotes === m.id
-                                        ? 'bg-[#ed347d] text-white shadow-2xs'
-                                        : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-                                    }`}
-                                  >
-                                    <span>{m.title}</span>
-                                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                                      selectedChapterForNotes === m.id ? 'bg-white/20' : 'bg-slate-100 text-slate-500'
-                                    }`}>
-                                      {mSheetsCount}
-                                    </span>
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          )}
-
-                          {/* Sheets grouped by Chapter */}
-                          <div className="space-y-6">
-                            {displayedModules.map((m) => {
-                              const mSheets = (m.lectures || []).flatMap((l) =>
-                                (l.notes || []).map((n) => ({ ...n, fromLectureTitle: l.title }))
-                              ).concat(
-                                (((m as any).notes || []) as any[]).map((n) => ({ ...n, fromLectureTitle: m.title }))
-                              );
-
-                              if (mSheets.length === 0) {
-                                if (selectedChapterForNotes !== 'all') {
-                                  return (
-                                    <div key={m.id} className="p-8 text-center rounded-2xl bg-white border border-slate-200 text-xs text-slate-400 space-y-1">
-                                      <FileText className="w-6 h-6 text-slate-300 mx-auto" />
-                                      <p className="font-bold text-slate-600">{m.title}</p>
-                                      <p>এই অধ্যায়ে এখনো কোনো ক্লাস শিট বা নোট আপলোড করা হয়নি।</p>
-                                    </div>
-                                  );
-                                }
-                                return null;
-                              }
-
-                              return (
-                                <div key={m.id} className="space-y-3">
-                                  <div className="flex items-center justify-between pb-1 border-b border-slate-200/80">
-                                    <span className="text-xs font-black text-slate-800 flex items-center gap-1.5">
-                                      <BookOpen className="w-4 h-4 text-[#ed347d]" />
-                                      {m.title}
-                                    </span>
-                                    <span className="text-[11px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full">
-                                      {mSheets.length} টি শিট
-                                    </span>
-                                  </div>
-
-                                  <div className="space-y-2.5">
-                                    {mSheets.map((sheet) => renderStudentSheetCard(sheet, sheet.fromLectureTitle))}
-                                  </div>
-                                </div>
-                              );
-                            })}
-
-                            {totalCourseSheets === 0 && (
-                              <div className="p-8 text-center rounded-2xl bg-white border border-slate-200 text-xs text-slate-400 space-y-2">
-                                <FileText className="w-8 h-8 text-slate-300 mx-auto" />
-                                <p className="font-bold text-slate-700">কোনো লেকচার বা প্র্যাকটিস শিট পাওয়া যায়নি</p>
-                                <p>শিক্ষক এখনো এই কোর্সের কোনো অধ্যায়ে শিট আপলোড করেননি।</p>
-                              </div>
-                            )}
+                        <div className="space-y-4">
+                          {/* Playing Lecture Header */}
+                          <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                            <span className="text-xs font-bold text-[#ed347d] flex items-center gap-1.5">
+                              <FileText className="w-4 h-4" />
+                              বর্তমান ক্লাসের শিট ({activeLecture?.title || 'চলমান লেকচার'})
+                            </span>
+                            <span className="text-[11px] font-bold bg-pink-50 text-[#ed347d] px-2.5 py-0.5 rounded-full border border-pink-200">
+                              {currentLectureNotes.length} টি শিট
+                            </span>
                           </div>
+
+                          {currentLectureNotes.length > 0 ? (
+                            <div className="space-y-2.5">
+                              {currentLectureNotes.map((sheet: any) => renderStudentSheetCard(sheet, activeLecture?.title))}
+                            </div>
+                          ) : (
+                            <div className="p-8 text-center rounded-2xl bg-white border border-slate-200 text-xs text-slate-400 space-y-2">
+                              <FileText className="w-8 h-8 text-slate-300 mx-auto" />
+                              <p className="font-bold text-slate-700 text-sm">এই ক্লাসে কোনো শিট সংযুক্ত নেই</p>
+                              <p className="text-slate-400 max-w-sm mx-auto">
+                                শিক্ষক এই নির্দিষ্ট ক্লাসের জন্য এখনো কোনো শিট আপলোড করেননি। অন্যান্য ক্লাসের শিট দেখতে ডানদিকের সিলেবাস তালিকা ব্যবহার করুন।
+                              </p>
+                            </div>
+                          )}
                         </div>
                       );
                     })()}

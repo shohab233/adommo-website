@@ -1829,12 +1829,12 @@ export default function TeacherDashboardPage() {
   // ==================== IF NOT AUTHENTICATED AS TEACHER -> SHOW TEACHER AUTH GATE ====================
   if (currentRole !== 'teacher' || currentUser?.role !== 'teacher') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#fff4f8] via-[#fafbfc] to-[#f4f3ff] flex items-center justify-center py-12 px-4 sm:px-6 relative overflow-hidden">
+      <div className="min-h-[calc(100vh-108px)] bg-gradient-to-br from-[#fff4f8] via-[#fafbfc] to-[#f4f3ff] flex items-center justify-center py-10 px-4 sm:px-6 relative overflow-hidden">
         
         {/* Ambient Glow Background Orbs */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[520px] h-[520px] bg-gradient-to-tr from-pink-300/30 via-indigo-300/20 to-purple-300/25 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[480px] h-[480px] bg-gradient-to-tr from-pink-300/30 via-indigo-300/20 to-purple-300/25 rounded-full blur-3xl pointer-events-none" />
         
-        <div className="w-full max-w-[580px] relative z-10 space-y-4 animate-fade-in">
+        <div className={`w-full ${teacherAuthTab === 'login' ? 'max-w-[490px]' : 'max-w-[520px]'} relative z-10 space-y-4 animate-fade-in transition-all duration-300`}>
           
           {/* Top navigation & Badge */}
           <div className="flex items-center justify-between px-2">
@@ -1853,20 +1853,20 @@ export default function TeacherDashboardPage() {
           </div>
 
           {/* Centered Glass Card */}
-          <div className="bg-white/95 backdrop-blur-xl rounded-[36px] border border-pink-100 shadow-2xl shadow-pink-500/10 p-8 sm:p-10 space-y-6">
+          <div className="bg-white/95 backdrop-blur-xl rounded-[36px] border border-pink-100 shadow-2xl shadow-pink-500/10 p-7 sm:p-9 space-y-5">
             
             {/* Header & Logo */}
-            <div className="text-center space-y-3">
+            <div className="text-center space-y-2.5">
               <div className="flex justify-center">
                 <AdommoLogo />
               </div>
 
-              <div className="space-y-1.5 pt-1">
+              <div className="space-y-1 pt-0.5">
                 <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-extrabold bg-[#fff0f5] text-[#ed347d] border border-pink-200 shadow-xs">
                   <GraduationCap className="w-3.5 h-3.5" />
                   <span>অদম্য টিচার স্টুডিও (Teacher Studio)</span>
                 </span>
-                <h1 className="text-2xl sm:text-[28px] font-black text-slate-900 tracking-tight pt-1">
+                <h1 className="text-2xl sm:text-[26px] font-black text-slate-900 tracking-tight pt-1">
                   {teacherAuthTab === 'login' ? 'শিক্ষক অ্যাকাউন্টে লগইন' : 'নতুন শিক্ষক রেজিস্ট্রেশন'}
                 </h1>
                 <p className="text-xs sm:text-sm text-slate-500 max-w-sm mx-auto leading-relaxed">
