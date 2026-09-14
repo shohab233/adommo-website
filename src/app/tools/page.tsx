@@ -39,6 +39,7 @@ import {
   CheckSquare,
   ListOrdered
 } from 'lucide-react';
+import { resolveSubjectTitle, isGenericSubjectTitle } from '@/lib/courseSubjectNormalizer';
 
 interface ParsedClass {
   id: string;
@@ -1214,10 +1215,15 @@ const CHAPTER_SYNONYMS: Record<string, string> = {
       if (data.archive && Array.isArray(data.archive.subjects)) {
         list = [...list, ...data.archive.subjects.map(s => ({ ...s, isArchive: true }))];
       }
-      return list.map(sub => ({
-        ...sub,
-        chapters: cleanAndRebalanceChapters(sub.chapters || [])
-      }));
+      return list.map((sub, sIdx) => {
+        const chapters = cleanAndRebalanceChapters(sub.chapters || []);
+        const title = resolveSubjectTitle(sub.title, chapters, sIdx + 1);
+        return {
+          ...sub,
+          title,
+          chapters
+        };
+      });
     }
 
     // Case B: Standard Course schema with sections and modules
@@ -1273,7 +1279,13 @@ const CHAPTER_SYNONYMS: Record<string, string> = {
         });
       });
 
-      return Array.from(subMap.values());
+      return Array.from(subMap.values()).map((sub, sIdx) => {
+        const title = resolveSubjectTitle(sub.title, sub.chapters, sIdx + 1);
+        return {
+          ...sub,
+          title
+        };
+      });
     }
 
     return [];

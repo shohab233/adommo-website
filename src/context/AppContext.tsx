@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Course, Enrollment, Exam, ExamSubmission, LeaderboardEntry, ResourceNote, Lecture, User, UserRole, QuestionBankItem, DetailedExamSubmission, LiveClass, NotificationItem, ChatMessage, ConversationThread, TeacherKycData } from '@/types';
+import { healCourse } from '@/lib/courseSubjectNormalizer';
 
 interface AppContextType {
   currentRole: UserRole;
@@ -158,7 +159,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         try {
           const parsed: Course[] = JSON.parse(savedCourses);
           if (Array.isArray(parsed)) {
-            setCourses(parsed);
+            setCourses(parsed.map((c: any) => healCourse(c)));
           }
         } catch (e) {
           console.error('Failed to parse courses from storage', e);
@@ -269,7 +270,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data && data.success && Array.isArray(data.courses)) {
-          setCourses(data.courses);
+          setCourses(data.courses.map((c: any) => healCourse(c)));
         }
       })
       .catch((err) => console.log('Course sync completed', err));

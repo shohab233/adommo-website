@@ -14,147 +14,17 @@ function slugify(text: string): string {
     .replace(/--+/g, '-');
 }
 
-const CHAPTER_SYNONYMS: Record<string, string> = {
-  'ভেক্টর': 'ভেক্টর',
-  'vector': 'ভেক্টর',
-  'গতিবিদ্যা': 'গতিবিদ্যা',
-  'dynamics': 'গতিবিদ্যা',
-  'নিউটনীয় বলবিদ্যা': 'নিউটনীয় বলবিদ্যা',
-  'নিউটনিয়ান মেকানিক্স': 'নিউটনীয় বলবিদ্যা',
-  'নিউটনিয়ান মেকানিক্স': 'নিউটনীয় বলবিদ্যা',
-  'newtonian mechanics': 'নিউটনীয় বলবিদ্যা',
-  'কাজ শক্তি ও ক্ষমতা': 'কাজ, শক্তি ও ক্ষমতা',
-  'কাজ, শক্তি ও ক্ষমতা': 'কাজ, শক্তি ও ক্ষমতা',
-  'মহাকর্ষ ও অভিকর্ষ': 'মহাকর্ষ ও অভিকর্ষ',
-  'পদার্থের গাঠনিক ধর্ম': 'পদার্থের গাঠনিক ধর্ম',
-  'পর্যাবৃত্ত গতি': 'পর্যাবৃত্ত গতি',
-  'তরঙ্গ': 'তরঙ্গ',
-  'আদর্শ গ্যাস ও গতিতত্ত্ব': 'আদর্শ গ্যাস ও গতিতত্ত্ব',
-  'আদর্শ গ্যাস': 'আদর্শ গ্যাস ও গতিতত্ত্ব',
-  'তাপগতিবিদ্যা': 'তাপগতিবিদ্যা',
-  'স্থির তড়িৎ': 'স্থির তড়িৎ',
-  'স্থির তড়িৎ': 'স্থির তড়িৎ',
-  'চল তড়িৎ': 'চল তড়িৎ',
-  'চল তড়িৎ': 'চল তড়িৎ',
-  'চলতড়িৎ': 'চল তড়িৎ',
-  'তড়িৎ প্রবাহের চৌম্বক ক্রিয়া ও চুম্বকত্ব': 'তড়িৎ প্রবাহের চৌম্বক ক্রিয়া ও চুম্বকত্ব',
-  'ভৌত আলোকবিজ্ঞান': 'ভৌত আলোকবিজ্ঞান',
-  'জ্যামিতিক আলোকবিজ্ঞান': 'জ্যামিতিক আলোকবিজ্ঞান',
-  'আধুনিক পদার্থবিজ্ঞানের সূচনা': 'আধুনিক পদার্থবিজ্ঞানের সূচনা',
-  'পরমাণু মডেল ও নিউক্লিয়ার পদার্থবিজ্ঞান': 'পরমাণু মডেল ও নিউক্লিয়ার পদার্থবিজ্ঞান',
-  'সেমিকন্ডাক্টর ও ইলেকট্রনিক্স': 'সেমিকন্ডাক্টর ও ইলেকট্রনিক্স',
-  'গুণগত রসায়ন': 'গুণগত রসায়ন',
-  'গুণগত রসায়ন': 'গুণগত রসায়ন',
-  'মৌলের পর্যায়বৃত্ত ধর্ম ও রাসায়নিক বন্ধন': 'মৌলের পর্যায়বৃত্ত ধর্ম ও রাসায়নিক বন্ধন',
-  'রাসায়নিক পরিবর্তন': 'রাসায়নিক পরিবর্তন',
-  'কর্মমুখী রসায়ন': 'কর্মমুখী রসায়ন',
-  'পরিবেশ রসায়ন': 'পরিবেশ রসায়ন',
-  'জৈব যৌগ': 'জৈব যৌগ',
-  'পরিমাণগত রসায়ন': 'পরিমাণগত রসায়ন',
-  'তড়িৎ রসায়ন': 'তড়িৎ রসায়ন',
-  'অর্থনৈতিক রসায়ন': 'অর্থনৈতিক রসায়ন',
-  'ম্যাট্রিক্স ও নির্ণায়ক': 'ম্যাট্রিক্স ও নির্ণায়ক',
-  'ম্যাট্রিক্স ও নির্ণায়ক': 'ম্যাট্রিক্স ও নির্ণায়ক',
-  'সরলরেখা': 'সরলরেখা',
-  'বৃত্ত': 'বৃত্ত',
-  'বিন্যাস ও সমাবেশ': 'বিন্যাস ও সমাবেশ',
-  'ত্রিকোণমিতিক অনুপাত': 'ত্রিকোণমিতিক অনুপাত',
-  'সংযুক্ত কোণের ত্রিকোণমিতিক অনুপাত': 'সংযুক্ত কোণের ত্রিকোণমিতিক অনুপাত',
-  'সংযুক্ত কোনের ত্রিকোনমিতিক অনুপাত': 'সংযুক্ত কোণের ত্রিকোণমিতিক অনুপাত',
-  'ফাংশন ও ফাংশনের লেখচিত্র': 'ফাংশন ও ফাংশনের লেখচিত্র',
-  'অন্তরীকরণ': 'অন্তরীকরণ',
-  'যোগজীকরণ': 'যোগজীকরণ',
-  'যোগাশ্রয়ী প্রোগ্রাম': 'যোগাশ্রয়ী প্রোগ্রাম',
-  'যোগাশ্রয়ী প্রোগ্রাম': 'যোগাশ্রয়ী প্রোগ্রাম',
-  'কণিক': 'কণিক',
-  'কনিক': 'কণিক',
-  'বিপরীত ত্রিকোণমিতিক ফাংশন ও ত্রিকোণমিতিক সমীকরণ': 'বিপরীত ত্রিকোণমিতিক ফাংশন',
-  'বিপরীত ত্রিকোণমিতিক ফাংশন': 'বিপরীত ত্রিকোণমিতিক ফাংশন',
-  'স্থিতিবিদ্যা': 'স্থিতিবিদ্যা',
-  'সমতলে বস্তুকণার গতি': 'সমতলে বস্তুকণার গতি',
-  'বিস্তার পরিমাপ ও সম্ভাবনা': 'বিস্তার পরিমাপ ও সম্ভাবনা',
-  'বহুপদী ও বহুপদী সমীকরণ': 'বহুপদী ও বহুপদী সমীকরণ'
-};
-
-function cleanAndNormalizeChapterTitle(raw: string): string {
-  if (!raw) return '';
-  let s = raw
-    .replace(/[✔✅▶⏩🔹📌🔥•\*\_~\|\#\(\)\[\]\{\}]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-  s = s.replace(/^(?:physics|chemistry|math|higher math|biology|ict|বাংলা|গণিত|পদার্থ|রসায়ন|ch-?\d+|chapter-?\d+)\s*[:–—\-]\s*/i, '');
-
-  let prev = '';
-  while (s !== prev) {
-    prev = s;
-    s = s
-      .replace(/\s*[-–—:]\s*(?:lecture|লেকচার|class|ক্লাস|part|পার্ট|পর্ব|ep|episode|লে)\s*[\d০-৯]+.*$/i, '')
-      .replace(/\s*(?:lecture|লেকচার|class|ক্লাস|part|পার্ট|পর্ব|ep|episode|লে)\s*[\d০-৯]+.*$/i, '')
-      .replace(/\s*[-–—:]\s*[\d০-৯]+.*$/i, '')
-      .replace(/\s+[\d০-৯]+(?:\s+(?:part|পার্ট|পর্ব|লেকচার)[\s\d০-৯]+)?.*$/i, '')
-      .replace(/\s*(?:part|পার্ট|পর্ব|লেকচার|class|ক্লাস)\s*$/i, '')
-      .replace(/\s*[-–—:]\s*$/i, '')
-      .replace(/\|.*$/g, '')
-      .trim();
-  }
-
-  const lower = s.toLowerCase();
-  if (CHAPTER_SYNONYMS[lower]) {
-    s = CHAPTER_SYNONYMS[lower];
-  }
-  return s;
-}
-
-export function isGenericChapterTitle(raw: string | null | undefined): boolean {
-  if (!raw || !raw.trim()) return true;
-  const clean = raw.replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
-  if (/^(?:অধ্যা[য়য়য][\u09BC]?|chapter|topic|টপিক|module|লেকচার|ক্লাস|পাঠ)\s*[:–—\-#]?\s*[\d০-৯a-z]*$/i.test(clean)) return true;
-  if (/^chapter\s*[\d০-৯]+[:\s]*(?:অধ্যা[য়য়য][\u09BC]?\s*[\d০-৯]*)$/i.test(clean)) return true;
-  if (/^মূল\s*অধ্যা/i.test(clean)) return true;
-  if (/^টপিক\s*[\d০-৯]+/i.test(clean)) return true;
-  return false;
-}
-
-export function inferChapterTitleFromClasses(classes: any[] | undefined, fallbackOrder: number): string {
-  const counts: Record<string, number> = {};
-  for (const cl of (classes || [])) {
-    const t = cl?.title || cl?.classTitle || cl?.description || '';
-    if (!t) continue;
-    if (/orientation|tech test|intro/i.test(t) && (classes || []).length > 1) continue;
-    const norm = cleanAndNormalizeChapterTitle(t);
-    if (norm && norm.length >= 2 && !isGenericChapterTitle(norm)) {
-      counts[norm] = (counts[norm] || 0) + 1;
-    }
-  }
-
-  let best = '';
-  let maxCount = 0;
-  for (const [name, cnt] of Object.entries(counts)) {
-    if (cnt > maxCount) {
-      maxCount = cnt;
-      best = name;
-    }
-  }
-
-  if (best) return best;
-  for (const cl of (classes || [])) {
-    const norm = cleanAndNormalizeChapterTitle(cl?.title || cl?.classTitle || cl?.description || '');
-    if (norm && norm.length >= 2 && !isGenericChapterTitle(norm)) return norm;
-  }
-  return `অধ্যায় ${fallbackOrder}`;
-}
-
-export function resolveChapterTitle(rawTitle: string | null | undefined, classes: any[] | undefined, order: number): string {
-  const isGeneric = isGenericChapterTitle(rawTitle);
-
-  if (!isGeneric && rawTitle && rawTitle.trim()) {
-    return rawTitle.trim();
-  }
-
-  const inferred = inferChapterTitleFromClasses(classes, order);
-  return inferred;
-}
+import { 
+  CHAPTER_SYNONYMS, 
+  cleanAndNormalizeChapterTitle, 
+  isGenericChapterTitle, 
+  inferChapterTitleFromClasses, 
+  resolveChapterTitle, 
+  isGenericSubjectTitle, 
+  inferSubjectTitleFromChapters, 
+  resolveSubjectTitle, 
+  healCourse 
+} from '@/lib/courseSubjectNormalizer';
 
 function cleanChapterTitle(desc: string | undefined, defaultTitle: string): string {
   if (!desc || !desc.trim()) return defaultTitle;
@@ -429,7 +299,8 @@ export async function processCourseImport(rawData: any) {
       const rawSubjects = rawData.subjects || [];
       rawSubjects.forEach((sub: any, sIdx: number) => {
         const rawChapters = sub.chapters || [];
-        const subTitle = sub.title || sub.name || sub.subjectName || `বিষয় ${sIdx + 1}`;
+        const rawSubTitle = sub.title || sub.name || sub.subjectName || sub.courseSubject?.title || sub.courseSubjectName || sub.courseSubject?.name;
+        const subTitle = resolveSubjectTitle(rawSubTitle, rawChapters, sIdx + 1);
 
         rawChapters.forEach((ch: any, cIdx: number) => {
           const classes = ch.classes || [];
@@ -451,6 +322,8 @@ export async function processCourseImport(rawData: any) {
                 order: courseSections.length + 1
               };
               courseSections.push(parentSec);
+            } else if (isGenericSubjectTitle(parentSec.title) && !isGenericSubjectTitle(subTitle)) {
+              parentSec.title = subTitle;
             }
 
             targetMod = {
@@ -494,17 +367,21 @@ export async function processCourseImport(rawData: any) {
           if (totalClassesInArcSub === 0) return;
 
           const arcSubSecId = 'sec_arc_sub_' + (arcSub.id || sIdx + 1);
+          const rawArcSubTitle = arcSub.title || arcSub.name || arcSub.subjectName || arcSub.courseSubject?.title || arcSub.courseSubjectName;
+          const arcSubTitle = resolveSubjectTitle(rawArcSubTitle, arcChapters, sIdx + 1);
           let arcSubSec = courseSections.find(s => s.id === arcSubSecId);
           if (!arcSubSec) {
             arcSubSec = {
               id: arcSubSecId,
-              title: arcSub.title || `আর্কাইভ বিষয় ${sIdx + 1}`,
+              title: arcSubTitle,
               type: 'subject',
               isArchive: true,
               parentArchiveId: arcSection!.id,
               order: courseSections.length + 1
             };
             courseSections.push(arcSubSec);
+          } else if (isGenericSubjectTitle(arcSubSec.title) && !isGenericSubjectTitle(arcSubTitle)) {
+            arcSubSec.title = arcSubTitle;
           }
 
           arcChapters.forEach((ch: any, cIdx: number) => {
@@ -547,10 +424,13 @@ export async function processCourseImport(rawData: any) {
         console.warn('Vercel read-only filesystem, skipping local file write:', fsErr);
       }
 
+      // Auto-heal entire course hierarchy before database save
+      const finalCourse = healCourse(existingCourse);
+
       // Sync to database
       try {
         const { db } = await import('@/lib/db');
-        await db.updateAsync('courses', existingCourse.id, existingCourse);
+        await db.updateAsync('courses', finalCourse.id, finalCourse);
       } catch (dbErr) {
         console.warn('DB update warning in existing course sync:', dbErr);
       }
@@ -559,17 +439,17 @@ export async function processCourseImport(rawData: any) {
         success: true,
         isNew: false,
         diff: {
-          courseTitle: existingCourse.title,
+          courseTitle: finalCourse.title,
           prevLectureCount,
           prevSheetCount,
           newClassesAdded,
           newSheetsAdded,
           classesUpdated,
           duplicateSkipped,
-          currentLectureCount: existingCourse.totalLectures,
-          currentSheetCount: existingCourse.totalSheets
+          currentLectureCount: finalCourse.totalLectures,
+          currentSheetCount: finalCourse.totalSheets
         },
-        course: existingCourse
+        course: finalCourse
       };
     }
 
@@ -672,7 +552,8 @@ export async function processCourseImport(rawData: any) {
       const totalClassesInSubject = rawChapters.reduce((acc: number, c: any) => acc + (c.classes?.length || 0), 0);
       if (totalClassesInSubject === 0 && rawSubjects.length > 5) return;
 
-      const subTitle = sub.title || sub.name || sub.subjectName || `বিষয় ${subIdx + 1}`;
+      const rawSubTitle = sub.title || sub.name || sub.subjectName || sub.courseSubject?.title || sub.courseSubjectName || sub.courseSubject?.name;
+      const subTitle = resolveSubjectTitle(rawSubTitle, rawChapters, subIdx + 1);
       const isBangla = /বাংলা|bangla/i.test(subTitle);
       const isEnglish = /english|ইংরেজি/i.test(subTitle);
 
@@ -760,7 +641,8 @@ export async function processCourseImport(rawData: any) {
         if (totalArcClasses === 0) return;
 
         const arcSubSecId = 'sec_arc_sub_' + (arcSub.id || arcSubIdx + 1);
-        const arcSubTitle = arcSub.title || `আর্কাইভ বিষয় ${arcSubIdx + 1}`;
+        const rawArcSubTitle = arcSub.title || arcSub.name || arcSub.subjectName || arcSub.courseSubject?.title || arcSub.courseSubjectName;
+        const arcSubTitle = resolveSubjectTitle(rawArcSubTitle, arcChapters, arcSubIdx + 1);
 
         sections.push({
           id: arcSubSecId,
@@ -839,21 +721,24 @@ export async function processCourseImport(rawData: any) {
       isPublished: rawData.isPublished !== undefined ? rawData.isPublished : false
     };
 
+    // Auto-heal entire new course before saving
+    const finalCourse = healCourse(newCourseObj);
+
     try {
-      const fileContent = `import { Course } from '@/types';\n\nexport const ${variableName}: Course = ${JSON.stringify(newCourseObj, null, 2)};\n`;
+      const fileContent = `import { Course } from '@/types';\n\nexport const ${variableName}: Course = ${JSON.stringify(finalCourse, null, 2)};\n`;
       fs.writeFileSync(outFilePath, fileContent, 'utf8');
     } catch (fsErr) {
       console.warn('Vercel read-only filesystem, skipping local file write:', fsErr);
     }
 
-    // Save to real database (data/courses.json)
+    // Save to real database (data/courses.json & MongoDB Atlas)
     try {
       const { db } = await import('@/lib/db');
-      const existing = await db.findOneAsync<any>('courses', (c: any) => c.id === newCourseObj.id);
+      const existing = await db.findOneAsync<any>('courses', (c: any) => c.id === finalCourse.id);
       if (existing) {
-        await db.updateAsync('courses', newCourseObj.id, newCourseObj);
+        await db.updateAsync('courses', finalCourse.id, finalCourse);
       } else {
-        await db.createAsync('courses', newCourseObj);
+        await db.createAsync('courses', finalCourse);
       }
     } catch (dbErr) {
       console.warn('DB save warning in course import:', dbErr);
@@ -864,12 +749,12 @@ export async function processCourseImport(rawData: any) {
       isNew: true,
       diff: {
         courseTitle,
-        totalSubjects: sections.length,
-        totalModules: modules.length,
+        totalSubjects: finalCourse.sections?.length || 0,
+        totalModules: finalCourse.modules?.length || 0,
         totalLectures,
         totalSheets
       },
-      course: newCourseObj
+      course: finalCourse
     };
   } catch (err: any) {
     console.error('Course import error:', err);

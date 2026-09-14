@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, verifyToken } from '@/lib/db';
+import { healCourse } from '@/lib/courseSubjectNormalizer';
 
 export async function GET(req: NextRequest) {
   try {
-    const courses = await db.findManyAsync<any>('courses') || [];
+    const rawCourses = await db.findManyAsync<any>('courses') || [];
+    const courses = rawCourses.map(c => healCourse(c));
     return NextResponse.json({ success: true, courses });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -21,8 +23,9 @@ export async function POST(req: NextRequest) {
     }
 
     const courseData = await req.json();
+    const healed = healCourse(courseData);
     const newCourse = await db.createAsync('courses', {
-      ...courseData,
+      ...healed,
       instructorId: payload?.id || courseData.instructorId || 'teacher_main',
       isPublished: true,
     });
@@ -36,7 +39,8 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const courseData = await req.json();
-    const { id, _id, ...updates } = courseData;
+    const healed = healCourse(courseData);
+    const { id, _id, ...updates } = healed;
 
     if (!id) {
       return NextResponse.json({ success: false, error: 'কোর্স আইডি প্রদান করুন।' }, { status: 400 });

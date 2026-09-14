@@ -45,37 +45,37 @@ export const acsCourse_0776a7b0: Course = {
   "sections": [
     {
       "id": "sec_81a5cba7-4aea-466a-8110-8c152c8e95bd",
-      "title": "বিষয় 1",
+      "title": "পদার্থবিজ্ঞান ১ম পত্র",
       "type": "subject",
       "order": 1
     },
     {
       "id": "sec_843c3116-53f0-4e77-a77e-a74886352702",
-      "title": "বিষয় 3",
+      "title": "উচ্চতর গণিত ১ম পত্র",
       "type": "subject",
       "order": 2
     },
     {
       "id": "sec_e1de256a-2cb6-4bc0-97d7-898c159f7c4c",
-      "title": "বিষয় 4",
+      "title": "উচ্চতর গণিত ২য় পত্র",
       "type": "subject",
       "order": 3
     },
     {
       "id": "sec_e6fb3f73-bcab-4904-be40-b4d596972132",
-      "title": "বিষয় 5",
+      "title": "রসায়ন ১ম পত্র",
       "type": "subject",
       "order": 4
     },
     {
       "id": "sec_e35b074a-d73b-4e98-b279-3d283ac003c6",
-      "title": "বিষয় 6",
+      "title": "রসায়ন ২য় পত্র",
       "type": "subject",
       "order": 5
     },
     {
       "id": "sec_86c4519e-dabf-4ae1-8437-13c34b297e1a",
-      "title": "বিষয় 7",
+      "title": "পদার্থবিজ্ঞান ২য় পত্র",
       "type": "subject",
       "order": 6
     }
@@ -86,7 +86,7 @@ export const acsCourse_0776a7b0: Course = {
       "title": "Chapter 1: Vector ভেক্টর",
       "order": 1,
       "parentSectionId": "sec_81a5cba7-4aea-466a-8110-8c152c8e95bd",
-      "parentSectionTitle": "বিষয় 1",
+      "parentSectionTitle": "পদার্থবিজ্ঞান ১ম পত্র",
       "parentSectionType": "subject",
       "lectures": [
         {
@@ -128,7 +128,7 @@ export const acsCourse_0776a7b0: Course = {
       "title": "Chapter 2: Dynamics গতিবিদ্যা",
       "order": 2,
       "parentSectionId": "sec_81a5cba7-4aea-466a-8110-8c152c8e95bd",
-      "parentSectionTitle": "বিষয় 1",
+      "parentSectionTitle": "পদার্থবিজ্ঞান ১ম পত্র",
       "parentSectionType": "subject",
       "lectures": [
         {
@@ -170,7 +170,7 @@ export const acsCourse_0776a7b0: Course = {
       "title": "Chapter 3: Newtonian Mechanics নিউটনীয় বলবিদ্যা",
       "order": 3,
       "parentSectionId": "sec_81a5cba7-4aea-466a-8110-8c152c8e95bd",
-      "parentSectionTitle": "বিষয় 1",
+      "parentSectionTitle": "পদার্থবিজ্ঞান ১ম পত্র",
       "parentSectionType": "subject",
       "lectures": [
         {
@@ -212,7 +212,7 @@ export const acsCourse_0776a7b0: Course = {
       "title": "Chapter 4: Work, Energy & Power কাজ, শক্তি ও ক্ষমতা",
       "order": 4,
       "parentSectionId": "sec_81a5cba7-4aea-466a-8110-8c152c8e95bd",
-      "parentSectionTitle": "বিষয় 1",
+      "parentSectionTitle": "পদার্থবিজ্ঞান ১ম পত্র",
       "parentSectionType": "subject",
       "lectures": [
         {
@@ -238,7 +238,7 @@ export const acsCourse_0776a7b0: Course = {
       "title": "Chapter 5: Gravitation and Gravity মহাকর্ষ ও অভিকর্ষ",
       "order": 5,
       "parentSectionId": "sec_81a5cba7-4aea-466a-8110-8c152c8e95bd",
-      "parentSectionTitle": "বিষয় 1",
+      "parentSectionTitle": "পদার্থবিজ্ঞান ১ম পত্র",
       "parentSectionType": "subject",
       "lectures": [
         {
@@ -264,7 +264,7 @@ export const acsCourse_0776a7b0: Course = {
       "title": "Chapter 6: Structural Properties of Matter পদার্থের গাঠনিক ধর্ম",
       "order": 6,
       "parentSectionId": "sec_81a5cba7-4aea-466a-8110-8c152c8e95bd",
-      "parentSectionTitle": "বিষয় 1",
+      "parentSectionTitle": "পদার্থবিজ্ঞান ১ম পত্র",
       "parentSectionType": "subject",
       "lectures": [
         {
@@ -290,7 +290,7 @@ export const acsCourse_0776a7b0: Course = {
       "title": "Chapter 1: সরলরেখা",
       "order": 1,
       "parentSectionId": "sec_843c3116-53f0-4e77-a77e-a74886352702",
-      "parentSectionTitle": "বিষয় 3",
+      "parentSectionTitle": "উচ্চতর গণিত ১ম পত্র",
       "parentSectionType": "subject",
       "lectures": [
         {
@@ -324,7 +324,7 @@ export const acsCourse_0776a7b0: Course = {
       "title": "Chapter 2: Circle বৃত্ত",
       "order": 2,
       "parentSectionId": "sec_843c3116-53f0-4e77-a77e-a74886352702",
-      "parentSectionTitle": "বিষয় 3",
+      "parentSectionTitle": "উচ্চতর গণিত ১ম পত্র",
       "parentSectionType": "subject",
       "lectures": [
         {
@@ -358,7 +358,7 @@ export const acsCourse_0776a7b0: Course = {
       "title": "Chapter 1: Complex Number জটিল সংখ্যা",
       "order": 1,
       "parentSectionId": "sec_e1de256a-2cb6-4bc0-97d7-898c159f7c4c",
-      "parentSectionTitle": "বিষয় 4",
+      "parentSectionTitle": "উচ্চতর গণিত ২য় পত্র",
       "parentSectionType": "subject",
       "lectures": [
         {
@@ -400,7 +400,7 @@ export const acsCourse_0776a7b0: Course = {
       "title": "Chapter 2: Polynomial and Polynomial Equations বহুপদী ও বহুপদী সমীকরণ",
       "order": 2,
       "parentSectionId": "sec_e1de256a-2cb6-4bc0-97d7-898c159f7c4c",
-      "parentSectionTitle": "বিষয় 4",
+      "parentSectionTitle": "উচ্চতর গণিত ২য় পত্র",
       "parentSectionType": "subject",
       "lectures": [
         {
@@ -426,7 +426,7 @@ export const acsCourse_0776a7b0: Course = {
       "title": "Chapter 3: Binomial Expansion দ্বিপদী বিস্তৃতি",
       "order": 3,
       "parentSectionId": "sec_e1de256a-2cb6-4bc0-97d7-898c159f7c4c",
-      "parentSectionTitle": "বিষয় 4",
+      "parentSectionTitle": "উচ্চতর গণিত ২য় পত্র",
       "parentSectionType": "subject",
       "lectures": [
         {
@@ -452,7 +452,7 @@ export const acsCourse_0776a7b0: Course = {
       "title": "Chapter 4: Conics কনিক",
       "order": 4,
       "parentSectionId": "sec_e1de256a-2cb6-4bc0-97d7-898c159f7c4c",
-      "parentSectionTitle": "বিষয় 4",
+      "parentSectionTitle": "উচ্চতর গণিত ২য় পত্র",
       "parentSectionType": "subject",
       "lectures": [
         {
@@ -470,7 +470,7 @@ export const acsCourse_0776a7b0: Course = {
       "title": "Chapter 1: সম্পূর্ণ চ্যাপ্টার",
       "order": 1,
       "parentSectionId": "sec_e6fb3f73-bcab-4904-be40-b4d596972132",
-      "parentSectionTitle": "বিষয় 5",
+      "parentSectionTitle": "রসায়ন ১ম পত্র",
       "parentSectionType": "subject",
       "lectures": [
         {
@@ -488,7 +488,7 @@ export const acsCourse_0776a7b0: Course = {
       "title": "Chapter 2: Qualitative Chemistry গুনগত রসায়ন",
       "order": 2,
       "parentSectionId": "sec_e6fb3f73-bcab-4904-be40-b4d596972132",
-      "parentSectionTitle": "বিষয় 5",
+      "parentSectionTitle": "রসায়ন ১ম পত্র",
       "parentSectionType": "subject",
       "lectures": [
         {
@@ -522,7 +522,7 @@ export const acsCourse_0776a7b0: Course = {
       "title": "Chapter 3: Periodic Properties of Elements মৌলের পর্যাবৃত্তিক ধর্ম ও রাসায়নিক বন্ধন",
       "order": 3,
       "parentSectionId": "sec_e6fb3f73-bcab-4904-be40-b4d596972132",
-      "parentSectionTitle": "বিষয় 5",
+      "parentSectionTitle": "রসায়ন ১ম পত্র",
       "parentSectionType": "subject",
       "lectures": [
         {
@@ -540,7 +540,7 @@ export const acsCourse_0776a7b0: Course = {
       "title": "Chapter 4: রাসায়নিক পরিবর্তন",
       "order": 4,
       "parentSectionId": "sec_e6fb3f73-bcab-4904-be40-b4d596972132",
-      "parentSectionTitle": "বিষয় 5",
+      "parentSectionTitle": "রসায়ন ১ম পত্র",
       "parentSectionType": "subject",
       "lectures": [
         {
@@ -598,7 +598,7 @@ export const acsCourse_0776a7b0: Course = {
       "title": "Chapter 1: Quantitative Chemistry পরিমাণগত রসায়ন",
       "order": 1,
       "parentSectionId": "sec_e35b074a-d73b-4e98-b279-3d283ac003c6",
-      "parentSectionTitle": "বিষয় 6",
+      "parentSectionTitle": "রসায়ন ২য় পত্র",
       "parentSectionType": "subject",
       "lectures": [
         {
@@ -632,7 +632,7 @@ export const acsCourse_0776a7b0: Course = {
       "title": "Chapter 1: অধ্যায় 1",
       "order": 1,
       "parentSectionId": "sec_86c4519e-dabf-4ae1-8437-13c34b297e1a",
-      "parentSectionTitle": "বিষয় 7",
+      "parentSectionTitle": "পদার্থবিজ্ঞান ২য় পত্র",
       "parentSectionType": "subject",
       "lectures": [
         {

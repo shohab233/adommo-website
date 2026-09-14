@@ -27,6 +27,7 @@ import confetti from 'canvas-confetti';
 import { useApp } from '@/context/AppContext';
 import { Course } from '@/types';
 import Link from 'next/link';
+import { healCourse } from '@/lib/courseSubjectNormalizer';
 
 interface CourseJsonUploadModalProps {
   isOpen: boolean;
@@ -129,7 +130,8 @@ export default function CourseJsonUploadModal({ isOpen, onClose, onEditCourse }:
           return;
         }
 
-        setParsedData(json);
+        const healedJson = healCourse(json);
+        setParsedData(healedJson);
 
         // কোর্সের নাম নির্ধারণ
         let initialTitle = json.courseTitle || fileNameOnly || 'ACS Course';
@@ -597,6 +599,37 @@ export default function CourseJsonUploadModal({ isOpen, onClose, onEditCourse }:
                       </span>
                     </div>
                   </div>
+
+                  {/* Auto-detected Subjects Preview */}
+                  {(() => {
+                    const detectedList = (parsedData.subjects || parsedData.sections || [])
+                      .filter((s: any) => s.title && !s.title.includes('আর্কাইভ ব্যাচ') && !s.title.includes('Previous Batch Archive'))
+                      .map((s: any) => s.title);
+                    if (!detectedList.length) return null;
+                    return (
+                      <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-1.5 shadow-2xs">
+                        <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                          <span className="flex items-center gap-1.5 text-emerald-700">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>শনাক্তকৃত বিষয়সমূহ ({detectedList.length} টি):</span>
+                          </span>
+                          <span className="text-[10px] text-emerald-600 font-extrabold bg-emerald-50 px-1.5 py-0.5 rounded-full border border-emerald-200">
+                            অটো-নরমালাইজড
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5 pt-0.5 max-h-24 overflow-y-auto">
+                          {detectedList.map((name: string, idx: number) => (
+                            <span 
+                              key={idx} 
+                              className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-slate-100 text-slate-800 border border-slate-200 shadow-2xs"
+                            >
+                              📚 {name}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {importMode === 'new' && (
                     <div className="flex items-center gap-2 text-[11px] text-emerald-800 bg-emerald-50/70 p-2.5 rounded-xl border border-emerald-200/80">
