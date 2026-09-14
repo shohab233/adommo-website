@@ -144,25 +144,43 @@ export async function processCourseImport(rawData: any) {
     let existingCourse: Course | null = null;
     let existingTargetFile = outFilePath;
 
-    if (!rawData.forceNew && fs.existsSync(libDir)) {
-      const libFiles = fs.readdirSync(libDir).filter(f => f.endsWith('_data.ts'));
-      const targetSearchId = rawData.targetCourseId || courseId;
+    if (!rawData.forceNew) {
+      // ১. ডাটাবেজ (MongoDB Atlas / data/courses.json) থেকে বিদ্যমান কোর্স খোঁজা
+      try {
+        const { db } = await import('@/lib/db');
+        const dbCourse = await db.findOneAsync<any>('courses', (c: any) => {
+          if (rawData.targetCourseId && (c.id === rawData.targetCourseId || c.slug === rawData.targetCourseId)) return true;
+          if (courseId && (c.id === courseId || c.slug === courseSlug)) return true;
+          if (cleanId.length >= 6 && c.id && c.id.includes(cleanId)) return true;
+          if (courseTitle && c.title && c.title.toLowerCase().trim() === courseTitle.toLowerCase().trim()) return true;
+          return false;
+        });
+        if (dbCourse) {
+          existingCourse = dbCourse;
+        }
+      } catch (dbErr) {
+        console.warn('DB lookup error for existing course:', dbErr);
+      }
 
-      for (const f of libFiles) {
-        const fPath = path.join(libDir, f);
-        const content = fs.readFileSync(fPath, 'utf8');
-        
-        const isMatch = rawData.targetCourseId 
-          ? content.includes(`"${rawData.targetCourseId}"`)
-          : (content.includes(`"${courseId}"`) || (cleanId.length >= 6 && content.includes(`"course_acs_${cleanId}"`)));
+      // ২. যদি ডাটাবেজে না পাওয়া যায়, তবে লোকাল lib ফাইলে খোঁজা
+      if (!existingCourse && fs.existsSync(libDir)) {
+        const libFiles = fs.readdirSync(libDir).filter(f => f.endsWith('_data.ts'));
+        for (const f of libFiles) {
+          const fPath = path.join(libDir, f);
+          const content = fs.readFileSync(fPath, 'utf8');
+          
+          const isMatch = rawData.targetCourseId 
+            ? content.includes(`"${rawData.targetCourseId}"`)
+            : (content.includes(`"${courseId}"`) || (cleanId.length >= 6 && content.includes(`"course_acs_${cleanId}"`)));
 
-        if (isMatch) {
-          try {
-            const jsonStr = content.replace(/^import [^;]+;\s*export const \w+: Course = /, '').replace(/;?\s*$/, '');
-            existingCourse = JSON.parse(jsonStr);
-            existingTargetFile = fPath;
-            break;
-          } catch (e) {}
+          if (isMatch) {
+            try {
+              const jsonStr = content.replace(/^import [^;]+;\s*export const \w+: Course = /, '').replace(/;?\s*$/, '');
+              existingCourse = JSON.parse(jsonStr);
+              existingTargetFile = fPath;
+              break;
+            } catch (e) {}
+          }
         }
       }
     }
@@ -417,9 +435,22 @@ export async function processCourseImport(rawData: any) {
       existingCourse.totalLectures = existingCourse.modules.reduce((acc, m) => acc + (m.lectures?.length || 0), 0);
       existingCourse.totalSheets = existingCourse.modules.reduce((acc, m) => acc + m.lectures.reduce((sAcc, l) => sAcc + (l.notes?.length || 0), 0), 0);
 
+      // গুরুত্বপূর্ণ: যদি কোর্সটি পূর্বে লাইভ/পাবলিশড থাকে, তা কোনো অবস্থাতেই ড্রাফট হবে না!
+      // সমস্ত পূর্ববর্তী টিচার সেটিংস (মূল্য, ডিসকাউন্ট, কভার ছবি, ডেসক্রিপশন) ১০০% অক্ষত থাকবে।
+      if (existingCourse.isPublished === undefined) {
+        existingCourse.isPublished = true;
+      }
+      if (existingCourse.isPublished) {
+        existingCourse.isDraft = false;
+      } else if (existingCourse.isDraft === undefined) {
+        existingCourse.isDraft = false;
+      }
+
       try {
-        const fileContent = `import { Course } from '@/types';\n\nexport const ${variableName}: Course = ${JSON.stringify(existingCourse, null, 2)};\n`;
-        fs.writeFileSync(existingTargetFile, fileContent, 'utf8');
+        if (existingTargetFile && fs.existsSync(existingTargetFile)) {
+          const fileContent = `import { Course } from '@/types';\n\nexport const ${variableName}: Course = ${JSON.stringify(existingCourse, null, 2)};\n`;
+          fs.writeFileSync(existingTargetFile, fileContent, 'utf8');
+        }
       } catch (fsErr) {
         console.warn('Vercel read-only filesystem, skipping local file write:', fsErr);
       }
@@ -430,7 +461,10 @@ export async function processCourseImport(rawData: any) {
       // Sync to database
       try {
         const { db } = await import('@/lib/db');
-        await db.updateAsync('courses', finalCourse.id, finalCourse);
+        const updated = await db.updateAsync('courses', finalCourse.id, finalCourse);
+        if (!updated) {
+          await db.createAsync('courses', finalCourse);
+        }
       } catch (dbErr) {
         console.warn('DB update warning in existing course sync:', dbErr);
       }

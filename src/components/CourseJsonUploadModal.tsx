@@ -148,7 +148,17 @@ export default function CourseJsonUploadModal({ isOpen, onClose, onEditCourse }:
         const isFrb = (json.courseId || '').includes('c82195b9') || /frb/i.test(initialTitle);
         const expectedId = isFrb ? 'course_acs_frb26' : ('course_acs_' + rawId);
 
-        const matched = rawId ? courses.find(c => c.id === expectedId || (rawId.length >= 6 && c.id.includes(rawId))) : null;
+        let matched = rawId ? courses.find(c => c.id === expectedId || (rawId.length >= 6 && c.id.includes(rawId))) : null;
+
+        // যদি আইডিতে সরাসরি না মিলে, তবে টাইটেল (শিরোনাম) মিলিয়ে নিশ্চিত করা
+        if (!matched && initialTitle) {
+          const normInitial = initialTitle.toLowerCase().replace(/[^a-z0-9\u0980-\u09FF]/g, '');
+          matched = courses.find(c => {
+            if (!c.title) return false;
+            const normTitle = c.title.toLowerCase().replace(/[^a-z0-9\u0980-\u09FF]/g, '');
+            return normTitle === normInitial || (normTitle.length > 5 && normInitial.length > 5 && (normTitle.includes(normInitial) || normInitial.includes(normTitle)));
+          }) || null;
+        }
 
         if (matched) {
           setIsExistingCourse(true);
@@ -332,9 +342,14 @@ export default function CourseJsonUploadModal({ isOpen, onClose, onEditCourse }:
                     </p>
                   </div>
                 ) : (
-                  <p className="text-[11px] text-emerald-700">
-                    📌 <strong>{syncResult.course?.title || syncResult.diff?.courseTitle}</strong> কোর্সটি এখন ওয়েবসাইটে আপডেট হয়ে গেছে। স্টুডেন্ট ও টিচার প্যানেলে সকল নতুন ক্লাস দৃশ্যমান।
-                  </p>
+                  <div className="p-3 bg-emerald-100/70 border border-emerald-200 rounded-xl text-xs space-y-1 text-emerald-900">
+                    <p className="font-bold flex items-center gap-1.5 text-emerald-950">
+                      <span>✅ লাইভ কোর্স সরাসরি আপডেট হয়েছে (ড্রাফট হয়নি):</span>
+                    </p>
+                    <p className="text-[11px] leading-relaxed">
+                      📌 <strong>{syncResult.course?.title || syncResult.diff?.courseTitle}</strong> কোর্সের কনটেন্ট সরাসরি লাইভে আপডেট হয়েছে। আপনার পূর্বের নির্ধারিত মূল্য, ব্যানার ছবি ও সেটিংস অক্ষত রয়েছে।
+                    </p>
+                  </div>
                 )}
               </div>
 
@@ -572,8 +587,8 @@ export default function CourseJsonUploadModal({ isOpen, onClose, onEditCourse }:
                           </option>
                         ))}
                       </select>
-                      <p className="text-[11px] text-amber-800 pt-0.5">
-                        💡 নির্বাচিত কোর্সের সাথে নতুন ক্লাস ও শিটগুলো যোগ হবে, পূর্বের কোনো ক্লাস ডুপ্লিকেট হবে না।
+                      <p className="text-[11px] text-amber-800 pt-0.5 font-medium">
+                        💡 নির্বাচিত লাইভ কোর্সের সাথে নতুন ক্লাস ও শিট সরাসরি যুক্ত হবে। পূর্বের মূল্য, ব্যানার ছবি ও লাইভ স্ট্যাটাস অক্ষত থাকবে (ড্রাফট হবে না)।
                       </p>
                     </div>
                   )}
