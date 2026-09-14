@@ -586,16 +586,20 @@ export async function processCourseImport(rawData: any) {
       const totalClassesInSubject = rawChapters.reduce((acc: number, c: any) => acc + (c.classes?.length || 0), 0);
       if (totalClassesInSubject === 0 && rawSubjects.length > 5) return;
 
-      const rawSubTitle = sub.title || sub.name || sub.subjectName || sub.courseSubject?.title || sub.courseSubjectName || sub.courseSubject?.name;
-      const subTitle = resolveSubjectTitle(rawSubTitle, rawChapters, subIdx + 1);
-      const isBangla = /বাংলা|bangla/i.test(subTitle);
-      const isEnglish = /english|ইংরেজি/i.test(subTitle);
+      const rawSubTitle = (sub.title || sub.name || sub.subjectName || sub.courseSubject?.title || sub.courseSubjectName || sub.courseSubject?.name || '').trim();
+      const subTitle = (rawSubTitle && !isGenericSubjectTitle(rawSubTitle))
+        ? rawSubTitle
+        : resolveSubjectTitle(rawSubTitle, rawChapters, subIdx + 1);
 
-      if ((isBangla || isEnglish) && rawChapters.length >= 2) {
+      // পেপার স্প্লিটিং শুধুমাত্র তখনই প্রযোজ্য হবে যদি ডাটাতে সুস্পষ্টভাবে ২টি পত্র থাকে (isMultiPaper === true)
+      const isMultiPaperAdmission = sub.isMultiPaper === true && rawChapters.length === 2 && (/বাংলা|bangla/i.test(subTitle) || /english|ইংরেজি/i.test(subTitle));
+
+      if (isMultiPaperAdmission) {
         rawChapters.forEach((ch: any, chIdx: number) => {
-          const classes = ch.classes || [];
+          const classes = ch.classes || ch.lectures || [];
           if (classes.length === 0) return;
 
+          const isBangla = /বাংলা|bangla/i.test(subTitle);
           const paperTitle = isBangla
             ? (chIdx === 0 ? 'বাংলা ১ম পত্র (সাহিত্য)' : 'বাংলা ২য় পত্র (ব্যাকরণ ও নির্মিতি)')
             : (chIdx === 0 ? 'English 1st Paper' : 'English 2nd Paper');
@@ -609,7 +613,10 @@ export async function processCourseImport(rawData: any) {
           });
 
           const modId = 'mod_' + ch.id;
-          const chapterTitle = resolveChapterTitle(ch.title, classes, chIdx + 1);
+          const rawChapTitle = (ch.title || ch.name || ch.chapterName || '').trim();
+          const chapterTitle = (rawChapTitle && !isGenericChapterTitle(rawChapTitle))
+            ? rawChapTitle
+            : resolveChapterTitle(rawChapTitle, classes, chIdx + 1);
           const lectures = processNewClasses(classes, chapterTitle);
 
           modules.push({
@@ -635,23 +642,25 @@ export async function processCourseImport(rawData: any) {
 
       let activeChapterOrder = 1;
       rawChapters.forEach((ch: any, chIdx: number) => {
-        const classes = ch.classes || [];
+        const classes = ch.classes || ch.lectures || [];
         if (classes.length === 0) return;
 
         const modId = 'mod_' + (ch.id || `${subIdx + 1}_${chIdx + 1}`);
-        const inferredChapterTitle = resolveChapterTitle(ch.title, classes, activeChapterOrder);
-        const lectures = processNewClasses(classes, inferredChapterTitle);
+        const rawChapTitle = (ch.title || ch.name || ch.chapterName || ch.courseSubjectChapterName || '').trim();
+        const chapterTitle = (rawChapTitle && !isGenericChapterTitle(rawChapTitle))
+          ? rawChapTitle
+          : resolveChapterTitle(rawChapTitle, classes, activeChapterOrder);
+        const lectures = processNewClasses(classes, chapterTitle);
 
         modules.push({
           id: modId,
-          title: inferredChapterTitle,
+          title: chapterTitle,
           order: activeChapterOrder,
           parentSectionId: secId,
           parentSectionTitle: subTitle,
           parentSectionType: 'subject',
           lectures
         });
-
         activeChapterOrder++;
       });
     });

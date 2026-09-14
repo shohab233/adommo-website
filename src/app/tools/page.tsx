@@ -1178,8 +1178,8 @@ const CHAPTER_SYNONYMS: Record<string, string> = {
 
         // If still "মূল অধ্যায়", don't keep as a separate chapter if other real chapters exist
         if (realChapter === 'মূল অধ্যায়') {
-          // If classes have valid content, assign to baseChapter or first available real chapter
-          realChapter = (!isPureDurationText(baseChapter) && baseChapter !== 'মূল অধ্যায়') ? baseChapter : 'ভেক্টর';
+          // If classes have valid content, assign to baseChapter or fallback
+          realChapter = (!isPureDurationText(baseChapter) && baseChapter !== 'মূল অধ্যায়') ? baseChapter : (baseChapter || 'অধ্যায় ১');
         }
 
         if (!cleanMap.has(realChapter)) {
@@ -1205,21 +1205,68 @@ const CHAPTER_SYNONYMS: Record<string, string> = {
     return healedChapters;
   };
 
-  // Helper: Extract standardized hierarchy
+  // Helper: Extract standardized hierarchy (Universal 1:1 ACS Pattern)
   const getNormalizedSubjects = (data: ParsedCourseData | null): ParsedSubject[] => {
     if (!data) return [];
     
-    // Case A: Scraper format (subjects array)
+    // Case A: Scraper / ACS format (subjects array)
     if (Array.isArray(data.subjects) && data.subjects.length > 0) {
       let list = [...data.subjects];
       if (data.archive && Array.isArray(data.archive.subjects)) {
         list = [...list, ...data.archive.subjects.map(s => ({ ...s, isArchive: true }))];
       }
+
+      const isFromTelegram = !!(data as any).messages || !!(data as any).isTelegram;
+
       return list.map((sub, sIdx) => {
-        const chapters = cleanAndRebalanceChapters(sub.chapters || []);
-        const title = resolveSubjectTitle(sub.title, chapters, sIdx + 1);
+        // ১. সাবজেক্ট টাইটেল: ACS এর আসল নাম (যেমন: Architecture, Archive, Physics) ১০০% হুবহু সংরক্ষণ
+        const rawSubTitle = (sub.title || sub.name || sub.subjectName || sub.courseSubject?.title || sub.courseSubjectName || '').trim();
+        const title = (rawSubTitle && !isGenericSubjectTitle(rawSubTitle))
+          ? rawSubTitle
+          : resolveSubjectTitle(rawSubTitle, sub.chapters, sIdx + 1);
+
+        const rawChapters = sub.chapters || [];
+
+        // ২. চ্যাপ্টারের তালিকা:
+        // শুধুমাত্র অসংগঠিত টেলিগ্রাম এক্সপোর্টের ক্ষেত্রে চ্যাপ্টার রিগ্রুপ দরকার
+        // ACS JSON-এর ক্ষেত্রে ACS-এর নিজস্ব চ্যাপ্টার (যেমন: Prologue, Composition, Logo, Poster & Book Cover) হুবহু ১:১ থাকবে
+        let chapters: ParsedChapter[] = [];
+        if (isFromTelegram) {
+          chapters = cleanAndRebalanceChapters(rawChapters);
+        } else {
+          chapters = rawChapters.map((ch: any, cIdx: number) => {
+            const chapTitle = (ch.title || ch.name || ch.chapterName || ch.courseSubjectChapterName || `অধ্যায় ${cIdx + 1}`).trim();
+            const classes: ParsedClass[] = (ch.classes || ch.lectures || []).map((cl: any, i: number) => {
+              const classTitle = (cl.title || cl.classTitle || cl.description || `Class ${i + 1}`).trim();
+              return {
+                id: cl.id || `cl_${cIdx + 1}_${i + 1}`,
+                classNo: cl.classNo || (i + 1).toString(),
+                title: classTitle,
+                description: cl.description || '',
+                instructor: cl.instructor || cl.instructorName || 'ACS Instructor',
+                videoUrl: cl.videoUrl || '',
+                videoId: cl.videoId || '',
+                hostingType: cl.hostingType || '',
+                lectureSheetPdf: cl.lectureSheetPdf || cl.lectureSheet || null,
+                practiceSheetPdf: cl.practiceSheetPdf || cl.practiceSheet || null,
+                solutionSheetPdf: cl.solutionSheetPdf || cl.solutionSheet || null,
+                markedBookPdf: cl.markedBookPdf || cl.markedBook || null,
+                notes: cl.notes || []
+              };
+            });
+
+            return {
+              id: ch.id || `chap_${sIdx + 1}_${cIdx + 1}`,
+              title: chapTitle,
+              paperTag: ch.paperTag || null,
+              classes
+            };
+          });
+        }
+
         return {
           ...sub,
+          id: sub.id || `sub_${sIdx + 1}`,
           title,
           chapters
         };
@@ -1280,7 +1327,10 @@ const CHAPTER_SYNONYMS: Record<string, string> = {
       });
 
       return Array.from(subMap.values()).map((sub, sIdx) => {
-        const title = resolveSubjectTitle(sub.title, sub.chapters, sIdx + 1);
+        const rawSubTitle = (sub.title || '').trim();
+        const title = (rawSubTitle && !isGenericSubjectTitle(rawSubTitle))
+          ? rawSubTitle
+          : resolveSubjectTitle(sub.title, sub.chapters, sIdx + 1);
         return {
           ...sub,
           title
