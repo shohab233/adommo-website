@@ -37,9 +37,15 @@ import {
   Award,
   HelpCircle,
   CheckSquare,
-  ListOrdered
+  ListOrdered,
+  Link2,
+  Image as ImageIcon,
+  Tag,
+  ArrowRight,
+  Loader2,
+  MousePointerClick
 } from 'lucide-react';
-import { resolveSubjectTitle, isGenericSubjectTitle } from '@/lib/courseSubjectNormalizer';
+import { resolveSubjectTitle, isGenericSubjectTitle, isGenericChapterTitle, inferChapterTitleFromClasses } from '@/lib/courseSubjectNormalizer';
 
 interface ParsedClass {
   id: string;
@@ -968,7 +974,64 @@ export default function AutomationToolsPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [copiedTgCode, setCopiedTgCode] = useState(false);
   const [isImportingToSite, setIsImportingToSite] = useState(false);
-  const [toolMode, setToolMode] = useState<'course' | 'exam'>('course');
+  const [toolMode, setToolMode] = useState<'course' | 'exam' | 'details'>('course');
+  
+  // ACS Course Details Extractor States
+  const [detailsUrl, setDetailsUrl] = useState('');
+  const [isExtractingDetails, setIsExtractingDetails] = useState(false);
+  const [extractedDetails, setExtractedDetails] = useState<any | null>(null);
+  const [detailsErrorMsg, setDetailsErrorMsg] = useState<string | null>(null);
+  const [copiedDetailKey, setCopiedDetailKey] = useState<string | null>(null);
+  const [copiedUnlockerBookmarklet, setCopiedUnlockerBookmarklet] = useState(false);
+
+  const ACS_COPY_UNLOCKER_BOOKMARKLET = `javascript:(function(){document.oncontextmenu=null;document.onselectstart=null;document.ondragstart=null;document.oncopy=null;document.oncut=null;document.onkeydown=null;document.querySelectorAll('*').forEach(e=>{e.style.userSelect='text';e.style.webkitUserSelect='text';e.removeAttribute('unselectable');});alert('🔓 এই পেজের সব টেক্সট এখন সিলেক্ট ও কপি করা যাবে!');})();`;
+
+  const handleCopyUnlockerBookmarklet = () => {
+    try {
+      navigator.clipboard.writeText(ACS_COPY_UNLOCKER_BOOKMARKLET);
+      setCopiedUnlockerBookmarklet(true);
+      setTimeout(() => setCopiedUnlockerBookmarklet(false), 3000);
+    } catch {
+      alert('ক্লিপবোর্ডে কপি করতে সমস্যা হয়েছে!');
+    }
+  };
+
+  const handleCopyDetailText = (text: string, key: string) => {
+    try {
+      navigator.clipboard.writeText(text);
+      setCopiedDetailKey(key);
+      setTimeout(() => setCopiedDetailKey(null), 2500);
+    } catch {
+      alert('কপি করতে সমস্যা হয়েছে!');
+    }
+  };
+
+  const handleExtractCourseDetails = async (targetUrl?: string) => {
+    const urlToUse = (targetUrl || detailsUrl).trim();
+    if (!urlToUse) {
+      setDetailsErrorMsg('দয়া করে একটি ACS কোর্স লিংক পেস্ট করুন');
+      return;
+    }
+
+    setIsExtractingDetails(true);
+    setDetailsErrorMsg(null);
+    try {
+      const res = await fetch('/api/tools/extract-course-details', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: urlToUse })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'কোর্স তথ্য সংগ্রহ করা সম্ভব হয়নি');
+      }
+      setExtractedDetails(data.data);
+    } catch (err: any) {
+      setDetailsErrorMsg(err.message || 'কোর্স লিংক থেকে তথ্য লোড করতে সমস্যা হয়েছে');
+    } finally {
+      setIsExtractingDetails(false);
+    }
+  };
   const examFileInputRef = useRef<HTMLInputElement>(null);
   const [selectedExamFile, setSelectedExamFile] = useState<File | null>(null);
   const [parsedExamData, setParsedExamData] = useState<any | null>(null);
@@ -1235,7 +1298,7 @@ const CHAPTER_SYNONYMS: Record<string, string> = {
           chapters = cleanAndRebalanceChapters(rawChapters);
         } else {
           chapters = rawChapters.map((ch: any, cIdx: number) => {
-            const chapTitle = (ch.title || ch.name || ch.chapterName || ch.courseSubjectChapterName || `অধ্যায় ${cIdx + 1}`).trim();
+            const rawChapTitle = (ch.title || ch.name || ch.chapterName || ch.courseSubjectChapterName || '').trim();
             const classes: ParsedClass[] = (ch.classes || ch.lectures || []).map((cl: any, i: number) => {
               const classTitle = (cl.title || cl.classTitle || cl.description || `Class ${i + 1}`).trim();
               return {
@@ -1254,6 +1317,12 @@ const CHAPTER_SYNONYMS: Record<string, string> = {
                 notes: cl.notes || []
               };
             });
+
+            // যদি চ্যাপ্টারের নাম ফাঁকা থাকে বা জেনেরিক থাকে (যেমন: "অধ্যায় 1", "Chapter 2", "টপিক ৩")
+            let chapTitle = rawChapTitle;
+            if (!chapTitle || isGenericChapterTitle(chapTitle)) {
+              chapTitle = inferChapterTitleFromClasses(classes, cIdx + 1);
+            }
 
             return {
               id: ch.id || `chap_${sIdx + 1}_${cIdx + 1}`,
@@ -1585,8 +1654,21 @@ const CHAPTER_SYNONYMS: Record<string, string> = {
           >
             <FileQuestion className="w-4 h-4" />
             <span>📝 ACS এক্সাম ও প্রশ্নপত্র এক্সট্রাক্টর</span>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-400 text-slate-950 animate-pulse">
-              NEW ⭐
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setToolMode('details')}
+            className={`px-5 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all cursor-pointer ${
+              toolMode === 'details'
+                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/20'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <Copy className="w-4 h-4" />
+            <span>🔍 ACS কোর্স ডিটেইলস ও কপি টুল</span>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-400 text-slate-950 animate-pulse">
+              HOT ⭐
             </span>
           </button>
         </div>
@@ -3170,9 +3252,484 @@ const CHAPTER_SYNONYMS: Record<string, string> = {
             )}
           </div>
         )}
+
+        {/* ========================================================================= */}
+        {/* ACS COURSE DETAILS & DIRECT COPY TOOL SECTION */}
+        {/* ========================================================================= */}
+        {toolMode === 'details' && (
+          <div className="space-y-6">
+            {/* Details Extractor Hero Banner */}
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-[#132724] to-[#121624] border border-emerald-900/40 p-6 sm:p-8 shadow-2xl">
+              <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="space-y-2 max-w-2xl">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>ACS Shop & Course Details Extractor</span>
+                  </div>
+                  <h1 className="text-xl sm:text-3xl font-extrabold tracking-tight text-white flex items-center gap-3">
+                    <span>ACS কোর্স ডিটেইলস ও কপি টুল</span>
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                      COPY UNLOCKED
+                    </span>
+                  </h1>
+                  <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+                    Apar&apos;s Classroom বা যেকোনো ACS কোর্স পেজে কপি ও রাইট-ক্লিক ব্লক করা থাকে। নিচের বক্সে শুধু কোর্সের লিংক পেস্ট করুন — স্বয়ংক্রিয়ভাবে টাইটেল, ফি (রেগুলার ও ডিসকাউন্ট), কভার ব্যানার, ডেসক্রিপশন, রুটিন এবং FAQ এক ক্লিকে কপি উপযোগী আকারে চলে আসবে!
+                  </p>
+                </div>
+
+                {/* Direct 1-Click Bookmarklet Unlocker */}
+                <div className="shrink-0 flex flex-col items-stretch sm:items-end gap-2">
+                  <button
+                    type="button"
+                    onClick={handleCopyUnlockerBookmarklet}
+                    className="px-4 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 cursor-pointer transition-all border border-emerald-400/30"
+                  >
+                    {copiedUnlockerBookmarklet ? (
+                      <>
+                        <Check className="w-4 h-4 text-white" />
+                        <span>বুকমার্কলেট কপি হয়েছে!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Bookmark className="w-4 h-4 text-emerald-200" />
+                        <span>⭐ ১-ক্লিক কপি আনলকার বুকমার্কলেট</span>
+                      </>
+                    )}
+                  </button>
+                  <span className="text-[11px] text-slate-400 text-center sm:text-right">
+                    💡 ব্রাউজার বুকমার্কে সেভ করে যেকোনো ACS পেজে ১-ক্লিকে কপি আনলক করুন
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* URL Input Form Card */}
+            <div className="p-6 sm:p-8 rounded-3xl bg-[#161b22] border border-slate-800 shadow-xl space-y-4">
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-2">
+                  <Link2 className="w-4 h-4" />
+                  <span>ACS কোর্স পেজের লিংক (URL) দিন</span>
+                </label>
+                <div className="flex flex-col sm:flex-row items-center gap-3">
+                  <div className="relative flex-1 w-full">
+                    <input
+                      type="url"
+                      value={detailsUrl}
+                      onChange={(e) => setDetailsUrl(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleExtractCourseDetails();
+                      }}
+                      placeholder="যেমন: https://aparsclassroom.com/shop/FRB26/"
+                      className="w-full px-4 py-3.5 pl-11 rounded-2xl bg-[#0d1117] border border-slate-700/80 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-sm text-white placeholder-slate-500 outline-none font-mono"
+                    />
+                    <Globe className="w-4 h-4 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2" />
+                  </div>
+                  <button
+                    type="button"
+                    disabled={isExtractingDetails}
+                    onClick={() => handleExtractCourseDetails()}
+                    className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50 cursor-pointer shadow-lg shadow-emerald-600/20 shrink-0"
+                  >
+                    {isExtractingDetails ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>তথ্য আনা হচ্ছে...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="w-4 h-4" />
+                        <span>🚀 কোর্স তথ্য এক্সট্র্যাক্ট করুন</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Sample Quick Links */}
+              <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-slate-800/80">
+                <span className="text-[11px] text-slate-400 font-medium">ডেমো ট্রাই করুন:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const sample = 'https://aparsclassroom.com/shop/FRB26/';
+                    setDetailsUrl(sample);
+                    handleExtractCourseDetails(sample);
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 text-xs font-mono border border-emerald-500/20 transition-all cursor-pointer"
+                >
+                  FRB 26 (HSC 26)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const sample = 'https://aparsclassroom.com/shop/ACS-HSC-26-Cycle-01/';
+                    setDetailsUrl(sample);
+                    handleExtractCourseDetails(sample);
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 text-xs font-mono border border-teal-500/20 transition-all cursor-pointer"
+                >
+                  HSC 26 Cycle 1
+                </button>
+              </div>
+
+              {detailsErrorMsg && (
+                <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-3">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+                  <span>{detailsErrorMsg}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Extracted Details Results View */}
+            {extractedDetails && (
+              <div className="space-y-6">
+                {/* Overview Header & Copy All */}
+                <div className="p-6 rounded-3xl bg-[#161b22] border border-slate-800 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+                      সফলভাবে এক্সট্র্যাক্ট করা হয়েছে
+                    </span>
+                    <h2 className="text-lg sm:text-2xl font-black text-white mt-2">
+                      {extractedDetails.courseTitle}
+                    </h2>
+                    <p className="text-xs text-slate-400 font-mono mt-1 break-all">
+                      {extractedDetails.sourceUrl}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3 shrink-0 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const allContent = `【কোর্সের নাম】\n${extractedDetails.courseTitle}\n\n【কোর্স ফি】\nরেগুলার ফি: ৳${extractedDetails.regularPrice || 0}\nঅফার ফি: ৳${extractedDetails.offerPrice || 0}\nডিসকাউন্ট: ${extractedDetails.discountPercentage || 0}%\n\n【ব্যানার লিংক】\n${extractedDetails.bannerImage || 'নেই'}\n\n【রুটিন ও ড্রাইভ】\n${(extractedDetails.routines || []).join('\n')}\n\n【কোর্স ডেসক্রিপশন】\n${extractedDetails.description || ''}\n\n【কোর্স ফিচারসমূহ】\n${(extractedDetails.features || []).map((f: string) => '• ' + f).join('\n')}`;
+                        handleCopyDetailText(allContent, 'all_details');
+                      }}
+                      className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/20 cursor-pointer transition-all"
+                    >
+                      {copiedDetailKey === 'all_details' ? (
+                        <>
+                          <Check className="w-4 h-4 text-white" />
+                          <span>সব কপি হয়েছে!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-4 h-4" />
+                          <span>📋 সম্পূর্ণ তথ্য ১-ক্লিকে কপি</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Grid of Course Detail Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Card 1: Pricing & Info */}
+                  <div className="p-6 rounded-3xl bg-[#161b22] border border-slate-800 space-y-4 shadow-xl">
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                      <div className="flex items-center gap-2 text-xs font-bold text-white">
+                        <Tag className="w-4 h-4 text-emerald-400" />
+                        <span>কোর্স ফি ও কোড</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const pText = `রেগুলার: ৳${extractedDetails.regularPrice}, অফার: ৳${extractedDetails.offerPrice}`;
+                          handleCopyDetailText(pText, 'pricing');
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 font-bold flex items-center gap-1 cursor-pointer transition-all"
+                      >
+                        {copiedDetailKey === 'pricing' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                        <span>{copiedDetailKey === 'pricing' ? 'কপি হয়েছে' : 'কপি'}</span>
+                      </button>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-3 rounded-2xl bg-[#0d1117] border border-slate-800/80">
+                        <span className="text-xs text-slate-400">রেগুলার ফি:</span>
+                        <span className="text-sm font-bold text-slate-300 line-through">
+                          ৳{extractedDetails.regularPrice ? Number(extractedDetails.regularPrice).toLocaleString() : '0'}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+                        <span className="text-xs font-bold text-emerald-300">অফার প্রাইস:</span>
+                        <span className="text-lg font-black text-emerald-400">
+                          ৳{extractedDetails.offerPrice ? Number(extractedDetails.offerPrice).toLocaleString() : '0'}
+                        </span>
+                      </div>
+
+                      {extractedDetails.discountPercentage > 0 && (
+                        <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center text-xs font-bold text-amber-300">
+                          🎉 {extractedDetails.discountPercentage}% স্পেশাল ডিসকাউন্ট
+                        </div>
+                      )}
+
+                      {extractedDetails.productCode && (
+                        <div className="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800">
+                          <span>প্রোডাক্ট কোড:</span>
+                          <span className="font-mono text-slate-200">{extractedDetails.productCode}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Card 2: Course Banner Image */}
+                  <div className="p-6 rounded-3xl bg-[#161b22] border border-slate-800 space-y-4 shadow-xl md:col-span-2">
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                      <div className="flex items-center gap-2 text-xs font-bold text-white">
+                        <ImageIcon className="w-4 h-4 text-emerald-400" />
+                        <span>কোর্স ব্যানার ছবি</span>
+                      </div>
+                      {extractedDetails.bannerImage && (
+                        <button
+                          type="button"
+                          onClick={() => handleCopyDetailText(extractedDetails.bannerImage, 'banner')}
+                          className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 font-bold flex items-center gap-1 cursor-pointer transition-all"
+                        >
+                          {copiedDetailKey === 'banner' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                          <span>{copiedDetailKey === 'banner' ? 'লিংক কপি হয়েছে' : 'লিংক কপি'}</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {extractedDetails.bannerImage ? (
+                      <div className="relative rounded-2xl overflow-hidden border border-slate-800 group bg-slate-950">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={extractedDetails.bannerImage}
+                          alt={extractedDetails.courseTitle}
+                          className="w-full max-h-56 object-cover"
+                          crossOrigin="anonymous"
+                        />
+                        <div className="p-3 bg-[#0d1117]/90 border-t border-slate-800 flex items-center justify-between gap-2">
+                          <span className="text-[11px] text-slate-400 font-mono truncate max-w-sm">
+                            {extractedDetails.bannerImage}
+                          </span>
+                          <a
+                            href={extractedDetails.bannerImage}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 text-[11px] font-bold flex items-center gap-1 hover:bg-emerald-500/30 transition-all shrink-0"
+                          >
+                            <span>ওপেন</span>
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-8 rounded-2xl border border-dashed border-slate-800 text-center text-xs text-slate-500">
+                        কোর্সের ব্যানার ছবি শনাক্ত করা যায়নি
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Routines & Drive Spreadsheets */}
+                {extractedDetails.routines && extractedDetails.routines.length > 0 && (
+                  <div className="p-6 rounded-3xl bg-[#161b22] border border-slate-800 space-y-4 shadow-xl">
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                      <div className="flex items-center gap-2 text-xs font-bold text-white">
+                        <FileText className="w-4 h-4 text-emerald-400" />
+                        <span>কোর্স রুটিন ও গুগল ড্রাইভ লিংক ({extractedDetails.routines.length} টি)</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyDetailText(extractedDetails.routines.join('\n'), 'routines')}
+                        className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 font-bold flex items-center gap-1 cursor-pointer transition-all"
+                      >
+                        {copiedDetailKey === 'routines' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                        <span>{copiedDetailKey === 'routines' ? 'কপি হয়েছে' : 'সব লিংক কপি'}</span>
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {extractedDetails.routines.map((link: string, idx: number) => (
+                        <div
+                          key={idx}
+                          className="p-3.5 rounded-2xl bg-[#0d1117] border border-slate-800 flex items-center justify-between gap-3"
+                        >
+                          <div className="flex items-center gap-2.5 overflow-hidden">
+                            <span className="w-6 h-6 rounded-lg bg-emerald-500/10 text-emerald-400 text-xs font-bold flex items-center justify-center shrink-0">
+                              {idx + 1}
+                            </span>
+                            <span className="text-xs text-slate-300 font-mono truncate">{link}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => handleCopyDetailText(link, `routine_${idx}`)}
+                              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-all cursor-pointer"
+                              title="লিংক কপি"
+                            >
+                              {copiedDetailKey === `routine_${idx}` ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                            </button>
+                            <a
+                              href={link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 transition-all"
+                              title="নতুন ট্যাবে ওপেন"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Course Description & Features */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Bengali Description */}
+                  <div className="p-6 rounded-3xl bg-[#161b22] border border-slate-800 space-y-4 shadow-xl flex flex-col">
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                      <div className="flex items-center gap-2 text-xs font-bold text-white">
+                        <Edit3 className="w-4 h-4 text-emerald-400" />
+                        <span>কোর্স বিবরণী (Description)</span>
+                      </div>
+                      {extractedDetails.description && (
+                        <button
+                          type="button"
+                          onClick={() => handleCopyDetailText(extractedDetails.description, 'description')}
+                          className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 font-bold flex items-center gap-1 cursor-pointer transition-all"
+                        >
+                          {copiedDetailKey === 'description' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                          <span>{copiedDetailKey === 'description' ? 'কপি হয়েছে' : 'ডেসক্রিপশন কপি'}</span>
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="flex-1 p-4 rounded-2xl bg-[#0d1117] border border-slate-800 text-xs text-slate-300 leading-relaxed max-h-[380px] overflow-y-auto whitespace-pre-line select-text scrollbar-thin">
+                      {extractedDetails.description || 'কোনো ডেসক্রিপশন পাওয়া যায়নি।'}
+                    </div>
+                  </div>
+
+                  {/* Course Features / Highlights */}
+                  <div className="p-6 rounded-3xl bg-[#161b22] border border-slate-800 space-y-4 shadow-xl flex flex-col">
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                      <div className="flex items-center gap-2 text-xs font-bold text-white">
+                        <Award className="w-4 h-4 text-emerald-400" />
+                        <span>কোর্স ফিচারসমূহ (Features)</span>
+                      </div>
+                      {extractedDetails.features && extractedDetails.features.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const featText = extractedDetails.features.map((f: string) => '• ' + f).join('\n');
+                            handleCopyDetailText(featText, 'features');
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 font-bold flex items-center gap-1 cursor-pointer transition-all"
+                        >
+                          {copiedDetailKey === 'features' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                          <span>{copiedDetailKey === 'features' ? 'কপি হয়েছে' : 'ফিচার কপি'}</span>
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="flex-1 p-4 rounded-2xl bg-[#0d1117] border border-slate-800 space-y-2.5 max-h-[380px] overflow-y-auto select-text scrollbar-thin">
+                      {extractedDetails.features && extractedDetails.features.length > 0 ? (
+                        extractedDetails.features.map((feat: string, idx: number) => (
+                          <div key={idx} className="flex items-start gap-2.5 text-xs text-slate-300">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                            <span className="leading-relaxed">{feat}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-xs text-slate-500">কোনো ফিচার শনাক্ত হয়নি।</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* FAQs Section if exists */}
+                {extractedDetails.faqs && extractedDetails.faqs.length > 0 && (
+                  <div className="p-6 rounded-3xl bg-[#161b22] border border-slate-800 space-y-4 shadow-xl">
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                      <div className="flex items-center gap-2 text-xs font-bold text-white">
+                        <HelpCircle className="w-4 h-4 text-emerald-400" />
+                        <span>সচরাচর জিজ্ঞাসা ও প্রশ্নোত্তর (FAQs)</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const faqText = extractedDetails.faqs.map((faq: any) => `প্রশ্ন: ${faq.question}\nউত্তর: ${faq.answer}`).join('\n\n');
+                          handleCopyDetailText(faqText, 'faqs');
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 font-bold flex items-center gap-1 cursor-pointer transition-all"
+                      >
+                        {copiedDetailKey === 'faqs' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                        <span>{copiedDetailKey === 'faqs' ? 'কপি হয়েছে' : 'সব FAQ কপি'}</span>
+                      </button>
+                    </div>
+
+                    <div className="space-y-3">
+                      {extractedDetails.faqs.map((faq: any, idx: number) => (
+                        <div key={idx} className="p-4 rounded-2xl bg-[#0d1117] border border-slate-800 space-y-2 select-text">
+                          <div className="flex items-center justify-between gap-2 text-xs font-bold text-emerald-300">
+                            <span>❓ {faq.question}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleCopyDetailText(`প্রশ্ন: ${faq.question}\nউত্তর: ${faq.answer}`, `faq_${idx}`)}
+                              className="text-[10px] text-slate-400 hover:text-white px-2 py-0.5 rounded bg-slate-800 shrink-0 cursor-pointer"
+                            >
+                              {copiedDetailKey === `faq_${idx}` ? 'কপি হয়েছে' : 'কপি'}
+                            </button>
+                          </div>
+                          <p className="text-xs text-slate-400 leading-relaxed pl-5">
+                            {faq.answer}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Bookmarklet Explanation Guide Box */}
+                <div className="p-6 rounded-3xl bg-gradient-to-br from-[#161b22] to-[#111827] border border-emerald-500/20 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
+                      <MousePointerClick className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-white">
+                        বিকল্প সহজ উপায়: সরাসরি Apar&apos;s Classroom পেজে কপি আনলক করবেন কীভাবে?
+                      </h4>
+                      <p className="text-xs text-slate-400">
+                        এই বুকমার্কলেট ব্যবহার করলে ব্রাউজারের বুকমার্ক বারে ১-ক্লিকেই যেকোনো ব্লক পেজের টেক্সট আনলক হয়ে যাবে:
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-slate-400 pt-2">
+                    <div className="p-3.5 rounded-2xl bg-[#0d1117] border border-slate-800 space-y-1">
+                      <span className="font-bold text-emerald-400">১. বুকমার্ক তৈরি:</span>
+                      <p className="leading-relaxed">
+                        ব্রাউজারের বুকমার্ক বারে রাইট ক্লিক করে &quot;Add Page&quot; বা &quot;Add bookmark&quot; দিন এবং নামের জায়গায় লিখুন <strong>&quot;🔓 Unlock Copy&quot;</strong>।
+                      </p>
+                    </div>
+                    <div className="p-3.5 rounded-2xl bg-[#0d1117] border border-slate-800 space-y-1">
+                      <span className="font-bold text-emerald-400">২. কোড পেস্ট:</span>
+                      <p className="leading-relaxed">
+                        URL বক্সে উপরের <strong>&quot;⭐ ১-ক্লিক কপি আনলকার বুকমার্কলেট&quot;</strong> বাটনে ক্লিক করে কপি করা কোডটি পেস্ট করে Save দিন।
+                      </p>
+                    </div>
+                    <div className="p-3.5 rounded-2xl bg-[#0d1117] border border-slate-800 space-y-1">
+                      <span className="font-bold text-emerald-400">৩. যেকোনো সময় ১-ক্লিক:</span>
+                      <p className="leading-relaxed">
+                        এখন যেকোনো ACS কোর্স পেজে গিয়ে বুকমার্কে ক্লিক করলেই সাথে সাথে ব্লক উঠে যাবে এবং মাউস দিয়ে টেনে সব টেক্সট কপি করা যাবে!
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
     </div>
   );
 }
+
 

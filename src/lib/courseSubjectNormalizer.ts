@@ -135,15 +135,111 @@ export const CHAPTER_SYNONYMS: Record<string, string> = {
   'চলন ও অঙ্গচালনা': 'চলন ও অঙ্গচালনা'
 };
 
+export const ACADEMIC_CHAPTER_PATTERNS: { name: string; regex: RegExp }[] = [
+  // উচ্চতর গণিত ১ম ও ২য় পত্র
+  { name: 'ম্যাট্রিক্স ও নির্ণায়ক', regex: /ম্যাট্রিক্স|নির্ণায়ক|নির্ণায়ক|matrix|matrices|determinant/i },
+  { name: 'সরলরেখা', regex: /সরলরেখা|straight\s*line/i },
+  { name: 'বৃত্ত', regex: /বৃত্ত|circle/i },
+  { name: 'বিন্যাস ও সমাবেশ', regex: /বিন্যাস|সমাবেশ|permutation|combination/i },
+  { name: 'সংযুক্ত কোণের ত্রিকোণমিতিক অনুপাত', regex: /ত্রিকোণমিতি|ত্রিকোনমিতি|সংযুক্ত\s*কোণ|সংযুক্ত\s*কোন|trigonometry/i },
+  { name: 'ফাংশন ও ফাংশনের লেখচিত্র', regex: /ফাংশন|লেখচিত্র|function/i },
+  { name: 'অন্তরীকরণ', regex: /অন্তরীকরণ|অন্তরিকরন|differentiation|derivative/i },
+  { name: 'যোগজীকরণ', regex: /যোগজীকরণ|যোগজিকরন|integration|integral|ক্যালকুলাস|calculus/i },
+  { name: 'যোগাশ্রয়ী প্রোগ্রাম', regex: /যোগাশ্রয়ী|যোগাশ্রয়ী|linear\s*programming/i },
+  { name: 'কণিক', regex: /কণিক|কনিক|পরাবৃত্ত|উপবৃত্ত|অধিবৃত্ত|conic/i },
+  { name: 'জটিল সংখ্যা', regex: /জটিল\s*সংখ্যা|complex\s*number/i },
+  { name: 'বহুপদী ও বহুপদী সমীকরণ', regex: /বহুপদী|polynomial/i },
+  { name: 'দ্বিপদী বিস্তৃতি', regex: /দ্বিপদী|binomial/i },
+  { name: 'বিপরীত ত্রিকোণমিতিক ফাংশন', regex: /বিপরীত\s*ত্রিকোণমিতিক|inverse\s*trig/i },
+  { name: 'স্থিতিবিদ্যা', regex: /স্থিতিবিদ্যা|statics/i },
+  { name: 'সমতলে বস্তুকণার গতি', regex: /সমতলে\s*বস্তুকণা|বস্তুকণার\s*গতি|প্রাস|projectile/i },
+  { name: 'বিস্তার পরিমাপ ও সম্ভাবনা', regex: /বিস্তার\s*পরিমাপ|সম্ভাবনা|probability/i },
+
+  // পদার্থবিজ্ঞান ১ম ও ২য় পত্র
+  { name: 'ভৌতজগৎ ও পরিমাপ', regex: /ভৌত\s*জগৎ|ভৌতজগৎ|পরিমাপ|physical\s*world/i },
+  { name: 'ভেক্টর', regex: /ভেক্টর|vector/i },
+  { name: 'গতিবিদ্যা', regex: /(?<!তাপ)গতিবিদ্যা|dynamics|motion/i },
+  { name: 'নিউটনীয় বলবিদ্যা', regex: /নিউটনীয়|নিউটনিয়ান|বলবিদ্যা|newtonian|mechanics/i },
+  { name: 'কাজ, শক্তি ও ক্ষমতা', regex: /কাজ.*শক্তি|শক্তি.*কাজ|কাজ.*ক্ষমতা|work\s*power|power.*energy/i },
+  { name: 'মহাকর্ষ ও অভিকর্ষ', regex: /মহাকর্ষ|অভিকর্ষ|gravit/i },
+  { name: 'পদার্থের গাঠনিক ধর্ম', regex: /পদার্থের\s*গাঠনিক|গাঠনিক\s*ধর্ম|elasticity|surface\s*tension/i },
+  { name: 'পর্যাবৃত্ত গতি', regex: /পর্যাবৃত্ত|periodic\s*motion/i },
+  { name: 'তরঙ্গ', regex: /তরঙ্গ|waves|শব্দ\s*তরঙ্গ/i },
+  { name: 'আদর্শ গ্যাস ও গতিতত্ত্ব', regex: /আদর্শ\s*গ্যাস|গতিতত্ত্ব|ideal\s*gas/i },
+  { name: 'তাপগতিবিদ্যা', regex: /তাপগতিবিদ্যা|thermodynamics/i },
+  { name: 'স্থির তড়িৎ', regex: /স্থির\s*তড়িৎ|স্থির\s*তড়িৎ|electrostatic/i },
+  { name: 'চল তড়িৎ', regex: /চল\s*তড়িৎ|চল\s*তড়িৎ|current\s*electric/i },
+  { name: 'তড়িৎ প্রবাহের চৌম্বক ক্রিয়া ও চুম্বকত্ব', regex: /চৌম্বক\s*ক্রিয়া|চুম্বকত্ব|magnet/i },
+  { name: 'তাড়িতচৌম্বকীয় আবেশ ও পরিবর্তী প্রবাহ', regex: /তাড়িতচৌম্বকীয়|আবেশ|পরিবর্তী\s*প্রবাহ|ac\s*current/i },
+  { name: 'জ্যামিতিক আলোকবিজ্ঞান', regex: /জ্যামিতিক\s*আলোক|geometric\s*optics/i },
+  { name: 'ভৌত আলোকবিজ্ঞান', regex: /ভৌত\s*আলোক|wave\s*optics/i },
+  { name: 'আধুনিক পদার্থবিজ্ঞানের সূচনা', regex: /আধুনিক\s*পদার্থ|আপেক্ষিকতা|relativity/i },
+  { name: 'পরমাণু মডেল ও নিউক্লিয়ার পদার্থবিজ্ঞান', regex: /পরমাণু\s*মডেল|নিউক্লিয়ার|nuclear|bohr\s*model/i },
+  { name: 'সেমিকন্ডাক্টর ও ইলেকট্রনিক্স', regex: /সেমিকন্ডাক্টর|ইলেকট্রনিক্স|semiconductor|transistor/i },
+
+  // রসায়ন ১ম ও ২য় পত্র
+  { name: 'ল্যাবরেটরির নিরাপদ ব্যবহার', regex: /ল্যাবরেটরি|নিরাপদ\s*ব্যবহার|laboratory/i },
+  { name: 'গুণগত রসায়ন', regex: /গুণগত|গুনগত|qualitative\s*chem/i },
+  { name: 'মৌলের পর্যাবৃত্ত ধর্ম ও রাসায়নিক বন্ধন', regex: /মৌলের\s*পর্যাবৃত্ত|পর্যাবৃত্তিক\s*ধর্ম|রাসায়নিক\s*বন্ধন|periodic\s*propert/i },
+  { name: 'রাসায়নিক পরিবর্তন', regex: /রাসায়নিক\s*পরিবর্তন|রাসায়নিক\s*পরিবর্তন|chemical\s*change/i },
+  { name: 'কর্মমুখী রসায়ন', regex: /কর্মমুখী|applied\s*chem/i },
+  { name: 'পরিবেশ রসায়ন', regex: /পরিবেশ\s*রসায়ন|পরিবেশ\s*রসায়ন|environmental\s*chem/i },
+  { name: 'জৈব যৌগ', regex: /জৈব\s*যৌগ|জৈব\s*রসায়ন|জৈব\s*রসায়ন|organic\s*chem/i },
+  { name: 'পরিমাণগত রসায়ন', regex: /পরিমাণগত|পরিমানগত|quantitative\s*chem/i },
+  { name: 'তড়িৎ রসায়ন', regex: /তড়িৎ\s*রসায়ন|তড়িৎ\s*রসায়ন|electrochem/i },
+  { name: 'অর্থনৈতিক রসায়ন', regex: /অর্থনৈতিক\s*রসায়ন|industrial\s*chem/i },
+
+  // জীববিজ্ঞান (উদ্ভিদ ও প্রাণী)
+  { name: 'কোষ ও এর গঠন', regex: /কোষ\s*ও\s*এর\s*গঠন|cell\s*structure/i },
+  { name: 'কোষ বিভাজন', regex: /কোষ\s*বিভাজন|cell\s*division|mitosis|meiosis/i },
+  { name: 'কোষ রসায়ন', regex: /কোষ\s*রসায়ন|কার্বোহাইড্রেট|প্রোটিন|লিপিড|এনজাইম/i },
+  { name: 'অনুজীব', regex: /অনুজীব|অণুজীব|ভাইরাস|ব্যাকটেরিয়া|microbiology/i },
+  { name: 'শৈবাল ও ছত্রাক', regex: /শৈবাল|ছত্রাক|algae|fungi/i },
+  { name: 'ব্রায়োফাইটা ও টেরেডোফাইটা', regex: /ব্রায়োফাইটা|টেরেডোফাইটা|bryophyta/i },
+  { name: 'নগ্নবীজী ও আবৃতবীজী উদ্ভিদ', regex: /নগ্নবীজী|আবৃতবীজী|gymnosperm|angiosperm/i },
+  { name: 'টিস্যু ও টিস্যুতন্ত্র', regex: /টিস্যু\s*ও\s*টিস্যুতন্ত্র|plant\s*tissue/i },
+  { name: 'উদ্ভিদ শারীরতত্ত্ব', regex: /উদ্ভিদ\s*শারীরতত্ত্ব|সালোকসংশ্লেষণ|শ্বসন|photosynthesis/i },
+  { name: 'উদ্ভিদ প্রজনন', regex: /উদ্ভিদ\s*প্রজনন|reproduction/i },
+  { name: 'জীবপ্রযুক্তি', regex: /জীবপ্রযুক্তি|বায়োটেকনোলজি|biotechnology|genetic\s*engineering/i },
+  { name: 'জীবের পরিবেশ, বিস্তার ও সংরক্ষণ', regex: /জীবের\s*পরিবেশ|ইকোলজি|ecology|conservation/i },
+  { name: 'প্রাণীর বিভিন্নতা ও শ্রেণিবিন্যাস', regex: /প্রাণীর\s*বিভিন্নতা|শ্রেণিবিন্যাস|শ্রেণীবিন্যাস|animal\s*diversity/i },
+  { name: 'প্রাণির পরিচিতি', regex: /হাইড্রা|ঘাসফড়িং|রুই\s*মাছ|প্রাণির\s*পরিচিতি/i },
+  { name: 'পরিপাক ও শোষণ', regex: /পরিপাক|শোষণ|digestion/i },
+  { name: 'রক্ত ও সংবহন', regex: /রক্ত|সংবহন|হৃদপিণ্ড|circulat/i },
+  { name: 'শ্বসন ও শ্বাসক্রিয়া', regex: /শ্বসন|শ্বাসক্রিয়া|respirat/i },
+  { name: 'বর্জ্য ও নিষ্কাশন', regex: /বর্জ্য|নিষ্কাশন|বৃক্ক|kidney|excret/i },
+  { name: 'চলন ও অঙ্গচালনা', regex: /চলন|অঙ্গচালনা|কঙ্কাল|হাড়|skelet/i },
+  { name: 'মানব শারীরতত্ত্ব', regex: /সমন্বয়|নিয়ন্ত্রণ|মস্তিষ্ক|হরমোন|nervous/i },
+  { name: 'মানব জীবনের ধারাবাহিকতা', regex: /ধারাবাহিকতা|মানব\s*প্রজনন/i },
+  { name: 'মানবদেহের প্রতিরক্ষা', regex: /প্রতিরক্ষা|ইমিউন|রোগ\s*প্রতিরোধ|immune/i },
+  { name: 'জিনতত্ত্ব ও বিবর্তন', regex: /জিনতত্ত্ব|বিবর্তন|মেন্ডেল|genetics|evolution/i }
+];
+
 export function cleanAndNormalizeChapterTitle(raw: string): string {
   if (!raw) return '';
-  let s = raw
+  const text = raw.trim();
+
+  // ১. সরাসরি একাডেমিক প্যাটার্ন ম্যাচিং (১০০% নিখুঁত)
+  for (const item of ACADEMIC_CHAPTER_PATTERNS) {
+    if (item.regex.test(text)) {
+      return item.name;
+    }
+  }
+
+  // ২. যদি একাডেমিক না হয়, তখন প্রিফিক্স ও সাফিক্স পরিষ্কার করা
+  let s = text
     .replace(/[✔✅▶⏩🔹📌🔥•\*\_~\|\#\(\)\[\]\{\}]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 
-  s = s.replace(/^(?:physics|chemistry|math|higher math|biology|ict|বাংলা|গণিত|পদার্থ|রসায়ন|ch-?\d+|chapter-?\d+)\s*[:–—\-]\s*/i, '');
+  // সামনে থেকে Class 1:, Lecture 01:, ইত্যাদি সরানো
+  s = s
+    .replace(/^(?:class|ক্লাস|lecture|লেকচার|part|পার্ট|পর্ব|ep|episode|লে)\s*[\d০-৯a-zA-Z]*\s*[:–—\-।.]\s*/i, '')
+    .replace(/^[\d০-৯]+[\.\s:–—\-]+\s*/, '')
+    .replace(/^(?:physics|chemistry|math|higher math|biology|ict|বাংলা|গণিত|উচ্চতর গণিত|পদার্থ|রসায়ন|ch-?\d+|chapter-?\d+|অধ্যায়-?\s*[\d০-৯]*)\s*[:–—\-]\s*/i, '')
+    .trim();
 
+  // পেছন থেকে Lecture 1, Part 1 ইত্যাদি সরানো
   let prev = '';
   while (s !== prev) {
     prev = s;
