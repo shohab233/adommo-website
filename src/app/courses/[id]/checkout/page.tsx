@@ -28,7 +28,7 @@ export default function CourseCheckoutPage({
 }) {
   const resolvedParams = React.use(params);
   const router = useRouter();
-  const { courses, enrollInCourse, isEnrolled, showToast, currentUser } = useApp();
+  const { courses, enrollInCourse, isEnrolled, showToast, currentUser, verifyCoupon, coupons } = useApp();
 
   const course = courses.find((c) => c.id === resolvedParams.id) || courses[0];
   const enrolled = course ? isEnrolled(course.id) : false;
@@ -53,8 +53,8 @@ export default function CourseCheckoutPage({
   const [couponCode, setCouponCode] = useState('');
   const [discountApplied, setDiscountApplied] = useState(0);
   const [couponSuccess, setCouponSuccess] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
   const paymentNumbers = {
@@ -65,29 +65,52 @@ export default function CourseCheckoutPage({
 
   const finalAmount = Math.max(0, course.offerPrice - discountApplied);
 
-  const handleCopyNumber = () => {
-    navigator.clipboard.writeText(paymentNumbers[paymentMethod].replace(/-/g, ''));
+  // Available real active coupons for this course
+  const availableCoupons = React.useMemo(() => {
+    const list: { code: string; label: string }[] = [];
+    if (course.couponCode) {
+      list.push({
+        code: course.couponCode.toUpperCase(),
+        label: `${course.couponCode.toUpperCase()} (৳${course.couponDiscount || 200} ছাড়)`,
+      });
+    }
+    (coupons || []).forEach((c) => {
+      if (!c.isActive) return;
+      if (c.expiresAt && new Date(c.expiresAt).getTime() < Date.now()) return;
+      if (c.applicableCourse && c.applicableCourse !== 'all' && c.applicableCourse !== course.id) return;
+      if (list.some((item) => item.code === c.code.toUpperCase())) return;
+      const discountTxt = c.discountType === 'percentage' ? `${c.discountValue}% ছাড়` : `৳${c.discountValue} ছাড়`;
+      list.push({
+        code: c.code.toUpperCase(),
+        label: `${c.code.toUpperCase()} (${discountTxt})`,
+      });
+    });
+    return list;
+  }, [course, coupons]);
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
     setCopied(true);
     showToast('নম্বর কপি করা হয়েছে!');
     setTimeout(() => setCopied(false), 2000);
   };
 
   const applyCoupon = (codeToUse?: string) => {
-    const code = (codeToUse || couponCode).toUpperCase().trim();
-    if (code === 'ADOMMO200') {
-      const discount = Math.min(200, course.offerPrice);
-      setDiscountApplied(discount);
+    const code = (codeToUse || couponCode).trim().toUpperCase();
+    if (!code) {
+      showToast('দয়া করে কুপন কোড লিখুন');
+      return;
+    }
+    const result = verifyCoupon(code, course);
+    if (result.valid) {
+      setDiscountApplied(result.discountAmount);
       setCouponSuccess(true);
-      setCouponCode('ADOMMO200');
-      showToast('🎉 ২০০ টাকা স্পেশাল কুপন ডিসকাউন্ট সফলভাবে যুক্ত হয়েছে!');
-    } else if (code === 'PHY2026') {
-      const discount = Math.round(course.offerPrice * 0.15);
-      setDiscountApplied(discount);
-      setCouponSuccess(true);
-      setCouponCode('PHY2026');
-      showToast(`🎉 কুপন কোড PHY2026 সফলভাবে যুক্ত হয়েছে! ১৫% (৳${discount}) ছাড় পেলেন।`);
+      setCouponCode(code);
+      showToast(result.message);
     } else {
-      showToast('⚠️ সঠিক কুপন কোড লিখুন (যেমন: ADOMMO200)');
+      setDiscountApplied(0);
+      setCouponSuccess(false);
+      showToast(result.message);
     }
   };
 
@@ -295,7 +318,7 @@ export default function CourseCheckoutPage({
 
                   <button
                     type="button"
-                    onClick={handleCopyNumber}
+                    onClick={() => handleCopy(paymentNumbers[paymentMethod])}
                     className="px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-700 border border-slate-200 hover:bg-slate-100 transition-colors flex items-center gap-1.5 shadow-xs shrink-0"
                   >
                     {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-slate-500" />}
@@ -385,23 +408,21 @@ export default function CourseCheckoutPage({
                     </button>
                   </div>
 
-                  <div className="flex items-center gap-2 text-[10px] text-slate-500 flex-wrap pt-0.5">
-                    <span className="font-semibold text-slate-400">ক্লিক করে কুপন নিন:</span>
-                    <button
-                      type="button"
-                      onClick={() => applyCoupon('ADOMMO200')}
-                      className="px-2.5 py-1 rounded-lg bg-white border border-pink-200 text-[#ed347d] font-bold hover:bg-pink-50 transition-colors"
-                    >
-                      ADOMMO200 (৳২০০ ছাড়)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => applyCoupon('PHY2026')}
-                      className="px-2.5 py-1 rounded-lg bg-white border border-pink-200 text-[#ed347d] font-bold hover:bg-pink-50 transition-colors"
-                    >
-                      PHY2026 (১৫% ছাড়)
-                    </button>
-                  </div>
+                  {availableCoupons.length > 0 && (
+                    <div className="flex items-center gap-2 text-[10px] text-slate-500 flex-wrap pt-0.5">
+                      <span className="font-semibold text-slate-400">উপলব্ধ কুপন:</span>
+                      {availableCoupons.map((c) => (
+                        <button
+                          key={c.code}
+                          type="button"
+                          onClick={() => applyCoupon(c.code)}
+                          className="px-2.5 py-1 rounded-lg bg-white border border-pink-200 text-[#ed347d] font-bold hover:bg-pink-50 transition-colors cursor-pointer"
+                        >
+                          🏷️ {c.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Submit Action */}

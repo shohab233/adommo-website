@@ -37,33 +37,49 @@ export default function CourseDetailsPage({
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isPlayingTrailer, setIsPlayingTrailer] = useState(false);
 
-  // Live Countdown Timer (PhyHunt exact feature)
+  const course = courses.find((c) => c.id === resolvedParams.id);
+
+  // Dynamic Live Countdown Timer (PhyHunt exact feature with real course data)
   const [timeLeft, setTimeLeft] = useState({
-    days: 4,
-    hours: 14,
-    minutes: 32,
-    seconds: 45,
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
   });
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev.seconds > 0) {
-          return { ...prev, seconds: prev.seconds - 1 };
-        } else if (prev.minutes > 0) {
-          return { ...prev, minutes: 59, seconds: 59 };
-        } else if (prev.hours > 0) {
-          return { ...prev, hours: prev.hours - 1, minutes: 59, seconds: 59 };
-        } else if (prev.days > 0) {
-          return { ...prev, days: prev.days - 1, hours: 23, minutes: 59, seconds: 59 };
-        }
-        return prev;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+    if (!course) return;
 
-  const course = courses.find((c) => c.id === resolvedParams.id);
+    const computeTargetMs = () => {
+      if (course.discountExpires) {
+        const ms = new Date(course.discountExpires).getTime();
+        if (!isNaN(ms)) return ms;
+      }
+      if (course.countdownDays !== undefined || course.countdownHours !== undefined) {
+        const base = new Date((course as any).updatedAt || (course as any).createdAt || Date.now()).getTime();
+        return base + ((course.countdownDays || 0) * 86400000) + ((course.countdownHours || 0) * 3600000);
+      }
+      // Default fallback 4 days 14 hours
+      return Date.now() + (4 * 86400000) + (14 * 3600000);
+    };
+
+    const targetMs = computeTargetMs();
+
+    const updateTimer = () => {
+      const now = Date.now();
+      const diff = Math.max(0, targetMs - now);
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      setTimeLeft({ days, hours, minutes, seconds });
+    };
+
+    updateTimer();
+    const timer = setInterval(updateTimer, 1000);
+    return () => clearInterval(timer);
+  }, [course?.id, course?.discountExpires, course?.countdownDays, course?.countdownHours]);
 
   if (!course) {
     return (
@@ -504,11 +520,11 @@ export default function CourseDetailsPage({
               </div>
 
               {/* Coupon Code Banner */}
-              {course.offerPrice > 0 && !enrolled && (
+              {course.offerPrice > 0 && !enrolled && course.couponCode && (
                 <div className="p-2.5 rounded-2xl bg-[#fff2f7] border border-[#fecdd3] flex items-center justify-between text-xs">
                   <div className="flex items-center gap-1.5 font-bold text-[#ed347d]">
                     <Tag className="w-3.5 h-3.5" />
-                    <span>কুপন কোড: <strong>{course.couponCode || 'ADOMMO200'}</strong></span>
+                    <span>কুপন কোড: <strong>{course.couponCode}</strong></span>
                   </div>
                   <span className="text-[10px] font-black bg-[#ed347d] text-white px-2 py-0.5 rounded-full">
                     ৳{course.couponDiscount || 200} ছাড়

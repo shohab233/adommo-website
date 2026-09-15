@@ -1087,7 +1087,12 @@ export default function TeacherDashboardPage() {
     const leadMentor = wMentors[0];
     const existingCourse = editingCourseId ? courses.find(c => c.id === editingCourseId) : null;
 
+    const discountExpires = new Date(
+      Date.now() + (Number(wCountdownDays || 0) * 86400000) + (Number(wCountdownHours || 0) * 3600000)
+    ).toISOString();
+
     const coursePayload = {
+      ...(existingCourse || {}),
       title: wTitle.trim(),
       category: wCategory,
       level: wLevel,
@@ -1114,6 +1119,7 @@ export default function TeacherDashboardPage() {
       routineTitle: wRoutineTitle,
       countdownDays: Number(wCountdownDays) || 4,
       countdownHours: Number(wCountdownHours) || 14,
+      discountExpires: discountExpires,
       comboCourseIds: wComboIds,
       couponCode: wCouponCode,
       couponDiscount: Number(wCouponDiscount) || 200,
@@ -1122,10 +1128,10 @@ export default function TeacherDashboardPage() {
       teacherEmail: currentUser.email || existingCourse?.teacherEmail || '',
       teacherPhone: currentUser.phone || existingCourse?.teacherPhone || '',
       instructor: {
-        name: currentUser.name || leadMentor?.name || 'সুমন হোসেন',
-        designation: leadMentor?.role || 'লিড ইনস্ট্রাক্টর',
-        institution: currentUser.college || leadMentor?.institution || 'বুয়েট (BUET)',
-        avatar: currentUser.avatar || leadMentor?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+        name: currentUser.name || leadMentor?.name || existingCourse?.instructor?.name || 'সুমন হোসেন',
+        designation: leadMentor?.role || existingCourse?.instructor?.designation || 'লিড ইনস্ট্রাক্টর',
+        institution: currentUser.college || leadMentor?.institution || existingCourse?.instructor?.institution || 'বুয়েট (BUET)',
+        avatar: currentUser.avatar || leadMentor?.avatar || existingCourse?.instructor?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
       },
     };
 
@@ -4043,30 +4049,75 @@ export default function TeacherDashboardPage() {
                       </div>
                       <p className="text-xs text-slate-500 mt-0.5">
                         {editingCourseId
-                          ? 'কোর্সের যেকোনো তথ্য পরিবর্তন করে ৭ম ধাপে গিয়ে আপডেট সংরক্ষণ করুন।'
+                          ? 'যেকোনো ধাপে প্রয়োজনীয় তথ্য সংশোধন করে সরাসরি "💾 এখনই পরিবর্তন সেভ করুন" বাটনে ক্লিক করলেই পরিবর্তন সংরক্ষিত হবে।'
                           : 'ধাপে ধাপে তথ্য দিয়ে কোর্স কার্ড ও ডিটেইলস পেজের যাবতীয় ফিচার সম্পূর্ণ করুন।'}
                       </p>
                     </div>
 
                     <div className="flex items-center gap-2 flex-wrap">
-                      {editingCourseId && (
+                      {editingCourseId ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => handlePublishWizardCourse(false)}
+                            className="px-4 py-2 rounded-xl text-xs font-black text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-md shadow-emerald-500/25 flex items-center gap-1.5 cursor-pointer hover:scale-[1.02] transition-transform"
+                          >
+                            <Check className="w-3.5 h-3.5 stroke-[3]" />
+                            <span>💾 এখনই পরিবর্তন সেভ করুন</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handlePublishWizardCourse(true)}
+                            className="px-3 py-2 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
+                          >
+                            খসড়া আপডেট
+                          </button>
+                          <button
+                            type="button"
+                            onClick={cancelEditingCourse}
+                            className="px-3 py-2 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors cursor-pointer"
+                          >
+                            এডিট বাতিল
+                          </button>
+                        </>
+                      ) : (
                         <button
                           type="button"
-                          onClick={cancelEditingCourse}
-                          className="px-3.5 py-2 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors cursor-pointer"
+                          onClick={() => handlePublishWizardCourse(true)}
+                          className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
                         >
-                          এডিট বাতিল
+                          খসড়া (Draft) সেভ
                         </button>
                       )}
-                      <button
-                        type="button"
-                        onClick={() => handlePublishWizardCourse(true)}
-                        className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
-                      >
-                        {editingCourseId ? 'খসড়া আপডেট' : 'খসড়া (Draft) সেভ'}
-                      </button>
                     </div>
                   </div>
+
+                  {/* Edit Mode Alert Banner */}
+                  {editingCourseId && (
+                    <div className="bg-gradient-to-r from-amber-50 via-pink-50/50 to-emerald-50 p-4 rounded-2xl border border-amber-200/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5">
+                        <span className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-black text-sm shadow-sm shrink-0">
+                          ✏️
+                        </span>
+                        <div>
+                          <h4 className="text-xs sm:text-sm font-black text-slate-900">
+                            কোর্স এডিট মোড চালু আছে: <span className="text-[#ed347d]">"{wTitle || 'কোর্স'}"</span>
+                          </h4>
+                          <p className="text-[11px] text-slate-600 mt-0.5">
+                            সবগুলো ধাপ পার হওয়ার কোনো প্রয়োজন নেই। যেকোনো তথ্য বা মূল্য পরিবর্তন করে সরাসরি <strong>"💾 এখনই পরিবর্তন সেভ করুন"</strong> বাটনে চাপলেই পূর্বের সকল ক্লাস, পরীক্ষা ও শিট অক্ষুণ্ণ রেখে কোর্সটি আপডেট হয়ে যাবে।
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handlePublishWizardCourse(false)}
+                        className="self-end sm:self-center px-4 py-2 rounded-xl text-xs font-black text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-md shadow-emerald-500/25 flex items-center gap-1.5 shrink-0 cursor-pointer"
+                      >
+                        <Check className="w-3.5 h-3.5 stroke-[3]" />
+                        <span>সেভ করুন</span>
+                      </button>
+                    </div>
+                  )}
 
                   {/* 7-Step Capsule Progress Stepper */}
                   <div className="bg-white p-2.5 rounded-2xl border border-slate-200/80 shadow-xs overflow-x-auto custom-scrollbar">
@@ -4188,18 +4239,71 @@ export default function TeacherDashboardPage() {
                           />
                         </div>
 
-                        {/* Thumbnail / Cover Image with Presets */}
-                        <div className="space-y-2 pt-2 border-t border-slate-100">
+                        {/* Thumbnail / Cover Image with Direct File Upload & URL Presets */}
+                        <div className="space-y-3 pt-2 border-t border-slate-100">
                           <label className="text-xs font-bold text-slate-700 block">
-                            কোর্স থাম্বনেইল / কভার ইমেজ লিংক (URL)
+                            কোর্স থাম্বনেইল / কভার ইমেজ
                           </label>
-                          <div className="flex gap-2">
+
+                          {/* 1. Direct File Upload Box */}
+                          <label className="flex flex-col items-center justify-center border-2 border-dashed border-slate-300 hover:border-[#ed347d] rounded-2xl p-4 cursor-pointer bg-slate-50/70 hover:bg-[#fff9fb] transition-all group">
+                            <div className="flex items-center gap-2 text-slate-700 group-hover:text-[#ed347d]">
+                              <UploadCloud className="w-5 h-5 text-slate-500 group-hover:text-[#ed347d] transition-colors" />
+                              <span className="text-xs font-bold">ডিভাইস থেকে ছবি আপলোড করুন (Upload Image)</span>
+                            </div>
+                            <span className="text-[11px] text-slate-400 mt-1">PNG, JPG, JPEG বা WEBP (সর্বোচ্চ ৫ MB)</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  if (file.size > 5 * 1024 * 1024) {
+                                    showToast('⚠️ ছবির সাইজ ৫ মেগাবাইট (MB) এর কম হতে হবে');
+                                    return;
+                                  }
+                                  const reader = new FileReader();
+                                  reader.onload = (uploadEvent) => {
+                                    if (uploadEvent.target?.result) {
+                                      setWCoverImage(uploadEvent.target.result as string);
+                                      showToast('✅ ইমেজ সফলভাবে আপলোড হয়েছে!');
+                                    }
+                                  };
+                                  reader.readAsDataURL(file);
+                                }
+                              }}
+                            />
+                          </label>
+
+                          {/* Current Thumbnail Preview */}
+                          {wCoverImage && (
+                            <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-slate-50 border border-slate-200">
+                              <img
+                                src={wCoverImage}
+                                alt="Cover Preview"
+                                className="w-20 h-14 rounded-xl object-cover border border-slate-300 shrink-0"
+                              />
+                              <div className="overflow-hidden flex-1">
+                                <span className="text-[11px] font-bold text-slate-800 block">বর্তমান থাম্বনেইল প্রিভিউ</span>
+                                <span className="text-[10px] text-slate-400 truncate block font-mono">
+                                  {wCoverImage.startsWith('data:') ? 'ডিভাইস থেকে আপলোডকৃত ফাইল' : wCoverImage}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* 2. URL Input */}
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-bold text-slate-500 block">
+                              অথবা সরাসরি ইমেজ লিংক (URL) লিখুন:
+                            </label>
                             <input
                               type="text"
-                              value={wCoverImage}
+                              value={wCoverImage.startsWith('data:') ? '' : wCoverImage}
                               onChange={(e) => setWCoverImage(e.target.value)}
                               placeholder="https://images.unsplash.com/..."
-                              className="flex-1 px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-mono focus:outline-none focus:border-[#ed347d]"
+                              className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-mono focus:outline-none focus:border-[#ed347d]"
                             />
                           </div>
 
@@ -4231,7 +4335,17 @@ export default function TeacherDashboardPage() {
                         </div>
                       </div>
 
-                      <div className="flex justify-end pt-3 border-t border-slate-100">
+                      <div className="flex items-center justify-between pt-3 border-t border-slate-100 flex-wrap gap-2">
+                        {editingCourseId && (
+                          <button
+                            type="button"
+                            onClick={() => handlePublishWizardCourse(false)}
+                            className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-md shadow-emerald-500/25 flex items-center gap-1.5 cursor-pointer hover:scale-[1.02] transition-transform"
+                          >
+                            <Check className="w-4 h-4" />
+                            <span>💾 পরিবর্তন সেভ করুন</span>
+                          </button>
+                        )}
                         <button
                           type="button"
                           onClick={() => {
@@ -4241,7 +4355,7 @@ export default function TeacherDashboardPage() {
                             }
                             setWizardStep(2);
                           }}
-                          className="px-6 py-2.5 rounded-xl text-xs font-bold text-white ph-btn-pink shadow-md flex items-center gap-1.5 cursor-pointer hover:scale-[1.02] transition-transform"
+                          className="ml-auto px-6 py-2.5 rounded-xl text-xs font-bold text-white ph-btn-pink shadow-md flex items-center gap-1.5 cursor-pointer hover:scale-[1.02] transition-transform"
                         >
                           <span>পরবর্তী: মূল্য ও ভর্তি কাউন্টডাউন</span>
                           <ArrowRight className="w-4 h-4" />
@@ -4357,7 +4471,7 @@ export default function TeacherDashboardPage() {
                         </div>
                       </div>
 
-                      <div className="flex justify-between pt-3 border-t border-slate-100">
+                      <div className="flex items-center justify-between pt-3 border-t border-slate-100 flex-wrap gap-2">
                         <button
                           type="button"
                           onClick={() => setWizardStep(1)}
@@ -4366,14 +4480,26 @@ export default function TeacherDashboardPage() {
                           <ArrowLeft className="w-4 h-4" />
                           <span>পূর্ববর্তী</span>
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => setWizardStep(3)}
-                          className="px-6 py-2.5 rounded-xl text-xs font-bold text-white ph-btn-pink shadow-md flex items-center gap-1.5 cursor-pointer hover:scale-[1.02] transition-transform"
-                        >
-                          <span>পরবর্তী: ক্লাস সংখ্যা ও ফিচার</span>
-                          <ArrowRight className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center gap-2">
+                          {editingCourseId && (
+                            <button
+                              type="button"
+                              onClick={() => handlePublishWizardCourse(false)}
+                              className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-md shadow-emerald-500/25 flex items-center gap-1.5 cursor-pointer hover:scale-[1.02] transition-transform"
+                            >
+                              <Check className="w-4 h-4" />
+                              <span>💾 পরিবর্তন সেভ করুন</span>
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => setWizardStep(3)}
+                            className="px-6 py-2.5 rounded-xl text-xs font-bold text-white ph-btn-pink shadow-md flex items-center gap-1.5 cursor-pointer hover:scale-[1.02] transition-transform"
+                          >
+                            <span>পরবর্তী: ক্লাস সংখ্যা ও ফিচার</span>
+                            <ArrowRight className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -4520,7 +4646,7 @@ export default function TeacherDashboardPage() {
                         </div>
                       </div>
 
-                      <div className="flex justify-between pt-3 border-t border-slate-100">
+                      <div className="flex items-center justify-between pt-3 border-t border-slate-100 flex-wrap gap-2">
                         <button
                           type="button"
                           onClick={() => setWizardStep(2)}
@@ -4529,14 +4655,26 @@ export default function TeacherDashboardPage() {
                           <ArrowLeft className="w-4 h-4" />
                           <span>পূর্ববর্তী</span>
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => setWizardStep(4)}
-                          className="px-6 py-2.5 rounded-xl text-xs font-bold text-white ph-btn-pink shadow-md flex items-center gap-1.5 cursor-pointer hover:scale-[1.02] transition-transform"
-                        >
-                          <span>পরবর্তী: ট্রেইলার ও গাইডলাইন ভিডিও</span>
-                          <ArrowRight className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center gap-2">
+                          {editingCourseId && (
+                            <button
+                              type="button"
+                              onClick={() => handlePublishWizardCourse(false)}
+                              className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-md shadow-emerald-500/25 flex items-center gap-1.5 cursor-pointer hover:scale-[1.02] transition-transform"
+                            >
+                              <Check className="w-4 h-4" />
+                              <span>💾 পরিবর্তন সেভ করুন</span>
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => setWizardStep(4)}
+                            className="px-6 py-2.5 rounded-xl text-xs font-bold text-white ph-btn-pink shadow-md flex items-center gap-1.5 cursor-pointer hover:scale-[1.02] transition-transform"
+                          >
+                            <span>পরবর্তী: ট্রেইলার ও গাইডলাইন ভিডিও</span>
+                            <ArrowRight className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -4656,7 +4794,7 @@ export default function TeacherDashboardPage() {
                         </div>
                       </div>
 
-                      <div className="flex justify-between pt-3 border-t border-slate-100">
+                      <div className="flex items-center justify-between pt-3 border-t border-slate-100 flex-wrap gap-2">
                         <button
                           type="button"
                           onClick={() => setWizardStep(3)}
@@ -4665,14 +4803,26 @@ export default function TeacherDashboardPage() {
                           <ArrowLeft className="w-4 h-4" />
                           <span>পূর্ববর্তী</span>
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => setWizardStep(5)}
-                          className="px-6 py-2.5 rounded-xl text-xs font-bold text-white ph-btn-pink shadow-md flex items-center gap-1.5 cursor-pointer hover:scale-[1.02] transition-transform"
-                        >
-                          <span>পরবর্তী: মেন্টর ও ফ্যাকাল্টি প্যানেল</span>
-                          <ArrowRight className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center gap-2">
+                          {editingCourseId && (
+                            <button
+                              type="button"
+                              onClick={() => handlePublishWizardCourse(false)}
+                              className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-md shadow-emerald-500/25 flex items-center gap-1.5 cursor-pointer hover:scale-[1.02] transition-transform"
+                            >
+                              <Check className="w-4 h-4" />
+                              <span>💾 পরিবর্তন সেভ করুন</span>
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => setWizardStep(5)}
+                            className="px-6 py-2.5 rounded-xl text-xs font-bold text-white ph-btn-pink shadow-md flex items-center gap-1.5 cursor-pointer hover:scale-[1.02] transition-transform"
+                          >
+                            <span>পরবর্তী: মেন্টর ও ফ্যাকাল্টি প্যানেল</span>
+                            <ArrowRight className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -4786,7 +4936,7 @@ export default function TeacherDashboardPage() {
                         </div>
                       </div>
 
-                      <div className="flex justify-between pt-3 border-t border-slate-100">
+                      <div className="flex items-center justify-between pt-3 border-t border-slate-100 flex-wrap gap-2">
                         <button
                           type="button"
                           onClick={() => setWizardStep(4)}
@@ -4795,14 +4945,26 @@ export default function TeacherDashboardPage() {
                           <ArrowLeft className="w-4 h-4" />
                           <span>পূর্ববর্তী</span>
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => setWizardStep(6)}
-                          className="px-6 py-2.5 rounded-xl text-xs font-bold text-white ph-btn-pink shadow-md flex items-center gap-1.5 cursor-pointer hover:scale-[1.02] transition-transform"
-                        >
-                          <span>পরবর্তী: সিলেবাস, বিবরণ ও FAQ</span>
-                          <ArrowRight className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center gap-2">
+                          {editingCourseId && (
+                            <button
+                              type="button"
+                              onClick={() => handlePublishWizardCourse(false)}
+                              className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-md shadow-emerald-500/25 flex items-center gap-1.5 cursor-pointer hover:scale-[1.02] transition-transform"
+                            >
+                              <Check className="w-4 h-4" />
+                              <span>💾 পরিবর্তন সেভ করুন</span>
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => setWizardStep(6)}
+                            className="px-6 py-2.5 rounded-xl text-xs font-bold text-white ph-btn-pink shadow-md flex items-center gap-1.5 cursor-pointer hover:scale-[1.02] transition-transform"
+                          >
+                            <span>পরবর্তী: সিলেবাস, বিবরণ ও FAQ</span>
+                            <ArrowRight className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -4982,7 +5144,7 @@ export default function TeacherDashboardPage() {
                         )}
                       </div>
 
-                      <div className="flex justify-between pt-3 border-t border-slate-100">
+                      <div className="flex items-center justify-between pt-3 border-t border-slate-100 flex-wrap gap-2">
                         <button
                           type="button"
                           onClick={() => setWizardStep(5)}
@@ -4991,14 +5153,26 @@ export default function TeacherDashboardPage() {
                           <ArrowLeft className="w-4 h-4" />
                           <span>পূর্ববর্তী</span>
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => setWizardStep(7)}
-                          className="px-6 py-2.5 rounded-xl text-xs font-bold text-white ph-btn-pink shadow-md flex items-center gap-1.5 cursor-pointer hover:scale-[1.02] transition-transform"
-                        >
-                          <span>পরবর্তী: চূড়ান্ত প্রিভিউ ও পাবলিশ</span>
-                          <ArrowRight className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center gap-2">
+                          {editingCourseId && (
+                            <button
+                              type="button"
+                              onClick={() => handlePublishWizardCourse(false)}
+                              className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-md shadow-emerald-500/25 flex items-center gap-1.5 cursor-pointer hover:scale-[1.02] transition-transform"
+                            >
+                              <Check className="w-4 h-4" />
+                              <span>💾 পরিবর্তন সেভ করুন</span>
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => setWizardStep(7)}
+                            className="px-6 py-2.5 rounded-xl text-xs font-bold text-white ph-btn-pink shadow-md flex items-center gap-1.5 cursor-pointer hover:scale-[1.02] transition-transform"
+                          >
+                            <span>পরবর্তী: চূড়ান্ত প্রিভিউ ও পাবলিশ</span>
+                            <ArrowRight className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )}

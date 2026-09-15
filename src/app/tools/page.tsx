@@ -1306,15 +1306,19 @@ const CHAPTER_SYNONYMS: Record<string, string> = {
                 classNo: cl.classNo || (i + 1).toString(),
                 title: classTitle,
                 description: cl.description || '',
-                instructor: cl.instructor || cl.instructorName || 'ACS Instructor',
+                instructor: cl.instructor || cl.instructorName || 'Instructor',
                 videoUrl: cl.videoUrl || '',
                 videoId: cl.videoId || '',
-                hostingType: cl.hostingType || '',
-                lectureSheetPdf: cl.lectureSheetPdf || cl.lectureSheet || null,
-                practiceSheetPdf: cl.practiceSheetPdf || cl.practiceSheet || null,
-                solutionSheetPdf: cl.solutionSheetPdf || cl.solutionSheet || null,
+                hostingType: cl.hostingType || cl.platform || '',
+                streamKey: cl.streamKey || '',
+                platform: cl.platform || '',
+                duration: cl.duration || '',
+                lectureSheetPdf: cl.lectureSheetPdf || cl.lectureSheet || (cl.materials && cl.materials[0]?.url) || null,
+                practiceSheetPdf: cl.practiceSheetPdf || cl.practiceSheet || (cl.materials && cl.materials[1]?.url) || null,
+                solutionSheetPdf: cl.solutionSheetPdf || cl.solutionSheet || (cl.materials && cl.materials[2]?.url) || null,
                 markedBookPdf: cl.markedBookPdf || cl.markedBook || null,
-                notes: cl.notes || []
+                notes: cl.notes || [],
+                materials: cl.materials || []
               };
             });
 
@@ -2527,10 +2531,10 @@ const CHAPTER_SYNONYMS: Record<string, string> = {
                         <span>ভিডিও স্ট্রিম লিংক</span>
                       </span>
 
-                      {selectedLesson.videoUrl || selectedLesson.videoId ? (
+                      {selectedLesson.videoUrl || selectedLesson.videoId || selectedLesson.streamKey ? (
                         <div className="p-3 rounded-2xl bg-[#0d1117] border border-emerald-500/20 space-y-2">
                           <div className="text-[11px] font-mono text-slate-300 break-all">
-                            {selectedLesson.videoUrl || `Video ID: ${selectedLesson.videoId}`}
+                            {selectedLesson.videoUrl ? selectedLesson.videoUrl : selectedLesson.streamKey ? `Stream Key (${selectedLesson.platform || 'R2'}): ${selectedLesson.streamKey.slice(0, 45)}...` : `Video ID: ${selectedLesson.videoId}`}
                           </div>
                           <div className="flex items-center gap-2 pt-1">
                             {selectedLesson.videoUrl && (
@@ -2546,7 +2550,7 @@ const CHAPTER_SYNONYMS: Record<string, string> = {
                             )}
                             <button
                               type="button"
-                              onClick={() => copyToClipboard(selectedLesson.videoUrl || selectedLesson.videoId || '', 'video')}
+                              onClick={() => copyToClipboard(selectedLesson.videoUrl || selectedLesson.streamKey || selectedLesson.videoId || '', 'video')}
                               className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-[10px] flex items-center gap-1 transition-colors cursor-pointer"
                             >
                               {copiedLink === 'video' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-slate-400" />}

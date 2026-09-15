@@ -196,6 +196,7 @@ export interface Course {
   discountEnd?: string;
   countdownDays?: number;
   countdownHours?: number;
+  discountExpires?: string;
   comboCourseIds?: string[];
   couponCode?: string;
   couponDiscount?: number;
@@ -204,6 +205,20 @@ export interface Course {
   instructorId?: string;
   teacherEmail?: string;
   teacherPhone?: string;
+}
+
+export interface CouponItem {
+  id: string;
+  code: string;
+  discountType: 'fixed' | 'percentage';
+  discountValue: number;
+  minPurchase?: number;
+  usageLimit: number;
+  usedCount: number;
+  expiresAt?: string;
+  isActive: boolean;
+  applicableCourse: string;
+  createdAt?: string;
 }
 
 export interface Enrollment {

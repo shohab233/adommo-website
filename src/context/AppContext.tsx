@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Course, Enrollment, Exam, ExamSubmission, LeaderboardEntry, ResourceNote, Lecture, User, UserRole, QuestionBankItem, DetailedExamSubmission, LiveClass, NotificationItem, ChatMessage, ConversationThread, TeacherKycData } from '@/types';
+import { Course, Enrollment, Exam, ExamSubmission, LeaderboardEntry, ResourceNote, Lecture, User, UserRole, QuestionBankItem, DetailedExamSubmission, LiveClass, NotificationItem, ChatMessage, ConversationThread, TeacherKycData, CouponItem } from '@/types';
 import { healCourse } from '@/lib/courseSubjectNormalizer';
 
 interface AppContextType {
@@ -33,7 +33,7 @@ interface AppContextType {
   updateExam: (examId: string, updatedData: Partial<Exam>) => void;
   deleteExam: (examId: string) => void;
   submitExam: (examId: string, answers: Record<string, number>) => ExamSubmission;
-  submitDetailedExam: (submission: Omit<DetailedExamSubmission, 'id' | 'submittedAt' | 'rank'>) => DetailedExamSubmission;
+  submitDetailedExam: (submissionData: Omit<DetailedExamSubmission, 'id' | 'submittedAt' | 'rank'>) => DetailedExamSubmission;
   evaluateSubmission: (
     submissionId: string, 
     cqMarksAwarded: number, 
@@ -50,6 +50,10 @@ interface AppContextType {
   addQuestionBank: (item: Omit<QuestionBankItem, 'id' | 'downloadCount' | 'createdAt'>) => void;
   updateQuestionBank: (id: string, updatedData: Partial<QuestionBankItem>) => void;
   deleteQuestionBank: (id: string) => void;
+  coupons: CouponItem[];
+  addCoupon: (coupon: Omit<CouponItem, 'id' | 'createdAt' | 'usedCount'>) => void;
+  deleteCoupon: (id: string) => void;
+  verifyCoupon: (code: string, course: Course) => { valid: boolean; discountAmount: number; message: string; coupon?: CouponItem };
   loginUser: (user: Partial<User>) => void;
   loginWithApi: (credentials: { identifier: string; password: string; role?: UserRole }) => Promise<{ success: boolean; message: string; user?: User }>;
   registerUser: (userData: Omit<User, 'id' | 'enrolledCourseIds'>) => void;
@@ -105,6 +109,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [liveClasses, setLiveClasses] = useState<LiveClass[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [conversations, setConversations] = useState<ConversationThread[]>([]);
+  const [coupons, setCoupons] = useState<CouponItem[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('adommo_coupons');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) return parsed;
+        } catch {}
+      }
+    }
+    return [];
+  });
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isCoursesLoaded, setIsCoursesLoaded] = useState(false);
 
@@ -335,6 +351,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
       })
       .catch((err) => console.log('Question banks sync completed', err));
+
+    // Hydrate coupons from DB
+    fetch('/api/admin/coupons')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && data.success && Array.isArray(data.coupons)) {
+          setCoupons(data.coupons);
+          try {
+            localStorage.setItem('adommo_coupons', JSON.stringify(data.coupons));
+          } catch {}
+        }
+      })
+      .catch((err) => console.log('Coupons sync completed', err));
 
     // Hydrate submissions from DB
     fetch('/api/exams/submit')
@@ -1452,6 +1481,101 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     showToast('🗑️ প্রশ্নব্যাংক সফলভাবে মুছে ফেলা হয়েছে!');
   };
 
+  const addCoupon = (couponData: Omit<CouponItem, 'id' | 'createdAt' | 'usedCount'>) => {
+    const newCoupon: CouponItem = {
+      id: `cpn_${Date.now()}`,
+      ...couponData,
+      code: couponData.code.trim().toUpperCase(),
+      usedCount: 0,
+      createdAt: new Date().toISOString(),
+      isActive: couponData.isActive !== undefined ? couponData.isActive : true,
+    };
+    setCoupons((prev) => {
+      const updated = [newCoupon, ...prev.filter((c) => c.code !== newCoupon.code)];
+      try {
+        localStorage.setItem('adommo_coupons', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+    fetch('/api/admin/coupons', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newCoupon),
+    }).catch((err) => console.log('Coupon persist error:', err));
+    showToast(`✅ কুপন কোড "${newCoupon.code}" সফলভাবে তৈরি হয়েছে!`);
+  };
+
+  const deleteCoupon = (id: string) => {
+    setCoupons((prev) => {
+      const updated = prev.filter((c) => c.id !== id);
+      try {
+        localStorage.setItem('adommo_coupons', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+    fetch(`/api/admin/coupons?id=${id}`, {
+      method: 'DELETE',
+    }).catch((err) => console.log('Coupon delete error:', err));
+    showToast('🗑️ কুপন সফলভাবে মুছে ফেলা হয়েছে!');
+  };
+
+  const verifyCoupon = (
+    codeRaw: string, 
+    course: Course
+  ): { valid: boolean; discountAmount: number; message: string; coupon?: CouponItem } => {
+    const code = (codeRaw || '').trim().toUpperCase();
+    if (!code) {
+      return { valid: false, discountAmount: 0, message: 'অনুগ্রহ করে কুপন কোড লিখুন।' };
+    }
+
+    // 1. Check Course-specific Teacher Coupon
+    if (course.couponCode && course.couponCode.trim().toUpperCase() === code) {
+      const discount = Math.min(course.couponDiscount || 200, course.offerPrice);
+      return {
+        valid: true,
+        discountAmount: discount,
+        message: `🎉 কোর্স কুপন "${code}" প্রযোজ্য হয়েছে! ৳${discount} ছাড় পেয়েছেন।`,
+      };
+    }
+
+    // 2. Check Admin / Global DB Coupons
+    const found = coupons.find((c) => (c.code || '').trim().toUpperCase() === code);
+    if (!found) {
+      return { valid: false, discountAmount: 0, message: '⚠️ কুপন কোডটি সঠিক নয়।' };
+    }
+
+    if (!found.isActive) {
+      return { valid: false, discountAmount: 0, message: '⚠️ এই কুপনটি বর্তমানে নিষ্ক্রিয় রয়েছে।' };
+    }
+
+    if (found.expiresAt && new Date(found.expiresAt).getTime() < Date.now()) {
+      return { valid: false, discountAmount: 0, message: '⚠️ এই কুপনটির মেয়াদ উত্তীর্ণ হয়ে গেছে।' };
+    }
+
+    if (found.applicableCourse && found.applicableCourse !== 'all' && found.applicableCourse !== course.id) {
+      return { valid: false, discountAmount: 0, message: '⚠️ এই কুপনটি শুধুমাত্র নির্দিষ্ট অন্য একটি কোর্সের জন্য প্রযোজ্য।' };
+    }
+
+    if (found.usageLimit && (found.usedCount || 0) >= found.usageLimit) {
+      return { valid: false, discountAmount: 0, message: '⚠️ এই কুপনটির ব্যবহারের সীমা শেষ হয়ে গেছে।' };
+    }
+
+    let discountAmount = 0;
+    if (found.discountType === 'percentage') {
+      discountAmount = Math.round(course.offerPrice * (found.discountValue / 100));
+    } else {
+      discountAmount = found.discountValue;
+    }
+    discountAmount = Math.min(discountAmount, course.offerPrice);
+
+    return {
+      valid: true,
+      discountAmount,
+      message: `🎉 কুপন "${found.code}" সফলভাবে যুক্ত হয়েছে! ৳${discountAmount} ছাড় পেয়েছেন।`,
+      coupon: found,
+    };
+  };
+
   const submitDetailedExam = (submissionData: Omit<DetailedExamSubmission, 'id' | 'submittedAt' | 'rank'>): DetailedExamSubmission => {
     const targetExam = exams.find((e) => e.id === submissionData.examId);
     const isPendingLater = targetExam?.resultPublishType === 'later';
@@ -2399,6 +2523,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         addQuestionBank,
         updateQuestionBank,
         deleteQuestionBank,
+        coupons,
+        addCoupon,
+        deleteCoupon,
+        verifyCoupon,
         loginUser,
         loginWithApi,
         registerUser,

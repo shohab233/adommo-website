@@ -376,6 +376,12 @@ export default function ProtectedVideoPlayer({ videoUrl, title }: ProtectedVideo
         enableWorker: true,
         lowLatencyMode: false,
         backBufferLength: 90,
+        maxBufferLength: 60,
+        maxMaxBufferLength: 600,
+        maxBufferSize: 60 * 1000 * 1000,
+        fragLoadingTimeOut: 20000,
+        fragLoadingMaxRetry: 6,
+        fragLoadingRetryDelay: 1000,
       });
       hlsRef.current = hls;
 
@@ -396,17 +402,26 @@ export default function ProtectedVideoPlayer({ videoUrl, title }: ProtectedVideo
         if (errorData.fatal) {
           switch (errorData.type) {
             case Hls.ErrorTypes.NETWORK_ERROR:
-              console.warn('HLS Network Error, recovering...');
+              console.warn('HLS Network Error, recovering...', errorData.details);
               hls.startLoad();
               break;
             case Hls.ErrorTypes.MEDIA_ERROR:
-              console.warn('HLS Media Error, recovering...');
+              console.warn('HLS Media Error, recovering...', errorData.details);
               hls.recoverMediaError();
               break;
             default:
-              console.warn('HLS Fatal Error:', errorData);
+              console.warn('HLS Fatal Error, destroying & reloading:', errorData.details);
+              hls.destroy();
+              setTimeout(() => {
+                if (videoRef.current) {
+                  hls.attachMedia(videoRef.current);
+                  hls.loadSource(mediaSource.url);
+                }
+              }, 1000);
               break;
           }
+        } else if (errorData.details === 'bufferStalledError') {
+          setIsBuffering(true);
         }
       });
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {

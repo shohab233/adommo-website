@@ -26,7 +26,7 @@ interface PaymentModalProps {
 
 export default function PaymentModal({ course, isOpen, onClose, onSuccessRedirect }: PaymentModalProps) {
   const router = useRouter();
-  const { enrollInCourse, showToast, currentUser } = useApp();
+  const { enrollInCourse, showToast, currentUser, verifyCoupon, coupons } = useApp();
   const [selectedMethod, setSelectedMethod] = useState<'bKash' | 'Nagad' | 'Rocket'>('bKash');
   const [senderPhone, setSenderPhone] = useState('');
   const [trxId, setTrxId] = useState('');
@@ -38,6 +38,29 @@ export default function PaymentModal({ course, isOpen, onClose, onSuccessRedirec
   const [couponInput, setCouponInput] = useState('');
   const [discountAmount, setDiscountAmount] = useState(0);
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
+
+  // Real available active coupons for this course
+  const availableCoupons = React.useMemo(() => {
+    const list: { code: string; label: string }[] = [];
+    if (course.couponCode) {
+      list.push({
+        code: course.couponCode.toUpperCase(),
+        label: `${course.couponCode.toUpperCase()} (৳${course.couponDiscount || 200} ছাড়)`,
+      });
+    }
+    (coupons || []).forEach((c) => {
+      if (!c.isActive) return;
+      if (c.expiresAt && new Date(c.expiresAt).getTime() < Date.now()) return;
+      if (c.applicableCourse && c.applicableCourse !== 'all' && c.applicableCourse !== course.id) return;
+      if (list.some((item) => item.code === c.code.toUpperCase())) return;
+      const discountTxt = c.discountType === 'percentage' ? `${c.discountValue}% ছাড়` : `৳${c.discountValue} ছাড়`;
+      list.push({
+        code: c.code.toUpperCase(),
+        label: `${c.code.toUpperCase()} (${discountTxt})`,
+      });
+    });
+    return list;
+  }, [course, coupons]);
 
   if (!isOpen) return null;
 
@@ -56,20 +79,16 @@ export default function PaymentModal({ course, isOpen, onClose, onSuccessRedirec
       return;
     }
 
-    if (code === 'ADOMMO200') {
-      const discount = Math.min(200, course.offerPrice);
-      setDiscountAmount(discount);
-      setAppliedCoupon('ADOMMO200');
-      setCouponInput('ADOMMO200');
-      showToast('🎉 কুপন কোড ADOMMO200 প্রযোজ্য হয়েছে! ২০০ টাকা ছাড় পেলেন।');
-    } else if (code === 'PHY2026') {
-      const discount = Math.round(course.offerPrice * 0.15);
-      setDiscountAmount(discount);
-      setAppliedCoupon('PHY2026');
-      setCouponInput('PHY2026');
-      showToast(`🎉 কুপন কোড PHY2026 প্রযোজ্য হয়েছে! ১৫% (৳${discount}) ছাড় পেলেন।`);
+    const result = verifyCoupon(code, course);
+    if (result.valid) {
+      setDiscountAmount(result.discountAmount);
+      setAppliedCoupon(code);
+      setCouponInput(code);
+      showToast(result.message);
     } else {
-      showToast('⚠️ অবৈধ কুপন কোড। টেস্ট করতে "ADOMMO200" ব্যবহার করুন।');
+      setDiscountAmount(0);
+      setAppliedCoupon(null);
+      showToast(result.message);
     }
   };
 
@@ -209,24 +228,22 @@ export default function PaymentModal({ course, isOpen, onClose, onSuccessRedirec
                   </button>
                 </div>
 
-                {/* 1-Click Test Coupons */}
-                <div className="flex items-center gap-2 pt-0.5 text-[10px] text-slate-500 flex-wrap">
-                  <span className="font-semibold text-slate-400">ক্লিক করে কুপন নিন:</span>
-                  <button
-                    type="button"
-                    onClick={() => handleApplyCoupon('ADOMMO200')}
-                    className="px-2 py-0.5 rounded-md bg-white border border-pink-200 text-[#ed347d] font-bold hover:bg-pink-50"
-                  >
-                    ADOMMO200 (৳২০০ ছাড়)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleApplyCoupon('PHY2026')}
-                    className="px-2 py-0.5 rounded-md bg-white border border-pink-200 text-[#ed347d] font-bold hover:bg-pink-50"
-                  >
-                    PHY2026 (১৫% ছাড়)
-                  </button>
-                </div>
+                {/* Available Real Coupons */}
+                {availableCoupons.length > 0 && (
+                  <div className="flex items-center gap-2 pt-0.5 text-[10px] text-slate-500 flex-wrap">
+                    <span className="font-semibold text-slate-400">উপলব্ধ কুপন:</span>
+                    {availableCoupons.map((c) => (
+                      <button
+                        key={c.code}
+                        type="button"
+                        onClick={() => handleApplyCoupon(c.code)}
+                        className="px-2 py-0.5 rounded-md bg-white border border-pink-200 text-[#ed347d] font-bold hover:bg-pink-50 transition-colors cursor-pointer"
+                      >
+                        🏷️ {c.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Payment Methods Selection */}
