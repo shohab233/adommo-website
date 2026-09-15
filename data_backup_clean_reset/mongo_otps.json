@@ -1,0 +1,38 @@
+[
+  {
+    "_id": "6aa51a62b2a91c4145efb0c0",
+    "id": "id_1789205079855_cwydx",
+    "createdAt": "2026-09-12T09:24:39.855Z",
+    "email": "adommoacc01@kuromee.com",
+    "otp": "891841",
+    "purpose": "registration",
+    "expiresAt": 1789205379855
+  },
+  {
+    "_id": "6aa51aaab2a91c4145efb0c9",
+    "id": "id_1789205162634_o9f5d",
+    "createdAt": "2026-09-12T09:26:02.634Z",
+    "email": "adommoacc01@kuromee.com",
+    "otp": "688676",
+    "purpose": "registration",
+    "expiresAt": 1789205462634
+  },
+  {
+    "_id": "6aa51badb2a91c4145efb0fb",
+    "id": "id_1789205419954_8oimi",
+    "createdAt": "2026-09-12T09:30:19.954Z",
+    "email": "yidap81493@airhemp.com",
+    "otp": "234207",
+    "purpose": "registration",
+    "expiresAt": 1789205719954
+  },
+  {
+    "_id": "6aa51c67b2a91c4145efb121",
+    "id": "id_1789205592993_s92ej",
+    "createdAt": "2026-09-12T09:33:12.993Z",
+    "email": "yidap81493@airhemp.com",
+    "otp": "171938",
+    "purpose": "registration",
+    "expiresAt": 1789205892993
+  }
+]

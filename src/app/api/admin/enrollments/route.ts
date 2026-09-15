@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
+export async function GET(req: NextRequest) {
+  try {
+    const enrollments = await db.findManyAsync<any>('enrollments');
+    return NextResponse.json({ success: true, enrollments });
+  } catch (err: any) {
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  }
+}
+
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
@@ -56,3 +65,18 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+    if (!id) {
+      return NextResponse.json({ success: false, error: 'এনরোলমেন্ট আইডি আবশ্যক।' }, { status: 400 });
+    }
+    const deleted = await db.deleteAsync('enrollments', id);
+    return NextResponse.json({ success: deleted });
+  } catch (err: any) {
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  }
+}
+

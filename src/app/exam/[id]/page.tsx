@@ -42,7 +42,25 @@ export default function ExamPage({
 
   const [isMounted, setIsMounted] = useState(false);
 
-  const exam = exams.find((e) => e.id === resolvedParams.id) || exams[0];
+  const exam = exams.find((e) => e.id === resolvedParams.id);
+
+  if (!exam) {
+    return (
+      <div className="bg-[#f8f9fc] min-h-screen pb-24 pt-12 flex items-center justify-center px-4">
+        <div className="bg-white rounded-3xl p-8 sm:p-12 max-w-md w-full border border-slate-200/80 shadow-lg text-center space-y-4">
+          <div className="w-16 h-16 mx-auto rounded-3xl bg-pink-50 border border-pink-200 flex items-center justify-center text-[#ed347d]">
+            <Award className="w-8 h-8" />
+          </div>
+          <h2 className="text-xl font-bold text-slate-800">পরীক্ষাটি খুঁজে পাওয়া যায়নি</h2>
+          <p className="text-xs text-slate-500">হয়তো পরীক্ষাটি এখনো তৈরি বা পাবলিশ হয়নি অথবা লিংকটি সঠিক নয়।</p>
+          <Link href="/exam" className="inline-block px-6 py-2.5 rounded-full text-xs font-bold text-white ph-btn-pink">
+            সকল পরীক্ষা দেখুন
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   const userEnrolled = isEnrolled(exam.courseId);
   const parentCourse = courses.find((c) => c.id === exam.courseId);
 
@@ -386,7 +404,7 @@ export default function ExamPage({
       studentId: currentUser.id,
       studentName: currentUser.name,
       studentPhone: currentUser.phone || '',
-      studentCollege: currentUser.college || 'নটর ডেম কলেজ, ঢাকা',
+      studentCollege: currentUser.college || 'শিক্ষার্থী',
       examType: exam.examType || 'mcq',
       score: totalCalculatedScore,
       totalMarks: exam.totalMarks,

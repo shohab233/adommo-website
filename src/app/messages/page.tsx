@@ -36,8 +36,7 @@ export default function StudentMessagesPage() {
   const isGuest = !currentUser || !currentUser.id || currentUser.id === 'usr_guest';
 
   // Strictly filter only enrolled courses for student
-  const enrolledCourseIds = currentUser?.enrolledCourseIds || [];
-  const enrolledCourses = courses.filter((c) => enrolledCourseIds.includes(c.id));
+  const enrolledCourses = courses.filter((c) => isEnrolled(c.id));
 
   const [studentBatchCourseId, setStudentBatchCourseId] = useState<string>('');
 

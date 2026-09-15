@@ -1,0 +1,107 @@
+[
+  {
+    "_id": "6aa512a7b2a91c4145efb009",
+    "id": "id_1789136556830_h8tvl",
+    "createdAt": "2026-09-11T14:22:36.830Z",
+    "name": "kaji nojrul",
+    "phone": "01714625067",
+    "email": "yidap81493@airhemp.com",
+    "college": "পদার্থবিজ্ঞান (Physics) • Lohagara Collage",
+    "passwordHash": "a4df76cd0e41463ebe2135c09857620c:b3f0d1232374085e9540422e1ab41d7270cf9cc81885e12f7b415e8761744bb347cdd7b16f261ba0e5fd966361b7d26cd9b930d006e2252d25cdc41dc36403ed",
+    "role": "teacher",
+    "kycStatus": "approved",
+    "enrolledCourseIds": [],
+    "updatedAt": "2026-09-12T03:53:54.163Z",
+    "bio": "ফিজিক্স স্পেশালিস্ট ও শিক্ষক"
+  },
+  {
+    "_id": "6aa512a7b2a91c4145efb00a",
+    "id": "id_1789135043017_foq2m",
+    "createdAt": "2026-09-11T13:57:23.017Z",
+    "name": "tanvir",
+    "phone": "01754111940",
+    "email": "dijiy23635@94an.com",
+    "college": "Pirgonj Govt Collage (চট্টগ্রাম)",
+    "passwordHash": "42d03a876fba6373e26f2e17fe6f7136:e7a1f0085f17da10d5f05baa28f4d0239955d04f35e6611cbcb32b70514df342d0ae41ae7be0dd2c0c7b6165cb7064ae4ec449edb79c6911292204a0814b9620",
+    "role": "student",
+    "enrolledCourseIds": [],
+    "updatedAt": "2026-09-11T14:07:56.597Z"
+  },
+  {
+    "_id": "6aa512a7b2a91c4145efb00b",
+    "id": "id_1788959044208_x6deh",
+    "createdAt": "2026-09-09T13:04:04.208Z",
+    "name": "Md Shohab  Hosen",
+    "phone": "01406548456",
+    "email": "airupantar01@gmail.com",
+    "college": "Lohagara Degree Collage (রংপুর)",
+    "passwordHash": "79d36a64ee8f02168e2775c33dd57447:18126e603c9150caafa7d442a15aaa2a9664f15c60d6d39bcf8a02dc4be1b33870423bd2285ac29ef6c8247e42ed93503ba2fada6e30ea6f6b519571283e1d08",
+    "role": "student",
+    "enrolledCourseIds": [
+      "course_1789274981999",
+      "course_acs_frb26",
+      "course_acs_eb733f87",
+      "course_acs_8a1af32c"
+    ],
+    "updatedAt": "2026-09-14T09:32:04.376Z"
+  },
+  {
+    "_id": "6aa51f3eb2a91c4145efb1d4",
+    "id": "id_1789206334643_q3l29",
+    "createdAt": "2026-09-12T09:45:34.643Z",
+    "name": "Md Sami",
+    "phone": "01754218754",
+    "email": "adommoacc01@kuromee.com",
+    "college": "Notordem collage (ঢাকা)",
+    "passwordHash": "652a60b975fcf2b5cabbe630f473659d:96809993b8b29c7cfeb68fc0bc7dd7b4fcdd34d7cf400951e1da3e6895f24cd0f71aaa63b7ce3553109bd00a42d68406531177311f2497e25fa6f4191e025b49",
+    "role": "student",
+    "kycStatus": null,
+    "enrolledCourseIds": [
+      "course_acs_8a1af32c"
+    ],
+    "updatedAt": "2026-09-14T10:15:56.997Z"
+  },
+  {
+    "_id": "6aa520d6b2a91c4145efb224",
+    "id": "id_1789206742801_ia13x",
+    "createdAt": "2026-09-12T09:52:22.801Z",
+    "name": "Md Saki",
+    "phone": "01754643125",
+    "email": "adommoteacher01@kuromee.com",
+    "college": "পদার্থবিজ্ঞান (Physics) • Buit",
+    "passwordHash": "5bb4b375639954c5281e1261c835fe08:b1f2178cf0c0362b1c439e183c67094f50157ef0a47a795ad17abd4412f123f019f741dd32346d9f16bf758834d1f45e31ae4161c99127f8609387526895a441",
+    "role": "teacher",
+    "kycStatus": "approved",
+    "enrolledCourseIds": [],
+    "updatedAt": "2026-09-12T10:14:42.444Z"
+  },
+  {
+    "_id": "6aa52aacb2a91c4145efb36a",
+    "id": "id_1789209260809_0iqu3",
+    "createdAt": "2026-09-12T10:34:20.809Z",
+    "name": "Miss Sakiba",
+    "phone": "01754875487",
+    "email": "yidap81493@airhemp.com",
+    "college": "Lohagara Collage (ঢাকা)",
+    "passwordHash": "44cf8beb44d6927d1e3eb5cfe83ad9c3:dc03026dccee033138d2639d5d82c8bc4c4b8aebda1d13ba3c3639794e48105c0fd4f4217f3507b3b9097bd8a26e8cd8b8a3500d971bb06d9440d2483c904232",
+    "role": "student",
+    "kycStatus": null,
+    "enrolledCourseIds": []
+  },
+  {
+    "_id": "6aa52b4eb2a91c4145efb383",
+    "id": "id_1789209422176_afov8",
+    "createdAt": "2026-09-12T10:37:02.176Z",
+    "name": "Miss Sadiya",
+    "phone": "01754875258",
+    "email": "nahewiv272@airhemp.com",
+    "college": "পদার্থবিজ্ঞান (Physics) • Pirgang Govt Collage",
+    "passwordHash": "4679ef1789ed41a5c0e3d3de0e1f758e:66648c53d31c9b369c759dde1e0d290d872fba6c4da8ba7c3ddd7ef2ff01801b96077789b23c26801c1dab29d5e880041ca52493acb033fb743196be5e090f87",
+    "role": "teacher",
+    "kycStatus": "approved",
+    "enrolledCourseIds": [
+      "course_acs_8a1af32c"
+    ],
+    "updatedAt": "2026-09-14T05:44:52.675Z"
+  }
+]

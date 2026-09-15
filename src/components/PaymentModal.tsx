@@ -62,13 +62,28 @@ export default function PaymentModal({ course, isOpen, onClose, onSuccessRedirec
     return list;
   }, [course, coupons]);
 
-  if (!isOpen) return null;
-
-  const paymentNumbers = {
+  const [paymentNumbers, setPaymentNumbers] = useState({
     bKash: '01712-345678',
     Nagad: '01819-876543',
     Rocket: '01911-223344-9',
-  };
+  });
+
+  React.useEffect(() => {
+    fetch('/api/admin/settings')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success && data.settings) {
+          setPaymentNumbers({
+            bKash: data.settings.bkashMerchant || '01712-345678',
+            Nagad: data.settings.nagadMerchant || '01819-876543',
+            Rocket: data.settings.rocketMerchant || '01911-223344-9',
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  if (!isOpen) return null;
 
   const finalAmount = Math.max(0, course.offerPrice - discountAmount);
 

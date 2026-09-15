@@ -399,12 +399,16 @@ export default function TeacherDashboardPage() {
       return [];
     }
 
+    if (currentUser.role === 'admin') {
+      return courses;
+    }
+
     const currentId = currentUser.id.trim();
     const currentNameClean = (currentUser.name || '').trim().toLowerCase();
     const currentEmailClean = (currentUser.email || '').trim().toLowerCase();
     const currentPhoneClean = (currentUser.phone || '').trim();
 
-    const matched = courses.filter((c) => {
+    return courses.filter((c) => {
       // 1. Direct Teacher ID match (highest priority)
       if (c.instructorId && c.instructorId === currentId) return true;
       // 2. Direct Teacher Email match
@@ -424,14 +428,8 @@ export default function TeacherDashboardPage() {
           return true;
         }
       }
-      // 5. Fallback: if course has no instructor assigned yet or was imported, let the active teacher manage it
-      if (!c.instructorId || !c.teacherEmail) {
-        return true;
-      }
       return false;
     });
-
-    return matched.length > 0 ? matched : courses;
   }, [courses, currentUser, currentRole]);
 
   const teacherCourseIds = useMemo(() => teacherCourses.map(c => c.id), [teacherCourses]);
@@ -559,9 +557,9 @@ export default function TeacherDashboardPage() {
   // Step 5: Mentors & Faculty Team
   const [wMentors, setWMentors] = useState<any[]>([
     {
-      name: currentUser.name || 'সুমন হোসেন',
+      name: currentUser.name || 'কোর্স ইন্সট্রাক্টর',
       role: 'ফিজিক্স ও ম্যাথ লিড মেন্টর',
-      institution: currentUser.college || 'বুয়েট (BUET)',
+      institution: currentUser.college || 'অনবোর্ডেড ফ্যাকাল্টি',
       avatar: currentUser.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
     },
   ]);
@@ -846,9 +844,9 @@ export default function TeacherDashboardPage() {
     try {
       const savedCourseId = typeof window !== 'undefined' ? localStorage.getItem('adommo_active_teacher_course') : null;
       const validCourseId =
-        savedCourseId && courses.some((c) => c.id === savedCourseId)
+        savedCourseId && teacherCourses.some((c) => c.id === savedCourseId)
           ? savedCourseId
-          : teacherCourses[0]?.id || courses[0]?.id || '';
+          : teacherCourses[0]?.id || '';
 
       if (validCourseId) {
         if (!selectedCourseForSection || !courses.some((c) => c.id === selectedCourseForSection)) {
@@ -978,7 +976,7 @@ export default function TeacherDashboardPage() {
   const [selectedZoomImage, setSelectedZoomImage] = useState<string | null>(null);
 
   // 8. Teacher Profile Settings
-  const [profileBio, setProfileBio] = useState('বুয়েট (BUET) থেকে স্নাতক। বিগত ৯ বছর যাবত শিক্ষার্থীদের ফিজিক্স ও উচ্চতর গণিতের ভীতি দূর করতে কাজ করে যাচ্ছি।');
+  const [profileBio, setProfileBio] = useState((currentUser as any)?.bio || 'অনবোর্ডেড শিক্ষক ও ফ্যাকাল্টি মেম্বার।');
   const [profilePhoto, setProfilePhoto] = useState(currentUser.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80');
   const [profileNewPassword, setProfileNewPassword] = useState('');
   const [profileConfirmPassword, setProfileConfirmPassword] = useState('');
@@ -1052,9 +1050,9 @@ export default function TeacherDashboardPage() {
     setWRelatedVideos(c.relatedVideos || []);
     setWMentors(c.mentors && c.mentors.length > 0 ? c.mentors : [
       {
-        name: c.instructor?.name || currentUser.name || 'সুমন হোসেন',
+        name: c.instructor?.name || currentUser.name || 'কোর্স ইন্সট্রাক্টর',
         role: c.instructor?.designation || 'লিড ইনস্ট্রাক্টর',
-        institution: c.instructor?.institution || currentUser.college || 'বুয়েট (BUET)',
+        institution: c.instructor?.institution || currentUser.college || 'অনবোর্ডেড ফ্যাকাল্টি',
         avatar: c.instructor?.avatar || currentUser.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
       }
     ]);
@@ -1157,9 +1155,9 @@ export default function TeacherDashboardPage() {
       teacherEmail: currentUser.email || existingCourse?.teacherEmail || '',
       teacherPhone: currentUser.phone || existingCourse?.teacherPhone || '',
       instructor: {
-        name: currentUser.name || leadMentor?.name || existingCourse?.instructor?.name || 'সুমন হোসেন',
+        name: currentUser.name || leadMentor?.name || existingCourse?.instructor?.name || 'কোর্স ইন্সট্রাক্টর',
         designation: leadMentor?.role || existingCourse?.instructor?.designation || 'লিড ইনস্ট্রাক্টর',
-        institution: currentUser.college || leadMentor?.institution || existingCourse?.instructor?.institution || 'বুয়েট (BUET)',
+        institution: currentUser.college || leadMentor?.institution || existingCourse?.instructor?.institution || 'অনবোর্ডেড ফ্যাকাল্টি',
         avatar: currentUser.avatar || leadMentor?.avatar || existingCourse?.instructor?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
       },
     };
@@ -1193,7 +1191,7 @@ export default function TeacherDashboardPage() {
   // ==================== SECTION & CHAPTER / CURRICULUM MANAGEMENT ====================
   const handleAddSection = (e: React.FormEvent) => {
     e.preventDefault();
-    const effCourseId = selectedCourseForSection || teacherCourses[0]?.id || courses[0]?.id;
+    const effCourseId = selectedCourseForSection || teacherCourses[0]?.id || '';
     if (!newSectionTitle.trim() || !effCourseId) {
       showToast('⚠️ বিষয়ের/মডিউলের নাম লিখুন');
       return;
@@ -1225,8 +1223,8 @@ export default function TeacherDashboardPage() {
   const handleUpdateSection = (sectionId: string) => {
     if (!editingSectionTitle.trim()) return;
     const course = courses.find((c) => c.sections?.some((s) => s.id === sectionId)) ||
-                   courses.find((c) => c.id === selectedCourseForSection) ||
-                   teacherCourses[0] || courses[0];
+                   teacherCourses.find((c) => c.id === selectedCourseForSection) ||
+                   teacherCourses[0];
     if (!course) return;
 
     const updatedSections = (course.sections || []).map((s) =>
@@ -1250,8 +1248,8 @@ export default function TeacherDashboardPage() {
 
   const handleDeleteSection = (sectionId: string) => {
     const course = courses.find((c) => c.sections?.some((s) => s.id === sectionId)) ||
-                   courses.find((c) => c.id === selectedCourseForSection) ||
-                   teacherCourses[0] || courses[0];
+                   teacherCourses.find((c) => c.id === selectedCourseForSection) ||
+                   teacherCourses[0];
     if (!course) return;
 
     if (!confirm('আপনি কি এই সেকশনটি মুছে ফেলতে চান? এর সকল অধ্যায় ও ক্লাস মুছে যাবে।')) return;
@@ -1302,7 +1300,7 @@ export default function TeacherDashboardPage() {
 
   const handleAddChapter = (e: React.FormEvent) => {
     e.preventDefault();
-    const effCourseId = selectedCourseForSection || teacherCourses[0]?.id || courses[0]?.id;
+    const effCourseId = selectedCourseForSection || teacherCourses[0]?.id || '';
     if (!newChapterTitle.trim() || !effCourseId) {
       showToast('⚠️ অধ্যায়/টপিকের নাম লিখুন');
       return;
@@ -1338,8 +1336,8 @@ export default function TeacherDashboardPage() {
   const handleUpdateChapter = (moduleId: string) => {
     if (!editingModuleTitle.trim()) return;
     const course = courses.find((c) => c.modules?.some((m) => m.id === moduleId)) ||
-                   courses.find((c) => c.id === selectedCourseForSection) ||
-                   teacherCourses[0] || courses[0];
+                   teacherCourses.find((c) => c.id === selectedCourseForSection) ||
+                   teacherCourses[0];
     if (!course) return;
 
     const updatedModules = (course.modules || []).map((m) =>
@@ -1358,8 +1356,8 @@ export default function TeacherDashboardPage() {
   const handleDeleteChapter = (moduleId: string, explicitCourseId?: string) => {
     const course = (explicitCourseId ? courses.find((c) => c.id === explicitCourseId) : null) ||
                    courses.find((c) => c.modules?.some((m) => m.id === moduleId)) ||
-                   courses.find((c) => c.id === selectedCourseForSection) ||
-                   teacherCourses[0] || courses[0];
+                   teacherCourses.find((c) => c.id === selectedCourseForSection) ||
+                   teacherCourses[0];
     if (!course) return;
 
     if (!confirm('আপনি কি এই অধ্যায়টি মুছে ফেলতে চান? এর সকল ক্লাস মুছে যাবে।')) return;
@@ -1382,7 +1380,7 @@ export default function TeacherDashboardPage() {
       return;
     }
 
-    const effCourseId = selectedCourseForLec || teacherCourses[0]?.id || courses[0]?.id;
+    const effCourseId = selectedCourseForLec || teacherCourses[0]?.id || '';
     if (!effCourseId) {
       showToast('⚠️ কোনো কোর্স নির্বাচন করা হয়নি। প্রথমে একটি কোর্স তৈরি বা নির্বাচন করুন!');
       return;
@@ -1415,7 +1413,7 @@ export default function TeacherDashboardPage() {
       return;
     }
 
-    const effCourseId = selectedCourseForSheet || teacherCourses[0]?.id || courses[0]?.id;
+    const effCourseId = selectedCourseForSheet || teacherCourses[0]?.id || '';
     if (!effCourseId) {
       showToast('⚠️ অনুগ্রহ করে প্রথমে একটি কোর্স নির্বাচন করুন।');
       return;
@@ -1637,7 +1635,11 @@ export default function TeacherDashboardPage() {
       return;
     }
 
-    const effCourseId = examCourseId || teacherCourses[0]?.id || courses[0]?.id || '';
+    const effCourseId = examCourseId || teacherCourses[0]?.id || '';
+    if (!effCourseId) {
+      showToast('⚠️ পরীক্ষা তৈরি করতে প্রথমে আপনার একটি কোর্স তৈরি বা নির্বাচন করুন!');
+      return;
+    }
     const course = courses.find((c) => c.id === effCourseId);
     const startMs = examStartTime ? new Date(examStartTime).getTime() : 0;
     const isUpcomingSchedule = Boolean(startMs && !isNaN(startMs) && Date.now() < startMs);
@@ -1683,7 +1685,11 @@ export default function TeacherDashboardPage() {
       return;
     }
 
-    const effCourseId = qbCourseId || teacherCourses[0]?.id || courses[0]?.id || '';
+    const effCourseId = qbCourseId || teacherCourses[0]?.id || '';
+    if (!effCourseId) {
+      showToast('⚠️ প্রশ্নব্যাংক তৈরি করতে প্রথমে আপনার একটি কোর্স তৈরি বা নির্বাচন করুন!');
+      return;
+    }
     const course = courses.find((c) => c.id === effCourseId);
 
     if (editingQbId) {
@@ -1778,9 +1784,9 @@ export default function TeacherDashboardPage() {
       showToast('অনুগ্রহ করে লাইভ ক্লাসের শিরোনাম লিখুন!');
       return;
     }
-    const targetCourse = teacherCourses.find(c => c.id === liveCourseId) || teacherCourses[0] || courses[0];
+    const targetCourse = teacherCourses.find(c => c.id === liveCourseId) || teacherCourses[0];
     if (!targetCourse) {
-      showToast('অনুগ্রহ করে একটি কোর্স নির্বাচন করুন!');
+      showToast('⚠️ লাইভ ক্লাস তৈরি করতে প্রথমে আপনার একটি কোর্স তৈরি বা নির্বাচন করুন!');
       return;
     }
 
@@ -5373,11 +5379,23 @@ export default function TeacherDashboardPage() {
                             <div className="pt-2 flex gap-2">
                               <button
                                 type="button"
+                                onClick={() => {
+                                  updateCourse(c.id, { isDraft: false, isPublished: true });
+                                  showToast(`🎉 "${c.title}" কোর্সটি সরাসরি লাইভ পাবলিশ করা হয়েছে!`);
+                                }}
+                                className="px-3 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 flex items-center justify-center gap-1 cursor-pointer transition-colors shadow-xs"
+                                title="সরাসরি পাবলিশ করুন"
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                <span>পাবলিশ</span>
+                              </button>
+                              <button
+                                type="button"
                                 onClick={() => startEditingCourse(c)}
                                 className="flex-1 py-2 rounded-xl text-xs font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 border border-amber-300 flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
                               >
                                 <Edit3 className="w-3.5 h-3.5" />
-                                <span>এডিট ও পাবলিশ</span>
+                                <span>এডিট</span>
                               </button>
                               <button
                                 type="button"
@@ -5600,7 +5618,7 @@ export default function TeacherDashboardPage() {
                 }
 
                 // If a Course IS SELECTED -> Show the Clean Dedicated Workspace for that Course
-                const targetCourse = courses.find((c) => c.id === selectedCourseForSection) || teacherCourses[0] || courses[0];
+                const targetCourse = teacherCourses.find((c) => c.id === selectedCourseForSection) || teacherCourses[0];
                 const sectionsList = targetCourse?.sections || [];
                 const modulesList = targetCourse?.modules || [];
                 const regularSections = sectionsList.filter((s) => !s.isArchive && s.type !== 'archive' && !s.parentArchiveId);
@@ -6760,7 +6778,7 @@ export default function TeacherDashboardPage() {
 
               {/* View 2: LECTURES & VIDEO CLASSES */}
               {(activeSubMenu === 'content_lectures' || activeSubMenu === 'content_videos') && (() => {
-                const course = courses.find((c) => c.id === selectedCourseForLec) || teacherCourses[0] || courses[0];
+                const course = teacherCourses.find((c) => c.id === selectedCourseForLec) || teacherCourses[0];
                 const modules = course?.modules || [];
                 const { regularSubjects, archiveSubjects, hasArchive } = getCategorizedCourseData(course);
                 const activeSubjectList = lecCategoryFilter === 'archive' ? archiveSubjects : regularSubjects;
@@ -7567,7 +7585,7 @@ export default function TeacherDashboardPage() {
 
               {/* View 3: PDF / NOTES / SHEETS */}
               {activeSubMenu === 'content_sheets' && (() => {
-                const course = courses.find((c) => c.id === selectedCourseForSheet) || teacherCourses[0] || courses[0];
+                const course = teacherCourses.find((c) => c.id === selectedCourseForSheet) || teacherCourses[0];
                 const modules = course?.modules || [];
                 const { regularSubjects: sheetRegSubjects, archiveSubjects: sheetArcSubjects, hasArchive: sheetHasArchive } = getCategorizedCourseData(course);
                 const activeSheetSubjectList = sheetCategoryFilter === 'archive' ? sheetArcSubjects : sheetRegSubjects;
@@ -8687,7 +8705,7 @@ export default function TeacherDashboardPage() {
           {/* 4. EXAMS MODULE */}
           {/* ========================================================================= */}
           {activeMenu === 'exams' && (() => {
-            const allDisplayedExams = teacherExams.length > 0 ? teacherExams : exams;
+            const allDisplayedExams = teacherExams;
 
             return (
               <div className="space-y-6 animate-fade-in">
@@ -12904,7 +12922,7 @@ export default function TeacherDashboardPage() {
 
                 {/* 6. SUBMENU 4: msg_batch (Batchmate Group Discussion Hub) */}
                 {currentMsgSub === 'msg_batch' && (() => {
-                  const activeBatchCourse = courses.find((c) => c.id === selectedBatchCourseId) || courses[0];
+                  const activeBatchCourse = teacherCourses.find((c) => c.id === selectedBatchCourseId) || teacherCourses[0];
                   const currentCourseBatch = conversations.find(
                     (c) => c.type === 'batch_group' && c.courseId === (activeBatchCourse?.id || 'course_campus6')
                   ) || (activeBatchCourse ? getOrCreateBatchGroup(activeBatchCourse.id, activeBatchCourse.title) : selectedBatch);

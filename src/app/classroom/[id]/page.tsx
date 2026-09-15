@@ -52,10 +52,15 @@ export default function ClassroomPage({
   const completedLiveClasses = courseLiveClasses.filter((lc) => lc.status === 'completed');
   const courseQBanksCount = course ? questionBanks.filter((qb) => qb.courseId === course.id).length : 0;
   const [commentInput, setCommentInput] = useState('');
-  const [comments, setComments] = useState<{ id: string; user: string; text: string; time: string }[]>([
-    { id: '1', user: 'মাহমুদুল হাসান শুভ', text: 'স্যার, নদী-নৌকা কেসে ন্যূনতম সময়ে পারাপারের শর্টকাটটা দারুণ ছিলো!', time: '১০ মিনিট আগে' },
-    { id: '2', user: 'নুসরাত জাহান', text: 'লেকচার শিটের প্র্যাকটিস প্রবলেম ৭ এর সলিউশন টা কোনো ক্লাসে আলোচনা হয়েছে?', time: '২৫ মিনিট আগে' },
-  ]);
+  const [comments, setComments] = useState<{ id: string; user: string; text: string; time: string }[]>(() => {
+    if (typeof window !== 'undefined' && course?.id) {
+      try {
+        const saved = localStorage.getItem(`adommo_comments_${course.id}`);
+        if (saved) return JSON.parse(saved);
+      } catch {}
+    }
+    return [];
+  });
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [expandedDrawerSections, setExpandedDrawerSections] = useState<Record<string, boolean>>({});
   const [expandedDrawerChapters, setExpandedDrawerChapters] = useState<Record<string, boolean>>({});
@@ -106,11 +111,17 @@ export default function ClassroomPage({
 
     const newComment = {
       id: Date.now().toString(),
-      user: currentUser.name,
-      text: commentInput,
+      user: currentUser.name || 'শিক্ষার্থী',
+      text: commentInput.trim(),
       time: 'এইমাত্র',
     };
-    setComments([newComment, ...comments]);
+    const updated = [newComment, ...comments];
+    setComments(updated);
+    if (typeof window !== 'undefined' && course?.id) {
+      try {
+        localStorage.setItem(`adommo_comments_${course.id}`, JSON.stringify(updated));
+      } catch {}
+    }
     setCommentInput('');
     showToast('💬 আপনার মন্তব্য পোস্ট করা হয়েছে!');
   };

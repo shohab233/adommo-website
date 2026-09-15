@@ -20,6 +20,7 @@ interface AppContextType {
   enrollInCourse: (courseId: string, paymentMethod: 'bKash' | 'Nagad' | 'Rocket' | 'Manual TrxID', trxId: string, senderPhone: string) => { success: boolean; message: string };
   approveEnrollment: (enrollmentId: string) => void;
   rejectEnrollment: (enrollmentId: string) => void;
+  deleteEnrollment: (enrollmentId: string) => void;
   addCourse: (course: Partial<Course>) => void;
   updateCourse: (courseId: string, updatedData: Partial<Course>) => void;
   deleteCourse: (courseId: string) => void;
@@ -97,6 +98,25 @@ export const emptyUser: User = {
 };
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
+  // One-time synchronous purge to guarantee 100% clean slate across all browsers
+  if (typeof window !== 'undefined' && !localStorage.getItem('adommo_fresh_clean_slate_v1')) {
+    try {
+      localStorage.removeItem('adommo_notifications');
+      localStorage.removeItem('adommo_conversations');
+      localStorage.removeItem('adommo_detailed_subs');
+      localStorage.removeItem('adommo_live_classes');
+      localStorage.removeItem('adommo_exams');
+      localStorage.removeItem('adommo_courses');
+      localStorage.removeItem('adommo_enrollments');
+      localStorage.removeItem('adommo_user');
+      localStorage.removeItem('adommo_role');
+      localStorage.removeItem('adommo_coupons');
+      localStorage.removeItem('adommo_teacher_kyc_list');
+      localStorage.removeItem('adommo_qbanks');
+      localStorage.setItem('adommo_fresh_clean_slate_v1', 'true');
+    } catch {}
+  }
+
   const [currentRole, setCurrentRole] = useState<UserRole>('student');
   const [currentUser, setCurrentUser] = useState<User>(emptyUser);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -147,8 +167,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Load from local storage if present
   useEffect(() => {
     try {
-      // One-time cleanup of stale mock data from previous demo sessions
-      if (typeof window !== 'undefined' && !localStorage.getItem('adommo_mock_purged_v3')) {
+      // One-time cleanup to ensure fresh clean slate across browser sessions
+      if (typeof window !== 'undefined' && !localStorage.getItem('adommo_fresh_clean_slate_v1')) {
         localStorage.removeItem('adommo_notifications');
         localStorage.removeItem('adommo_conversations');
         localStorage.removeItem('adommo_detailed_subs');
@@ -158,7 +178,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         localStorage.removeItem('adommo_enrollments');
         localStorage.removeItem('adommo_user');
         localStorage.removeItem('adommo_role');
-        localStorage.setItem('adommo_mock_purged_v3', 'true');
+        localStorage.removeItem('adommo_coupons');
+        localStorage.removeItem('adommo_teacher_kyc_list');
+        localStorage.removeItem('adommo_qbanks');
+        localStorage.setItem('adommo_fresh_clean_slate_v1', 'true');
       }
 
       const savedRole = localStorage.getItem('adommo_role') as UserRole;
@@ -913,6 +936,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     showToast('⚠️ এনরোলমেন্ট রিকোয়েস্ট রিজেক্ট করা হয়েছে।');
   };
 
+  const deleteEnrollment = (enrollmentId: string) => {
+    const updated = enrollments.filter((e) => e.id !== enrollmentId);
+    setEnrollments(updated);
+    try {
+      localStorage.setItem('adommo_enrollments', JSON.stringify(updated));
+    } catch {}
+
+    fetch(`/api/admin/enrollments?id=${enrollmentId}`, {
+      method: 'DELETE',
+    }).catch((err) => console.log('Admin enrollment delete error:', err));
+
+    showToast('এনরোলমেন্ট মুছে ফেলা হয়েছে।');
+  };
+
   const addCourse = (newCourseData: Partial<Course>) => {
     const regPrice = Number(newCourseData.regularPrice) || 2500;
     const offPrice = Number(newCourseData.offerPrice) || 1200;
@@ -933,7 +970,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       teacherEmail: currentUser.email || newCourseData.teacherEmail || '',
       teacherPhone: currentUser.phone || newCourseData.teacherPhone || '',
       instructor: {
-        name: currentUser.name || 'সুমন হোসেন',
+        name: currentUser.name || 'কোর্স ইনস্ট্রাক্টর',
         designation: 'লিড ইনস্ট্রাক্টর',
         institution: currentUser.college || 'মেন্টর ও শিক্ষক, অদম্য এডটেক',
         avatar: currentUser.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
@@ -1626,7 +1663,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const newRankEntry: LeaderboardEntry = {
         rank: newRank,
         studentName: newSubmission.studentName,
-        college: newSubmission.studentCollege || 'নটর ডেম কলেজ, ঢাকা',
+        college: newSubmission.studentCollege || 'শিক্ষার্থী',
         score: newSubmission.score,
         totalMarks: newSubmission.totalMarks,
         accuracy: Math.round(((newSubmission.correctAnswers || 1) / Math.max(1, (newSubmission.correctAnswers || 1) + (newSubmission.wrongAnswers || 0))) * 100),
@@ -1759,7 +1796,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         .map((s) => ({
           rank: s.rank || 1,
           studentName: s.studentName,
-          college: s.studentCollege || 'নটর ডেম কলেজ, ঢাকা',
+          college: s.studentCollege || 'শিক্ষার্থী',
           score: s.score,
           totalMarks: s.totalMarks,
           accuracy: Math.round(((s.correctAnswers || 1) / Math.max(1, (s.correctAnswers || 1) + (s.wrongAnswers || 0))) * 100),
@@ -2171,7 +2208,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       type: 'doubt',
       studentId: currentUser.id,
       studentName: currentUser.name || 'শিক্ষার্থী',
-      studentCollege: currentUser.college || 'নটর ডেম কলেজ, ঢাকা',
+      studentCollege: currentUser.college || 'অনবোর্ডেড শিক্ষার্থী',
       studentAvatar: currentUser.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
       studentRoll: '#STD-' + Math.floor(1000 + Math.random() * 9000),
       courseId: data.courseId,
@@ -2498,6 +2535,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         enrollInCourse,
         approveEnrollment,
         rejectEnrollment,
+        deleteEnrollment,
         addCourse,
         updateCourse,
         deleteCourse,

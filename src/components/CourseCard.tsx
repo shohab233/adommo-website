@@ -15,10 +15,10 @@ export default function CourseCard({ course }: CourseCardProps) {
   const enrolled = isEnrolled(course.id);
 
   // Total lecture count across modules
-  const totalLectures = course.modules?.reduce(
+  const totalLectures = course.totalLectures || course.modules?.reduce(
     (acc, m) => acc + (m.lectures?.length || 0),
     0
-  ) || 45;
+  ) || 0;
 
   const discountPercent =
     course.regularPrice > course.offerPrice

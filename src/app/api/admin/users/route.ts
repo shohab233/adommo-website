@@ -117,3 +117,49 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { userId, id, status, role, name, college, phone, email } = body;
+    const targetId = userId || id;
+
+    if (!targetId) {
+      return NextResponse.json({ success: false, error: 'ইউজার আইডি আবশ্যক।' }, { status: 400 });
+    }
+
+    const updates: any = {};
+    if (status) updates.status = status;
+    if (role) updates.role = role;
+    if (name) updates.name = name.trim();
+    if (college) updates.college = college.trim();
+    if (phone) updates.phone = phone.trim();
+    if (email) updates.email = email.trim().toLowerCase();
+
+    const updated = await db.updateAsync('users', targetId, updates);
+    if (!updated) {
+      return NextResponse.json({ success: false, error: 'ইউজার পাওয়া যায়নি।' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, user: updated });
+  } catch (err: any) {
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ success: false, error: 'ইউজার আইডি আবশ্যক।' }, { status: 400 });
+    }
+
+    const deleted = await db.deleteAsync('users', id);
+    return NextResponse.json({ success: deleted });
+  } catch (err: any) {
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  }
+}
+

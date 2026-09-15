@@ -1,0 +1,83 @@
+[
+  {
+    "id": "thread_batch_course_1789274981999",
+    "createdAt": "2026-09-13T12:59:23.074Z",
+    "type": "batch_group",
+    "studentName": "ACS Physics HSC 27 By Apurbo Mashrur Apar (Cycle-1) - অফিশিয়াল ব্যাচমেট ফোরাম",
+    "courseId": "course_1789274981999",
+    "courseTitle": "ACS Physics HSC 27 By Apurbo Mashrur Apar (Cycle-1)",
+    "status": "open",
+    "priority": "normal",
+    "lastMessageText": "keno aco tomra",
+    "lastMessageTime": "এইমাত্র",
+    "unreadCountTeacher": 1,
+    "unreadCountStudent": 1,
+    "messages": [
+      {
+        "id": "msg_bg_auto_1789304361779",
+        "senderId": "teacher_main",
+        "senderName": "Miss Sadiya (ইনস্ট্রাক্টর)",
+        "senderRole": "teacher",
+        "senderAvatar": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80",
+        "text": "স্বাগতম প্রিয় শিক্ষার্থীরা! \"ACS Physics HSC 27 By Apurbo Mashrur Apar (Cycle-1)\" কোর্সের সকল ব্যাচমেটদের পারস্পরিক পড়াশোনা ও সহযোগিতার জন্য এই গ্রুপ তৈরি করা হয়েছে।",
+        "createdAt": "এখনই",
+        "isRead": true
+      },
+      {
+        "id": "msg_1789304387287_nqj0",
+        "senderId": "id_1788959044208_x6deh",
+        "senderName": "Md Shohab  Hosen",
+        "senderRole": "student",
+        "senderAvatar": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80",
+        "text": "hi",
+        "createdAt": "এখনই",
+        "isRead": false
+      },
+      {
+        "id": "msg_1789304414056_w83x",
+        "senderId": "id_1789209422176_afov8",
+        "senderName": "Miss Sadiya",
+        "senderRole": "teacher",
+        "senderAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
+        "text": "keno aco tomra",
+        "createdAt": "এখনই",
+        "isRead": false
+      }
+    ],
+    "lastUpdated": 1789304415373,
+    "updatedAt": "2026-09-13T13:00:15.373Z"
+  },
+  {
+    "id": "thread_doubt_1789304448478",
+    "createdAt": "2026-09-13T13:00:49.799Z",
+    "type": "doubt",
+    "studentId": "id_1788959044208_x6deh",
+    "studentName": "Md Shohab  Hosen",
+    "studentCollege": "Lohagara Degree Collage (রংপুর)",
+    "studentAvatar": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80",
+    "studentRoll": "#STD-2464",
+    "courseId": "course_acs_frb26",
+    "courseTitle": "ACS HSC 26 Final Revision Batch || FRB-26",
+    "subject": "পদার্থবিজ্ঞান ১ম পত্র",
+    "chapter": "অধ্যায় ৩: গতিবিদ্যা (প্রাস)",
+    "topic": "সর্বোচ্চ উচ্চতায় বেগ ও ত্বরণ",
+    "status": "pending",
+    "priority": "high",
+    "lastMessageText": "hi sir",
+    "lastMessageTime": "এখনই",
+    "unreadCountTeacher": 1,
+    "unreadCountStudent": 0,
+    "messages": [
+      {
+        "id": "msg_d_1789304448478",
+        "senderId": "id_1788959044208_x6deh",
+        "senderName": "Md Shohab  Hosen",
+        "senderRole": "student",
+        "senderAvatar": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80",
+        "text": "hi sir",
+        "createdAt": "এখনই",
+        "isRead": false
+      }
+    ]
+  }
+]

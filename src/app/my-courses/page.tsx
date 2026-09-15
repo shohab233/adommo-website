@@ -19,11 +19,24 @@ import {
 } from 'lucide-react';
 
 export default function MyCoursesPage() {
-  const { currentUser, courses, liveClasses, isEnrolled } = useApp();
+  const { currentUser, courses, liveClasses, isEnrolled, enrollments } = useApp();
   const isGuest = !currentUser || !currentUser.id || currentUser.id === 'usr_guest';
 
   // Filter only the courses the student is enrolled in (checked via isEnrolled)
   const enrolledCourses = courses.filter((c) => isEnrolled(c.id));
+
+  const cleanPhone = (currentUser?.phone || '').replace(/\D/g, '');
+  const pendingEnrollments = (enrollments || []).filter((e) => {
+    if (e.status !== 'pending') return false;
+    if (currentUser?.id && e.studentId === currentUser.id) return true;
+    if (cleanPhone) {
+      const p1 = (e.studentPhone || '').replace(/\D/g, '');
+      const p2 = (e.senderPhone || '').replace(/\D/g, '');
+      if (p1 && p1 === cleanPhone) return true;
+      if (p2 && p2 === cleanPhone) return true;
+    }
+    return false;
+  });
 
   if (isGuest) {
     return (
@@ -92,6 +105,36 @@ export default function MyCoursesPage() {
           </div>
         </div>
       </div>
+
+      {/* Pending Enrollments Banner/List (If any pending payment submissions) */}
+      {pendingEnrollments.length > 0 && (
+        <div className="max-w-[1480px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-amber-50/80 border border-amber-200 rounded-3xl p-6 space-y-4 shadow-xs">
+            <div className="flex items-center gap-2 text-amber-800 font-black text-sm">
+              <Clock className="w-5 h-5 text-amber-600" />
+              <span>পেমেন্ট ভেরিফিকেশন চলমান ({pendingEnrollments.length} টি আবেদন)</span>
+            </div>
+            <p className="text-xs text-amber-700 leading-relaxed">
+              আপনার পেমেন্ট ট্রানজেকশন আইডি (TrxID) আমাদের অ্যাডমিন টিম যাচাই করছে। ভেরিফিকেশন সম্পন্ন হওয়া মাত্রই আপনার ক্লাসরুম স্বয়ংক্রিয়ভাবে খুলে যাবে।
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {pendingEnrollments.map((pen) => (
+                <div key={pen.id} className="bg-white p-4 rounded-2xl border border-amber-200 shadow-2xs space-y-2">
+                  <div className="flex items-center justify-between text-[11px] font-bold">
+                    <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 font-extrabold">{pen.paymentMethod}</span>
+                    <span className="text-slate-500 font-mono">TrxID: {pen.trxId}</span>
+                  </div>
+                  <h4 className="text-xs font-black text-slate-800 line-clamp-1">{pen.courseTitle}</h4>
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-100">
+                    <span>ফি: <strong>৳{pen.amount}</strong></span>
+                    <span className="text-amber-600 font-bold">অ্যাডমিন রিভিউ চলছে</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Course Grid */}
       <div className="max-w-[1480px] mx-auto px-4 sm:px-6 lg:px-8">

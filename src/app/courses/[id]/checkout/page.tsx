@@ -30,8 +30,39 @@ export default function CourseCheckoutPage({
   const router = useRouter();
   const { courses, enrollInCourse, isEnrolled, showToast, currentUser, verifyCoupon, coupons } = useApp();
 
-  const course = courses.find((c) => c.id === resolvedParams.id) || courses[0];
+  const course = courses.find((c) => c.id === resolvedParams.id);
   const enrolled = course ? isEnrolled(course.id) : false;
+
+  const [paymentMethod, setPaymentMethod] = useState<'bKash' | 'Nagad' | 'Rocket'>('bKash');
+  const [senderPhone, setSenderPhone] = useState('');
+  const [trxId, setTrxId] = useState('');
+  const [couponCode, setCouponCode] = useState('');
+  const [discountApplied, setDiscountApplied] = useState(0);
+  const [couponSuccess, setCouponSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+
+  const [paymentNumbers, setPaymentNumbers] = useState({
+    bKash: '01712-345678',
+    Nagad: '01819-876543',
+    Rocket: '01911-223344-9',
+  });
+
+  React.useEffect(() => {
+    fetch('/api/admin/settings')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success && data.settings) {
+          setPaymentNumbers({
+            bKash: data.settings.bkashMerchant || '01712-345678',
+            Nagad: data.settings.nagadMerchant || '01819-876543',
+            Rocket: data.settings.rocketMerchant || '01911-223344-9',
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   if (!course) {
     return (
@@ -46,22 +77,6 @@ export default function CourseCheckoutPage({
       </div>
     );
   }
-
-  const [paymentMethod, setPaymentMethod] = useState<'bKash' | 'Nagad' | 'Rocket'>('bKash');
-  const [senderPhone, setSenderPhone] = useState('');
-  const [trxId, setTrxId] = useState('');
-  const [couponCode, setCouponCode] = useState('');
-  const [discountApplied, setDiscountApplied] = useState(0);
-  const [couponSuccess, setCouponSuccess] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-
-  const paymentNumbers = {
-    bKash: '01712-345678',
-    Nagad: '01819-876543',
-    Rocket: '01911-223344-9',
-  };
 
   const finalAmount = Math.max(0, course.offerPrice - discountApplied);
 

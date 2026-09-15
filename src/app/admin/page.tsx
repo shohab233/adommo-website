@@ -211,6 +211,7 @@ export default function SuperAdminPage() {
     enrollments, 
     approveEnrollment, 
     rejectEnrollment, 
+    deleteEnrollment, 
     exams,
     detailedSubmissions,
     leaderboard,
@@ -271,7 +272,7 @@ export default function SuperAdminPage() {
     fetch('/api/admin/payouts')
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (data && data.success && Array.isArray(data.payouts) && data.payouts.length > 0) {
+        if (data && data.success && Array.isArray(data.payouts)) {
           setPayoutRecords(data.payouts);
         }
       })
@@ -283,7 +284,7 @@ export default function SuperAdminPage() {
     fetch('/api/admin/coupons')
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (data && data.success && Array.isArray(data.coupons) && data.coupons.length > 0) {
+        if (data && data.success && Array.isArray(data.coupons)) {
           setCoupons(data.coupons);
         }
       })
@@ -435,18 +436,44 @@ export default function SuperAdminPage() {
     }
   }, [customTeachers]);
 
-  // 2. Real Teachers Aggregation (Strictly Approved Teachers Only)
+  // 2. Real Teachers Aggregation (Strictly Real Teachers from Database & KYC)
   const realTeachers = useMemo<CustomTeacher[]>(() => {
     const teacherMap = new Map<string, CustomTeacher>();
 
-    // 1. Approved Teachers from live KYC List
+    // 1. Teachers from Live Database Users
+    dbUsers
+      .filter((u) => u.role === 'teacher')
+      .forEach((tu) => {
+        const isVerified = tu.kycStatus === 'approved' ||
+          effectiveKycList.some(k => (k.teacherId === tu.id || (tu.email && k.teacherEmail === tu.email) || (tu.name && k.fullName === tu.name)) && k.status === 'approved');
+
+        teacherMap.set(tu.id, {
+          id: tu.id,
+          name: tu.name || 'নিবন্ধিত শিক্ষক',
+          institution: tu.college || 'রেজিস্টার্ড ফ্যাকাল্টি',
+          designation: tu.designation || 'নিবন্ধিত শিক্ষক',
+          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+          subject: tu.subject || 'একাডেমিক ইন্সট্রাক্টর',
+          coursesTaught: [],
+          courseIds: [],
+          totalStudents: 0,
+          isVerified: isVerified,
+          commissionPercent: tu.commissionPercent || 80,
+          email: tu.email || '',
+          phone: tu.phone || '',
+        });
+      });
+
+    // 2. Approved Teachers from live KYC List who might not be in dbUsers yet
     effectiveKycList
       .filter((kyc) => kyc.status === 'approved')
       .forEach((kyc) => {
+        const teacherId = kyc.teacherId || `teacher_${kyc.applicationId}`;
         const teacherName = kyc.fullName || kyc.teacherName;
-        if (teacherName && !teacherMap.has(teacherName)) {
-          teacherMap.set(teacherName, {
-            id: kyc.teacherId || `teacher_${kyc.applicationId}`,
+        const exists = Array.from(teacherMap.values()).some(t => t.id === teacherId || (teacherName && t.name === teacherName));
+        if (teacherName && !exists) {
+          teacherMap.set(teacherId, {
+            id: teacherId,
             name: teacherName,
             institution: kyc.institutionName || 'অনবোর্ডেড ফ্যাকাল্টি',
             designation: kyc.degreeName || 'শিক্ষক ও প্রশিক্ষক',
@@ -463,46 +490,28 @@ export default function SuperAdminPage() {
         }
       });
 
-    // 2. Approved Teachers from Database Users
-    dbUsers
-      .filter((u) => u.role === 'teacher' && u.kycStatus === 'approved')
-      .forEach((tu) => {
-        if (tu.name && !teacherMap.has(tu.name)) {
-          teacherMap.set(tu.name, {
-            id: tu.id,
-            name: tu.name,
-            institution: tu.college || 'রেজিস্টার্ড ফ্যাকাল্টি',
-            designation: tu.designation || 'নিবন্ধিত শিক্ষক',
-            avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-            subject: tu.subject || 'একাডেমিক ইন্সট্রাক্টর',
-            coursesTaught: [],
-            courseIds: [],
-            totalStudents: 0,
-            isVerified: true,
-            commissionPercent: tu.commissionPercent || 80,
-            email: tu.email || '',
-            phone: tu.phone || '',
-          });
-        }
-      });
-
     // 3. Custom Teachers directly created by Super Admin
     customTeachers.forEach((ct) => {
-      if (ct.name && !teacherMap.has(ct.name)) {
-        teacherMap.set(ct.name, {
+      const exists = Array.from(teacherMap.values()).some(t => t.id === ct.id || (ct.name && t.name === ct.name));
+      if (ct.name && !exists) {
+        teacherMap.set(ct.id, {
           ...ct,
           isVerified: true,
         });
       }
     });
 
-    // 4. Map courses taught to these approved teachers
+    // 4. Map courses taught to these teachers
     courses.forEach((c) => {
-      if (c.instructor && c.instructor.name && teacherMap.has(c.instructor.name)) {
-        const existing = teacherMap.get(c.instructor.name)!;
-        if (!existing.coursesTaught.includes(c.title)) existing.coursesTaught.push(c.title);
-        if (!existing.courseIds.includes(c.id)) existing.courseIds.push(c.id);
-        existing.totalStudents += (c.enrolledCount || 0);
+      if (c.instructor && c.instructor.name) {
+        const teacher = Array.from(teacherMap.values()).find(t => 
+          (t.name && t.name.toLowerCase() === c.instructor.name.toLowerCase()) || ((c.instructor as any).id && t.id === (c.instructor as any).id)
+        );
+        if (teacher) {
+          if (!teacher.coursesTaught.includes(c.title)) teacher.coursesTaught.push(c.title);
+          if (!teacher.courseIds.includes(c.id)) teacher.courseIds.push(c.id);
+          teacher.totalStudents += (c.enrolledCount || 0);
+        }
       }
     });
 
@@ -527,144 +536,21 @@ export default function SuperAdminPage() {
   }, [userStatusOverrides]);
 
   // 4. Real Users (Guaranteed Unique IDs)
+  // 4. Real Users (Strictly from Live Database)
   const allRealUsers = useMemo(() => {
-    const usersById = new Map<string, any>();
-    const phoneToId = new Map<string, string>();
-
-    const recordUser = (userObj: any) => {
-      const phone = userObj.phone && userObj.phone !== '—' ? userObj.phone.trim() : null;
-      let canonicalId = userObj.id;
-      
-      if (phone && phoneToId.has(phone)) {
-        canonicalId = phoneToId.get(phone)!;
-      }
-
-      if (usersById.has(canonicalId)) {
-        const existing = usersById.get(canonicalId);
-        if ((!existing.phone || existing.phone === '—') && userObj.phone) existing.phone = userObj.phone;
-        if ((!existing.email || existing.email === '—') && userObj.email) existing.email = userObj.email;
-        if ((!existing.college || existing.college === '—') && userObj.college) existing.college = userObj.college;
-        if (userObj.courses && Array.isArray(userObj.courses)) {
-          userObj.courses.forEach((c: string) => {
-            if (!existing.courses.includes(c)) existing.courses.push(c);
-          });
-        }
-      } else {
-        const newUser = {
-          ...userObj,
-          id: canonicalId,
-          status: userStatusOverrides[canonicalId] || userObj.status || 'active',
-          courses: Array.isArray(userObj.courses) ? [...userObj.courses] : (userObj.courses ? [userObj.courses] : []),
-        };
-        usersById.set(canonicalId, newUser);
-        if (phone) phoneToId.set(phone, canonicalId);
-      }
-    };
-
-    if (currentUser) {
-      recordUser({
-        id: currentUser.id || 'usr_student_01',
-        name: currentUser.name || 'নিবন্ধিত শিক্ষার্থী',
-        phone: currentUser.phone || '—',
-        email: currentUser.email || '—',
-        college: currentUser.college || '—',
-        role: currentUser.role || 'student',
-        status: 'active',
-        joinedAt: 'সক্রিয় সদস্য',
-        courses: courses.filter(c => currentUser.enrolledCourseIds?.includes(c.id)).map(c => c.title),
-      });
-    }
-
-    enrollments.forEach(enr => {
-      const studentId = enr.studentId || (enr.studentPhone ? `usr_p_${enr.studentPhone.replace(/[^0-9]/g, '')}` : `usr_enr_${enr.id}`);
-      recordUser({
-        id: studentId,
-        name: enr.studentName || 'শিক্ষার্থী',
-        phone: enr.studentPhone || enr.senderPhone || '—',
-        email: enr.studentPhone ? `${enr.studentPhone.replace(/[^0-9]/g, '')}@student.adommo.com` : '—',
-        college: 'উচ্চ মাধ্যমিক কলেজ',
-        role: 'student' as UserRole,
-        status: enr.status === 'approved' ? 'active' : 'new',
-        joinedAt: enr.createdAt || 'সম্প্রতি',
-        courses: [enr.courseTitle],
-      });
-    });
-
-    detailedSubmissions.forEach(sub => {
-      recordUser({
-        id: sub.studentId || `usr_sub_${sub.id}`,
-        name: sub.studentName || 'পরীক্ষার্থী',
-        phone: sub.studentPhone || '—',
-        email: `${sub.studentId}@adommo.com`,
-        college: sub.studentCollege || '—',
-        role: 'student' as UserRole,
-        status: 'active',
-        joinedAt: sub.submittedAt || 'সম্প্রতি',
-        courses: [sub.courseTitle],
-      });
-    });
-
-    leaderboard.forEach(lb => {
-      recordUser({
-        id: `usr_lb_${lb.studentName.replace(/\s+/g, '_')}`,
-        name: lb.studentName,
-        phone: '—',
-        email: `${lb.studentName.replace(/\s+/g, '').toLowerCase()}@student.com`,
-        college: lb.college || '—',
-        role: 'student' as UserRole,
-        status: 'active',
-        joinedAt: lb.submittedAt || 'সম্প্রতি',
-        courses: [courses[0]?.title || 'Campus 6.0'],
-      });
-    });
-
-    // 5. Ingest Real Users from Database API (dbUsers)
-    dbUsers.forEach((du) => {
-      // Exclude teachers who are not yet approved by Super Admin
-      if (du.role === 'teacher' && du.kycStatus !== 'approved') {
-        return;
-      }
-      recordUser({
-        id: du.id,
-        name: du.name || (du.role === 'teacher' ? 'শিক্ষক' : 'নিবন্ধিত শিক্ষার্থী'),
-        phone: du.phone || '—',
-        email: du.email || '—',
-        college: du.college || (du.role === 'teacher' ? 'ফ্যাকাল্টি' : 'শিক্ষাপ্রতিষ্ঠান'),
-        role: (du.role || 'student') as UserRole,
-        status: du.status || 'active',
-        joinedAt: du.createdAt ? new Date(du.createdAt).toLocaleDateString('bn-BD') : 'নিবন্ধিত সদস্য',
-        courses: courses.filter(c => du.enrolledCourseIds?.includes(c.id)).map(c => c.title),
-      });
-    });
-
-    realTeachers.forEach(t => {
-      recordUser({
-        id: t.id,
-        name: t.name,
-        phone: t.phone || 'অফিসিয়াল ফ্যাকাল্টি',
-        email: t.email || `${t.name.replace(/\s+/g, '').toLowerCase()}@faculty.adommo.com`,
-        college: t.institution,
-        role: 'teacher' as UserRole,
-        status: 'active',
-        joinedAt: 'অনবোর্ডেড ফ্যাকাল্টি',
-        courses: t.coursesTaught,
-      });
-    });
-
-    recordUser({
-      id: 'usr_super_admin',
-      name: 'সুপার অ্যাডমিনিস্ট্রেটর',
-      phone: '01819-876543',
-      email: 'admin@adommo.com',
-      college: 'অদম্য হেডকোয়ার্টার্স',
-      role: 'admin' as UserRole,
-      status: 'active',
-      joinedAt: 'সিস্টেম রুট',
-      courses: ['সকল কোর্স ম্যানেজমেন্ট'],
-    });
-
-    return Array.from(usersById.values());
-  }, [currentUser, enrollments, detailedSubmissions, leaderboard, realTeachers, courses, userStatusOverrides, dbUsers]);
+    return dbUsers.map((du) => ({
+      id: du.id,
+      name: du.name || (du.role === 'teacher' ? 'শিক্ষক' : 'শিক্ষার্থী'),
+      phone: du.phone || '—',
+      email: du.email || '—',
+      college: du.college || (du.role === 'teacher' ? 'ফ্যাকাল্টি' : 'শিক্ষাপ্রতিষ্ঠান'),
+      role: (du.role || 'student') as UserRole,
+      status: du.status || 'active',
+      kycStatus: du.kycStatus,
+      joinedAt: du.createdAt ? new Date(du.createdAt).toLocaleDateString('bn-BD') : 'নিবন্ধিত সদস্য',
+      courses: courses.filter(c => du.enrolledCourseIds?.includes(c.id)).map(c => c.title),
+    }));
+  }, [dbUsers, courses]);
 
   const realStudents = useMemo(() => allRealUsers.filter(u => u.role === 'student'), [allRealUsers]);
 
@@ -1112,12 +998,27 @@ export default function SuperAdminPage() {
   };
 
   const handleToggleCoupon = (couponId: string) => {
-    setCoupons(prev => prev.map(c => c.id === couponId ? { ...c, isActive: !c.isActive } : c));
+    const target = coupons.find(c => c.id === couponId);
+    if (!target) return;
+    const newStatus = !target.isActive;
+    setCoupons(prev => prev.map(c => c.id === couponId ? { ...c, isActive: newStatus } : c));
+    fetch('/api/admin/coupons', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: couponId, isActive: newStatus }),
+    })
+      .then(() => refreshCoupons())
+      .catch(err => console.log('Coupon toggle error:', err));
     showToast('কুপন স্ট্যাটাস পরিবর্তিত হয়েছে!');
   };
 
   const handleDeleteCoupon = (couponId: string) => {
     setCoupons(prev => prev.filter(c => c.id !== couponId));
+    fetch(`/api/admin/coupons?id=${couponId}`, {
+      method: 'DELETE',
+    })
+      .then(() => refreshCoupons())
+      .catch(err => console.log('Coupon delete error:', err));
     showToast('কুপন মুছে ফেলা হয়েছে!');
   };
 
@@ -2417,24 +2318,50 @@ export default function SuperAdminPage() {
                           </span>
                         </td>
                         <td className="p-3.5 text-center">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const newStatus = u.status === 'active' ? 'suspended' : 'active';
-                              setUserStatusOverrides(prev => ({
-                                ...prev,
-                                [u.id]: newStatus
-                              }));
-                              showToast(`ব্যবহারকারী ${u.name} এর অ্যাকাউন্ট ${newStatus === 'active' ? 'সক্রিয়' : 'স্থগিত'} করা হয়েছে!`);
-                            }}
-                            className={`px-3 py-1.5 rounded-xl text-[11px] font-black cursor-pointer transition-all active:scale-95 ${
-                              u.status === 'active'
-                                ? 'bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200/80 shadow-2xs'
-                                : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200/80 shadow-2xs'
-                            }`}
-                          >
-                            {u.status === 'active' ? 'স্থগিত করুন' : 'সক্রিয় করুন'}
-                          </button>
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newStatus = u.status === 'active' ? 'suspended' : 'active';
+                                setUserStatusOverrides(prev => ({
+                                  ...prev,
+                                  [u.id]: newStatus
+                                }));
+                                fetch('/api/admin/users', {
+                                  method: 'PATCH',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ id: u.id, status: newStatus }),
+                                })
+                                  .then(() => refreshDbUsers())
+                                  .catch(err => console.log('User status update error:', err));
+                                showToast(`ব্যবহারকারী ${u.name} এর অ্যাকাউন্ট ${newStatus === 'active' ? 'সক্রিয়' : 'স্থগিত'} করা হয়েছে!`);
+                              }}
+                              className={`px-2.5 py-1 rounded-xl text-[11px] font-black cursor-pointer transition-all active:scale-95 ${
+                                u.status === 'active'
+                                  ? 'bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200/80'
+                                  : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200/80'
+                              }`}
+                            >
+                              {u.status === 'active' ? 'স্থগিত' : 'সক্রিয়'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (typeof window !== 'undefined' && window.confirm(`আপনি কি নিশ্চিত যে ${u.name}-এর অ্যাকাউন্ট মুছে ফেলতে চান?`)) {
+                                  fetch(`/api/admin/users?id=${u.id}`, { method: 'DELETE' })
+                                    .then(() => {
+                                      refreshDbUsers();
+                                      showToast(`ব্যবহারকারী ${u.name}-এর অ্যাকাউন্ট সফলভাবে মুছে ফেলা হয়েছে!`);
+                                    })
+                                    .catch(err => console.log('User delete error:', err));
+                                }
+                              }}
+                              className="p-1.5 rounded-xl bg-slate-100 hover:bg-rose-100 text-slate-500 hover:text-rose-600 border border-slate-200 cursor-pointer transition-colors"
+                              title="ইউজার মুছুন"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -3475,13 +3402,28 @@ export default function SuperAdminPage() {
                             </button>
                           </td>
                           <td className="p-3.5 text-center">
-                            <Link
-                              href={`/classroom/${c.id}`}
-                              className="px-3 py-1.5 rounded-xl bg-pink-50 text-[#ed347d] hover:bg-[#ed347d] hover:text-white font-bold text-[11px] transition-colors inline-flex items-center gap-1 shadow-2xs"
-                            >
-                              <ExternalLink className="w-3 h-3" />
-                              <span>ক্লাসরুম</span>
-                            </Link>
+                            <div className="flex items-center justify-center gap-1.5">
+                              <Link
+                                href={`/classroom/${c.id}`}
+                                className="px-2.5 py-1.5 rounded-xl bg-pink-50 text-[#ed347d] hover:bg-[#ed347d] hover:text-white font-bold text-[11px] transition-colors inline-flex items-center gap-1 shadow-2xs"
+                              >
+                                <ExternalLink className="w-3 h-3" />
+                                <span>ক্লাসরুম</span>
+                              </Link>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (typeof window !== 'undefined' && window.confirm(`আপনি কি নিশ্চিত যে "${c.title}" কোর্সটি সম্পূর্ণ মুছে ফেলতে চান?`)) {
+                                    deleteCourse(c.id);
+                                    showToast(`"${c.title}" কোর্সটি সফলভাবে মুছে ফেলা হয়েছে!`);
+                                  }
+                                }}
+                                className="p-1.5 rounded-xl bg-slate-100 hover:bg-rose-100 text-slate-500 hover:text-rose-600 border border-slate-200 cursor-pointer transition-colors"
+                                title="কোর্স মুছুন"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -3574,37 +3516,52 @@ export default function SuperAdminPage() {
                           </span>
                         </td>
                         <td className="p-3.5 text-center">
-                          {enr.status === 'pending' ? (
-                            <div className="flex items-center justify-center gap-1.5">
+                          <div className="flex items-center justify-center gap-1.5">
+                            {enr.status === 'pending' ? (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    approveEnrollment(enr.id);
+                                    showToast(`${enr.studentName} এর এনরোলমেন্ট অনুমোদিত হয়েছে!`);
+                                  }}
+                                  className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-[11px] shadow-xs cursor-pointer flex items-center gap-1"
+                                >
+                                  <Check className="w-3 h-3" />
+                                  <span>অনুমোদন</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => rejectEnrollment(enr.id)}
+                                  className="p-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 cursor-pointer"
+                                  title="বাতিল করুন"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              </>
+                            ) : (
                               <button
                                 type="button"
-                                onClick={() => {
-                                  approveEnrollment(enr.id);
-                                  showToast(`${enr.studentName} এর এনরোলমেন্ট অনুমোদিত হয়েছে!`);
-                                }}
-                                className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-[11px] shadow-xs cursor-pointer flex items-center gap-1"
+                                onClick={() => setSelectedReceiptEnrollment(enr)}
+                                className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-pink-50 hover:text-[#ed347d] text-slate-700 text-[11px] font-extrabold inline-flex items-center gap-1.5 cursor-pointer transition-colors"
                               >
-                                <Check className="w-3 h-3" />
-                                <span>অনুমোদন</span>
+                                <Eye className="w-3.5 h-3.5" />
+                                <span>রশিদ দেখুন</span>
                               </button>
-                              <button
-                                type="button"
-                                onClick={() => rejectEnrollment(enr.id)}
-                                className="p-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 cursor-pointer"
-                              >
-                                <X className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          ) : (
+                            )}
                             <button
                               type="button"
-                              onClick={() => setSelectedReceiptEnrollment(enr)}
-                              className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-pink-50 hover:text-[#ed347d] text-slate-700 text-[11px] font-extrabold inline-flex items-center gap-1.5 cursor-pointer transition-colors"
+                              onClick={() => {
+                                if (typeof window !== 'undefined' && window.confirm(`এনরোলমেন্ট #${enr.id} মুছে ফেলতে চান?`)) {
+                                  deleteEnrollment(enr.id);
+                                }
+                              }}
+                              className="p-1.5 rounded-xl bg-slate-100 hover:bg-rose-100 text-slate-500 hover:text-rose-600 border border-slate-200 cursor-pointer transition-colors"
+                              title="মুছে ফেলুন"
                             >
-                              <Eye className="w-3.5 h-3.5" />
-                              <span>রশিদ দেখুন</span>
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
-                          )}
+                          </div>
                         </td>
                       </tr>
                     ))}

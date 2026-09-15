@@ -40,3 +40,31 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ success: false, authenticated: false, error: err.message, user: null });
   }
 }
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const token = req.cookies.get('adommo_auth_token')?.value;
+    let userId = body.id;
+
+    if (token) {
+      const payload = verifyToken<any>(token);
+      if (payload?.id) userId = payload.id;
+    }
+
+    if (!userId) {
+      return NextResponse.json({ success: false, error: 'User ID is required' }, { status: 400 });
+    }
+
+    const updated = await db.updateAsync('users', userId, {
+      ...(body.name ? { name: body.name.trim() } : {}),
+      ...(body.college ? { college: body.college.trim() } : {}),
+      ...(body.avatar ? { avatar: body.avatar } : {}),
+      updatedAt: new Date().toISOString(),
+    });
+
+    return NextResponse.json({ success: true, user: updated });
+  } catch (err: any) {
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  }
+}

@@ -198,10 +198,10 @@ export default function CourseJsonUploadModal({ isOpen, onClose, onEditCourse }:
         courseTitle: courseTitleInput.trim() || parsedData.courseTitle || parsedData.title || parsedData.name || 'ACS Course',
         forceNew: importMode === 'new',
         targetCourseId: importMode === 'sync' ? selectedTargetCourseId : undefined,
-        instructorId: currentUser?.id || 'id_1789136556830_h8tvl',
-        teacherEmail: currentUser?.email || 'yidap81493@airhemp.com',
-        teacherPhone: currentUser?.phone || '01714625067',
-        teacherName: currentUser?.name || 'কাজী নজরুল'
+        instructorId: currentUser?.id || '',
+        teacherEmail: currentUser?.email || '',
+        teacherPhone: currentUser?.phone || '',
+        teacherName: currentUser?.name || 'শিক্ষক'
       };
 
       const res = await fetch('/api/course/import', {
