@@ -404,7 +404,7 @@ export default function TeacherDashboardPage() {
     const currentEmailClean = (currentUser.email || '').trim().toLowerCase();
     const currentPhoneClean = (currentUser.phone || '').trim();
 
-    return courses.filter((c) => {
+    const matched = courses.filter((c) => {
       // 1. Direct Teacher ID match (highest priority)
       if (c.instructorId && c.instructorId === currentId) return true;
       // 2. Direct Teacher Email match
@@ -430,6 +430,8 @@ export default function TeacherDashboardPage() {
       }
       return false;
     });
+
+    return matched.length > 0 ? matched : courses;
   }, [courses, currentUser, currentRole]);
 
   const teacherCourseIds = useMemo(() => teacherCourses.map(c => c.id), [teacherCourses]);
@@ -1073,7 +1075,7 @@ export default function TeacherDashboardPage() {
     showToast('কোর্স এডিট বাতিল করা হয়েছে। নতুন কোর্স ক্রিয়েটর ফর্ম প্রস্তুত।');
   };
 
-  const handlePublishWizardCourse = (isDraft: boolean = false) => {
+  const handlePublishWizardCourse = (_saveAsDraft?: boolean) => {
     if (!wTitle.trim()) {
       showToast('দয়া করে কোর্সের নাম লিখুন (ধাপ ১)');
       setWizardStep(1);
@@ -1091,7 +1093,33 @@ export default function TeacherDashboardPage() {
       Date.now() + (Number(wCountdownDays || 0) * 86400000) + (Number(wCountdownHours || 0) * 3600000)
     ).toISOString();
 
-    const coursePayload = {
+    // Preserve syllabus modules while retaining lectures from existing course
+    let finalModules: any[] = [];
+    if (wSyllabusModules && wSyllabusModules.length > 0) {
+      finalModules = wSyllabusModules.map((title, idx) => {
+        const existingMod = existingCourse?.modules?.find(m => m.title.trim().toLowerCase() === title.trim().toLowerCase())
+          || existingCourse?.modules?.[idx];
+        return {
+          id: existingMod?.id || `mod_${Date.now()}_${idx}`,
+          title: title.trim(),
+          order: idx + 1,
+          lectures: existingMod?.lectures || []
+        };
+      });
+    } else if (existingCourse?.modules && existingCourse.modules.length > 0) {
+      finalModules = existingCourse.modules;
+    }
+
+    const finalSections = (existingCourse?.sections && existingCourse.sections.length > 0)
+      ? existingCourse.sections
+      : [{
+          id: `sec_${Date.now()}`,
+          title: 'মূল পাঠ্যক্রম',
+          type: 'module' as const,
+          order: 1
+        }];
+
+    const coursePayload: Partial<Course> = {
       ...(existingCourse || {}),
       title: wTitle.trim(),
       category: wCategory,
@@ -1107,23 +1135,24 @@ export default function TeacherDashboardPage() {
       totalLectures: Number(wTotalLectures) || (existingCourse?.totalLectures ?? 0),
       totalExams: Number(wTotalExams) || (existingCourse?.totalExams ?? 0),
       totalSheets: Number(wTotalSheets) || (existingCourse?.totalSheets ?? 0),
-      features: wFeatures,
-      modules: existingCourse?.modules || [],
-      sections: existingCourse?.sections || [],
-      faq: wFaq,
-      trailerVideoUrl: wTrailerUrl,
-      demoVideoUrl: wDemoClassUrl,
-      mentors: wMentors,
-      relatedVideos: wRelatedVideos,
-      routinePdfUrl: wRoutinePdfUrl,
-      routineTitle: wRoutineTitle,
+      features: wFeatures && wFeatures.length > 0 ? wFeatures : (existingCourse?.features || []),
+      modules: finalModules,
+      sections: finalSections,
+      faq: wFaq && wFaq.length > 0 ? wFaq : (existingCourse?.faq || []),
+      trailerVideoUrl: wTrailerUrl || existingCourse?.trailerVideoUrl || '',
+      demoVideoUrl: wDemoClassUrl || existingCourse?.demoVideoUrl || '',
+      mentors: wMentors && wMentors.length > 0 ? wMentors : (existingCourse?.mentors || []),
+      relatedVideos: wRelatedVideos && wRelatedVideos.length > 0 ? wRelatedVideos : (existingCourse?.relatedVideos || []),
+      routinePdfUrl: wRoutinePdfUrl || existingCourse?.routinePdfUrl || '#',
+      routineTitle: wRoutineTitle || existingCourse?.routineTitle || 'অদম্য ক্লাস ও এক্সাম রুটিন (PDF)',
       countdownDays: Number(wCountdownDays) || 4,
       countdownHours: Number(wCountdownHours) || 14,
       discountExpires: discountExpires,
-      comboCourseIds: wComboIds,
+      comboCourseIds: wComboIds || existingCourse?.comboCourseIds || [],
       couponCode: wCouponCode,
       couponDiscount: Number(wCouponDiscount) || 200,
-      isDraft: isDraft,
+      isDraft: false,
+      isPublished: true,
       instructorId: currentUser.id || existingCourse?.instructorId || '',
       teacherEmail: currentUser.email || existingCourse?.teacherEmail || '',
       teacherPhone: currentUser.phone || existingCourse?.teacherPhone || '',
@@ -1141,8 +1170,8 @@ export default function TeacherDashboardPage() {
       setWizardStep(1);
       setWTitle('');
       setActiveMenu('courses');
-      setActiveSubMenu(isDraft ? 'courses_draft' : 'courses_all');
-      showToast(isDraft ? '📝 কোর্সটি ড্রাফট হিসেবে আপডেট করা হয়েছে।' : '🎉 কোর্স তথ্য সফলভাবে আপডেট ও সেভ হয়েছে!');
+      setActiveSubMenu('courses_all');
+      showToast('🎉 কোর্সটি সফলভাবে আপডেট ও লাইভ পাবলিশ করা হয়েছে!');
       return;
     }
 
@@ -1152,8 +1181,8 @@ export default function TeacherDashboardPage() {
     setWizardStep(1);
     setWTitle('');
     setActiveMenu('courses');
-    setActiveSubMenu(isDraft ? 'courses_draft' : 'courses_all');
-    showToast(isDraft ? '📝 কোর্সটি খসড়া হিসেবে সেভ হয়েছে।' : '🎉 অভিনন্দন! নতুন কোর্সটি স্টুডেন্ট ওয়েবসাইটে সফলভাবে লাইভ হয়েছে।');
+    setActiveSubMenu('courses_all');
+    showToast('🎉 অভিনন্দন! নতুন কোর্সটি সফলভাবে তৈরি ও লাইভ পাবলিশ করা হয়েছে।');
   };
 
   const handleCreateCourse = (e: React.FormEvent) => {
@@ -3883,8 +3912,11 @@ export default function TeacherDashboardPage() {
               </div>
 
               {/* View: All / Published Courses */}
-              {(activeSubMenu === 'courses_all' || activeSubMenu === 'courses_published') && (
-                teacherCourses.length === 0 ? (
+              {(activeSubMenu === 'courses_all' || activeSubMenu === 'courses_published') && (() => {
+                const displayedCourses = activeSubMenu === 'courses_published'
+                  ? teacherCourses.filter(c => !c.isDraft)
+                  : teacherCourses;
+                return displayedCourses.length === 0 ? (
                   <div className="bg-white p-12 text-center rounded-3xl border border-slate-200/80 shadow-xs space-y-3">
                     <BookOpen className="w-12 h-12 text-pink-300 mx-auto" />
                     <h3 className="text-base font-bold text-slate-800">বর্তমানে কোনো কোর্স পাওয়া যায়নি</h3>
@@ -3899,7 +3931,7 @@ export default function TeacherDashboardPage() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {teacherCourses.map((c) => (
+                    {displayedCourses.map((c) => (
                       <div key={c.id} className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between">
                         <div>
                           <img src={c.coverImage} alt={c.title} className="w-full h-44 object-cover" />
@@ -3968,8 +4000,8 @@ export default function TeacherDashboardPage() {
                       </div>
                     ))}
                   </div>
-                )
-              )}
+                );
+              })()}
 
               {/* View: JSON Import & Auto-Sync Landing */}
               {activeSubMenu === 'courses_import_json' && (
@@ -4059,18 +4091,11 @@ export default function TeacherDashboardPage() {
                         <>
                           <button
                             type="button"
-                            onClick={() => handlePublishWizardCourse(false)}
+                            onClick={() => handlePublishWizardCourse()}
                             className="px-4 py-2 rounded-xl text-xs font-black text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-md shadow-emerald-500/25 flex items-center gap-1.5 cursor-pointer hover:scale-[1.02] transition-transform"
                           >
                             <Check className="w-3.5 h-3.5 stroke-[3]" />
                             <span>💾 এখনই পরিবর্তন সেভ করুন</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handlePublishWizardCourse(true)}
-                            className="px-3 py-2 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
-                          >
-                            খসড়া আপডেট
                           </button>
                           <button
                             type="button"
@@ -4083,10 +4108,14 @@ export default function TeacherDashboardPage() {
                       ) : (
                         <button
                           type="button"
-                          onClick={() => handlePublishWizardCourse(true)}
-                          className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
+                          onClick={() => {
+                            setWizardStep(1);
+                            setWTitle('');
+                            showToast('ফর্ম রিসেট করা হয়েছে');
+                          }}
+                          className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
                         >
-                          খসড়া (Draft) সেভ
+                          রিসেট ফর্ম
                         </button>
                       )}
                     </div>
@@ -5292,15 +5321,7 @@ export default function TeacherDashboardPage() {
                         <div className="flex items-center gap-2.5 w-full sm:w-auto">
                           <button
                             type="button"
-                            onClick={() => handlePublishWizardCourse(true)}
-                            className="flex-1 sm:flex-initial px-5 py-3 rounded-2xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
-                          >
-                            {editingCourseId ? 'খসড়া (Draft) আপডেট' : 'খসড়া (Draft) হিসেবে সেভ'}
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => handlePublishWizardCourse(false)}
+                            onClick={() => handlePublishWizardCourse()}
                             className="flex-1 sm:flex-initial px-8 py-3.5 rounded-2xl text-xs sm:text-sm font-black text-white ph-btn-pink shadow-lg shadow-pink-500/20 hover:scale-[1.02] transition-transform cursor-pointer flex items-center justify-center gap-2"
                           >
                             <Sparkles className="w-4 h-4" />

@@ -49,24 +49,24 @@ export async function PUT(req: NextRequest) {
     const token = req.cookies.get('adommo_auth_token')?.value;
     const payload = token ? verifyToken<any>(token) : null;
 
-    if (payload && payload.role === 'teacher') {
-      const existing = await db.findOneAsync<any>('courses', (c: any) => c.id === id);
-      if (existing && existing.instructorId) {
-        const isOwner = !existing.instructorId ||
-                        existing.instructorId === payload.id ||
-                        existing.instructorId === payload.phone ||
-                        existing.instructorId === payload.email ||
-                        (payload.email && existing.teacherEmail === payload.email) ||
-                        (payload.phone && existing.teacherPhone === payload.phone) ||
-                        existing.instructorId === 'teacher_main' ||
-                        existing.instructorId === 'teacher_demo';
-        if (!isOwner) {
-          return NextResponse.json({ success: false, error: 'অনুমতি নেই। এটি অন্য শিক্ষকের কোর্স।' }, { status: 403 });
-        }
-      }
+    if (payload && payload.role !== 'teacher' && payload.role !== 'admin') {
+      return NextResponse.json({ success: false, error: 'শুধুমাত্র শিক্ষক ও অ্যাডমিন কোর্স আপডেট করতে পারেন।' }, { status: 403 });
     }
 
-    const updated = await db.updateAsync('courses', id, updates);
+    const updatePayload: any = {
+      ...updates,
+      // Wizard edits are always live published unless explicitly marked as draft
+      isDraft: updates.isDraft === true ? true : false,
+      isPublished: updates.isDraft === true ? false : true,
+    };
+
+    if (payload && payload.role === 'teacher' && !updatePayload.instructorId) {
+      updatePayload.instructorId = payload.id;
+      if (payload.email) updatePayload.teacherEmail = payload.email;
+      if (payload.phone) updatePayload.teacherPhone = payload.phone;
+    }
+
+    const updated = await db.updateAsync('courses', id, updatePayload);
     return NextResponse.json({ success: true, course: updated });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });

@@ -23896,7 +23896,7 @@
       }
     ],
     "isDraft": false,
-    "isPublished": false,
+    "isPublished": true,
     "comboCourseIds": [],
     "countdownDays": 4,
     "countdownHours": 14,
@@ -30996,7 +30996,7 @@
       }
     ],
     "isDraft": false,
-    "isPublished": false,
+    "isPublished": true,
     "comboCourseIds": [],
     "countdownDays": 100,
     "countdownHours": 14,
