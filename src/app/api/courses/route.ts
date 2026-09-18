@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import fs from 'fs';
+import path from 'path';
 import { db, verifyToken } from '@/lib/db';
 import { healCourse } from '@/lib/courseSubjectNormalizer';
 import { sanitizeBase64Image } from '@/lib/mediaStorage';
@@ -195,10 +197,16 @@ export async function POST(req: NextRequest) {
     }
 
     const healed = healCourse(courseData);
+    const isDraft = courseData.isDraft !== undefined ? Boolean(courseData.isDraft) : false;
+    const isPublished = courseData.isPublished !== undefined ? Boolean(courseData.isPublished) : !isDraft;
+
     const newCourse = await db.createAsync('courses', {
       ...healed,
       instructorId: payload?.id || courseData.instructorId || 'teacher_main',
-      isPublished: true,
+      teacherEmail: payload?.email || courseData.teacherEmail || '',
+      teacherPhone: payload?.phone || courseData.teacherPhone || '',
+      isDraft,
+      isPublished,
     });
 
     return NextResponse.json({ success: true, course: newCourse });
@@ -236,9 +244,15 @@ export async function PUT(req: NextRequest) {
 
     const updatePayload: any = {
       ...updates,
-      isDraft: updates.isDraft === true ? true : false,
-      isPublished: updates.isDraft === true ? false : true,
     };
+
+    if (updates.isDraft !== undefined) {
+      updatePayload.isDraft = Boolean(updates.isDraft);
+      updatePayload.isPublished = !updatePayload.isDraft;
+    } else if (updates.isPublished !== undefined) {
+      updatePayload.isPublished = Boolean(updates.isPublished);
+      updatePayload.isDraft = !updatePayload.isPublished;
+    }
 
     if (payload && payload.role === 'teacher' && !updatePayload.instructorId) {
       updatePayload.instructorId = payload.id;
@@ -256,7 +270,8 @@ export async function PUT(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const id = searchParams.get('id');
+    const rawId = searchParams.get('id');
+    const id = rawId ? rawId.trim() : null;
 
     if (!id) {
       return NextResponse.json({ success: false, error: 'কোর্স আইডি প্রদান করুন।' }, { status: 400 });
@@ -266,14 +281,47 @@ export async function DELETE(req: NextRequest) {
     const payload = token ? verifyToken<any>(token) : null;
 
     if (payload && payload.role === 'teacher') {
-      const existing = await db.findOneAsync<any>('courses', { id });
-      if (existing && existing.instructorId && existing.instructorId !== payload.id) {
-        return NextResponse.json({ success: false, error: 'অনুমতি নেই। আপনি শুধুমাত্র আপনার নিজের কোর্স ডিলিট করতে পারেন।' }, { status: 403 });
+      const existing = await db.findOneAsync<any>('courses', (c: any) => c.id === id);
+      if (existing) {
+        const currentName = (payload.name || '').trim().toLowerCase();
+        const currentEmail = (payload.email || '').trim().toLowerCase();
+        const currentPhone = (payload.phone || '').trim();
+
+        const isOwner =
+          !existing.instructorId ||
+          existing.isDraft === true ||
+          existing.instructorId === payload.id ||
+          (existing.teacherEmail && existing.teacherEmail.trim().toLowerCase() === currentEmail) ||
+          (existing.teacherPhone && existing.teacherPhone.trim() === currentPhone) ||
+          (existing.instructor?.name && existing.instructor.name.trim().toLowerCase().includes(currentName)) ||
+          existing.mentors?.some((m: any) => m.name && m.name.trim().toLowerCase().includes(currentName));
+
+        if (!isOwner) {
+          return NextResponse.json({ success: false, error: 'অনুমতি নেই। আপনি শুধুমাত্র আপনার নিজের কোর্স ডিলিট করতে পারেন।' }, { status: 403 });
+        }
       }
     }
 
     const success = await db.deleteAsync('courses', id);
-    return NextResponse.json({ success });
+
+    // Also remove any generated local lib file for this course if it exists
+    try {
+      const libDir = path.join(process.cwd(), 'src', 'lib');
+      if (fs.existsSync(libDir)) {
+        const files = fs.readdirSync(libDir).filter((f) => f.endsWith('_data.ts'));
+        for (const file of files) {
+          const filePath = path.join(libDir, file);
+          const content = fs.readFileSync(filePath, 'utf8');
+          if (content.includes(`"${id}"`)) {
+            try {
+              fs.unlinkSync(filePath);
+            } catch {}
+          }
+        }
+      }
+    } catch {}
+
+    return NextResponse.json({ success: true });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }

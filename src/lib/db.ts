@@ -499,30 +499,34 @@ export const db = {
 
   deleteAsync: async (collection: string, id: string): Promise<boolean> => {
     let success = false;
+    const cleanId = (id || '').trim();
 
-    // Invalidate in-memory cache
-    invalidateCollectionCache(collection);
-
-    // 1. Delete from Atlas
-    try {
-      const atlas = await getAtlasDb();
-      if (atlas) {
-        const res = await atlas.collection(collection).deleteOne({ id });
-        success = (res.deletedCount || 0) > 0;
-      }
-    } catch (err: any) {
-      console.warn(`deleteAsync(${collection}) Atlas warning:`, err.message);
-    }
-
-    // 2. Delete from local JSON backup without duplicate Atlas sync
+    // 1. Delete from local JSON backup and update in-memory cache immediately
+    let filtered: any[] = [];
     try {
       const items = readCollection<any>(collection);
-      const filtered = items.filter((i) => i.id !== id);
+      filtered = items.filter((i) => (i.id || '').trim() !== cleanId);
       if (filtered.length !== items.length) {
         success = true;
         writeCollection(collection, filtered);
       }
     } catch {}
+
+    // Immediately prime cache with filtered items so subsequent read never resurfaces deleted item
+    setCachedCollection(collection, filtered);
+
+    // 2. Delete from MongoDB Atlas
+    try {
+      const atlas = await getAtlasDb();
+      if (atlas) {
+        const res = await atlas.collection(collection).deleteOne({ id: cleanId });
+        if ((res.deletedCount || 0) > 0) {
+          success = true;
+        }
+      }
+    } catch (err: any) {
+      console.warn(`deleteAsync(${collection}) Atlas warning:`, err.message);
+    }
 
     return success;
   }

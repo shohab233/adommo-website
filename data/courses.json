@@ -26519,8 +26519,8 @@
         "answer": "হ্যাঁ, হাই-কোয়ালিটি PDF শিট ডাউনলোড ও প্রিন্ট করা যাবে।"
       }
     ],
-    "isDraft": false,
-    "isPublished": true,
+    "isDraft": true,
+    "isPublished": false,
     "comboCourseIds": [],
     "countdownDays": 40,
     "countdownHours": 14,

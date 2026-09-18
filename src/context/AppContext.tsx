@@ -1082,6 +1082,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     fetch('/api/courses', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify(newCourse),
     }).catch((err) => console.log('Course persist completed', err));
 
@@ -1149,6 +1150,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       fetch('/api/courses', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ id: courseId, ...updatedData }),
       }).catch((err) => console.log('Course update sync completed', err));
 
@@ -1164,8 +1166,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       } catch {}
 
       // Delete course from DB
-      fetch(`/api/courses?id=${courseId}`, {
+      fetch(`/api/courses?id=${encodeURIComponent(courseId)}`, {
         method: 'DELETE',
+        credentials: 'include',
       }).catch((err) => console.log('Course delete sync completed', err));
 
       return updated;

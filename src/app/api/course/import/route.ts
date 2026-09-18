@@ -760,8 +760,8 @@ export async function processCourseImport(rawData: any) {
       ],
       sections,
       modules,
-      isDraft: rawData.isDraft !== undefined ? rawData.isDraft : true,
-      isPublished: rawData.isPublished !== undefined ? rawData.isPublished : false
+      isDraft: rawData.forceNew ? true : (rawData.isDraft !== undefined ? Boolean(rawData.isDraft) : true),
+      isPublished: rawData.forceNew ? false : (rawData.isPublished !== undefined ? Boolean(rawData.isPublished) : false)
     };
 
     // Auto-heal entire new course before saving

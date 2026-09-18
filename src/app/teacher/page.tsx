@@ -15041,6 +15041,16 @@ export default function TeacherDashboardPage() {
         isOpen={showCourseUploadModal} 
         onClose={() => setShowCourseUploadModal(false)}
         onEditCourse={(course) => startEditingCourse(course)}
+        onNavigateToDrafts={() => {
+          setShowCourseUploadModal(false);
+          setActiveMenu('courses');
+          setActiveSubMenu('courses_draft');
+        }}
+        onNavigateToPublished={() => {
+          setShowCourseUploadModal(false);
+          setActiveMenu('courses');
+          setActiveSubMenu('courses_published');
+        }}
       />
 
     </div>
