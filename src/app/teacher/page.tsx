@@ -1325,7 +1325,7 @@ export default function TeacherDashboardPage() {
 
     const isDraftState = saveAsDraft !== undefined 
       ? saveAsDraft 
-      : (existingCourse ? (existingCourse.isDraft ?? false) : false);
+      : false;
 
     const discountExpires = new Date(
       Date.now() + (Number(wCountdownDays || 0) * 86400000) + (Number(wCountdownHours || 0) * 3600000)
@@ -1333,19 +1333,15 @@ export default function TeacherDashboardPage() {
 
     // Preserve syllabus modules while retaining lectures from existing course
     let finalModules: any[] = [];
-    if (wSyllabusModules && wSyllabusModules.length > 0) {
-      finalModules = wSyllabusModules.map((title, idx) => {
-        const existingMod = existingCourse?.modules?.find(m => m.title.trim().toLowerCase() === title.trim().toLowerCase())
-          || existingCourse?.modules?.[idx];
-        return {
-          id: existingMod?.id || `mod_${Date.now()}_${idx}`,
-          title: title.trim(),
-          order: idx + 1,
-          lectures: existingMod?.lectures || []
-        };
-      });
-    } else if (existingCourse?.modules && existingCourse.modules.length > 0) {
+    if (existingCourse?.modules && existingCourse.modules.length > 0) {
       finalModules = existingCourse.modules;
+    } else if (wSyllabusModules && wSyllabusModules.length > 0) {
+      finalModules = wSyllabusModules.map((title, idx) => ({
+        id: `mod_${Date.now()}_${idx}`,
+        title: title.trim(),
+        order: idx + 1,
+        lectures: []
+      }));
     }
 
     const finalSections = (existingCourse?.sections && existingCourse.sections.length > 0)
@@ -1407,7 +1403,7 @@ export default function TeacherDashboardPage() {
       updateCourse(editingCourseId, coursePayload);
       resetWizardForm();
       setActiveMenu('courses');
-      setActiveSubMenu(isDraftState ? 'courses_draft' : 'courses_all');
+      setActiveSubMenu(isDraftState ? 'courses_draft' : 'courses_published');
       showToast(isDraftState ? '📁 কোর্সটি ড্রাফট হিসেবে আপডেট ও সংরক্ষণ করা হয়েছে!' : '🎉 কোর্সটি সফলভাবে আপডেট ও লাইভ পাবলিশ করা হয়েছে!');
       return;
     }
@@ -4506,11 +4502,19 @@ export default function TeacherDashboardPage() {
                         <>
                           <button
                             type="button"
-                            onClick={() => handlePublishWizardCourse()}
+                            onClick={() => handlePublishWizardCourse(false)}
                             className="px-4 py-2 rounded-xl text-xs font-black text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-md shadow-emerald-500/25 flex items-center gap-1.5 cursor-pointer hover:scale-[1.02] transition-transform"
                           >
-                            <Check className="w-3.5 h-3.5 stroke-[3]" />
-                            <span>💾 এখনই পরিবর্তন সেভ করুন</span>
+                            <Sparkles className="w-3.5 h-3.5 stroke-[3]" />
+                            <span>🚀 লাইভ পাবলিশ ও সেভ করুন</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handlePublishWizardCourse(true)}
+                            className="px-3 py-2 rounded-xl text-xs font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 border border-amber-300 transition-colors cursor-pointer flex items-center gap-1"
+                          >
+                            <Bookmark className="w-3.5 h-3.5 text-amber-700" />
+                            <span>খসড়া (Draft) রাখুন</span>
                           </button>
                           <button
                             type="button"

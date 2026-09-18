@@ -106,9 +106,14 @@ export async function GET(req: NextRequest) {
           price: c.price,
           regularPrice: c.regularPrice,
           offerPrice: c.offerPrice,
+          discountPercentage: c.discountPercentage,
           instructor: c.instructor,
           instructorId: c.instructorId,
+          teacherEmail: c.teacherEmail,
+          teacherPhone: c.teacherPhone,
           batch: c.batch,
+          level: c.level,
+          badge: c.badge,
           tags: c.tags,
           isPublished: c.isPublished,
           isDraft: c.isDraft,
@@ -119,14 +124,27 @@ export async function GET(req: NextRequest) {
           countdownDays: c.countdownDays,
           countdownHours: c.countdownHours,
           trailerVideoUrl: c.trailerVideoUrl,
+          demoVideoUrl: c.demoVideoUrl,
+          routineTitle: c.routineTitle,
+          routinePdfUrl: c.routinePdfUrl,
+          features: c.features || [],
+          mentors: c.mentors || [],
+          relatedVideos: c.relatedVideos || [],
+          comboCourseIds: c.comboCourseIds || [],
+          couponCode: c.couponCode,
+          couponDiscount: c.couponDiscount,
           totalLectures,
           totalExams,
           totalSheets,
           faq: c.faq || [],
+          sections: c.sections || [],
           modulesSummary: (c.modules || []).map((m: any) => ({
             id: m.id,
             title: m.title,
             chapter: m.chapter,
+            order: m.order,
+            parentSectionId: m.parentSectionId,
+            parentSectionTitle: m.parentSectionTitle,
             lectureCount: m.lectures?.length || 0,
           })),
         };
@@ -261,7 +279,14 @@ export async function PUT(req: NextRequest) {
     }
 
     const updated = await db.updateAsync('courses', id, updatePayload);
-    return NextResponse.json({ success: true, course: updated });
+    return NextResponse.json(
+      { success: true, course: updated },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        },
+      }
+    );
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }

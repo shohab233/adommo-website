@@ -207,6 +207,8 @@ export interface Course {
   instructorId?: string;
   teacherEmail?: string;
   teacherPhone?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Enrollment {

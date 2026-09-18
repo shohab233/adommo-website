@@ -456,6 +456,7 @@ export const db = {
     const { _id, ...cleanData } = (data || {}) as any;
     const updateData = { ...cleanData, updatedAt: new Date().toISOString() };
     let updatedDoc: T | null = null;
+    const cleanId = (id || '').trim();
 
     // Invalidate in-memory cache
     invalidateCollectionCache(collection);
@@ -464,8 +465,16 @@ export const db = {
     try {
       const atlas = await getAtlasDb();
       if (atlas) {
-        await atlas.collection(collection).updateOne({ id }, { $set: updateData });
-        const updated = await atlas.collection(collection).findOne({ id });
+        const filter: any = { $or: [{ id: cleanId }, { _id: cleanId }] };
+        const res = await atlas.collection(collection).updateOne(filter, { $set: updateData });
+        if (res.matchedCount === 0) {
+          await atlas.collection(collection).replaceOne(
+            { id: cleanId },
+            { id: cleanId, ...updateData },
+            { upsert: true }
+          );
+        }
+        const updated = await atlas.collection(collection).findOne(filter);
         if (updated) {
           const { _id: unused, ...cleanUpdated } = updated as any;
           updatedDoc = cleanUpdated as unknown as T;
@@ -478,12 +487,19 @@ export const db = {
     // 2. Update in local JSON backup without duplicate Atlas sync
     try {
       const items = readCollection<any>(collection);
-      const index = items.findIndex((i) => i.id === id);
+      const index = items.findIndex((i) => (i.id || '').trim() === cleanId);
       if (index !== -1) {
         items[index] = { ...items[index], ...updateData };
         writeCollection(collection, items);
         if (!updatedDoc) {
           updatedDoc = items[index] as T;
+        }
+      } else {
+        const newItem = { id: cleanId, ...updateData };
+        items.unshift(newItem);
+        writeCollection(collection, items);
+        if (!updatedDoc) {
+          updatedDoc = newItem as T;
         }
       }
     } catch {}

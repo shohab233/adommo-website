@@ -336,19 +336,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             const activePrev = prevCourses.filter((p) => !delSet.has(p.id));
             return healedSummaries.map((newC: any) => {
               const existing = activePrev.find((p) => p.id === newC.id);
-              if (existing && existing.modules && existing.modules.length > 0 && (!newC.modules || newC.modules.length === 0)) {
+              if (existing) {
                 return {
+                  ...existing,
                   ...newC,
-                  modules: existing.modules,
-                  sections: existing.sections || newC.sections,
+                  modules: (existing.modules && existing.modules.length > 0 && (!newC.modules || newC.modules.length === 0))
+                    ? existing.modules
+                    : (newC.modules || existing.modules || []),
+                  sections: (existing.sections && existing.sections.length > 0) ? existing.sections : (newC.sections || []),
+                  features: (newC.features && newC.features.length > 0) ? newC.features : (existing.features || []),
+                  mentors: (newC.mentors && newC.mentors.length > 0) ? newC.mentors : (existing.mentors || []),
                 };
               }
               return newC;
             });
           });
-          try {
-            localStorage.setItem('adommo_courses', JSON.stringify(healedSummaries));
-          } catch {}
         }
       })
       .catch((err) => console.log('Course summary sync completed', err));
@@ -1146,6 +1148,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateCourse = (courseId: string, updatedData: Partial<Course>) => {
+    let finalCourseToSave: Course | null = null;
+
     setCourses((prevCourses) => {
       const updated = prevCourses.map((course) => {
         if (course.id !== courseId) return course;
@@ -1160,7 +1164,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           0
         );
 
-        return {
+        const merged: Course = {
           ...course,
           ...updatedData,
           regularPrice: regPrice,
@@ -1168,7 +1172,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           discountPercentage: updatedData.discountPercentage !== undefined ? updatedData.discountPercentage : calcDiscount,
           totalLectures: updatedData.totalLectures !== undefined ? updatedData.totalLectures : calcLectures,
           totalSheets: updatedData.totalSheets !== undefined ? updatedData.totalSheets : calcSheets,
+          updatedAt: new Date().toISOString(),
         };
+        finalCourseToSave = merged;
+        return merged;
       });
       try {
         localStorage.setItem('adommo_courses', JSON.stringify(updated));
@@ -1178,12 +1185,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
 
     // Persist updated course to DB outside pure state updater
+    const payloadToSend = finalCourseToSave || { id: courseId, ...updatedData };
     fetch('/api/courses', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ id: courseId, ...updatedData }),
-    }).catch((err) => console.log('Course update sync completed', err));
+      body: JSON.stringify(payloadToSend),
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && data.success && data.course) {
+          setCourses((prev) => {
+            const confirmed = prev.map((c) => (c.id === courseId ? { ...c, ...data.course } : c));
+            try {
+              localStorage.setItem('adommo_courses', JSON.stringify(confirmed));
+            } catch {}
+            return confirmed;
+          });
+        }
+      })
+      .catch((err) => console.log('Course update sync completed', err));
   };
 
   const deleteCourse = (courseId: string) => {
