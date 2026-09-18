@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { Course, Enrollment, Exam, ExamSubmission, LeaderboardEntry, ResourceNote, Lecture, User, UserRole, QuestionBankItem, DetailedExamSubmission, LiveClass, NotificationItem, ChatMessage, ConversationThread, TeacherKycData, CouponItem } from '@/types';
 import { healCourse } from '@/lib/courseSubjectNormalizer';
 
@@ -121,38 +121,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } catch {}
   }
 
-  const [currentRole, setCurrentRole] = useState<UserRole>(() => {
-    if (typeof window !== 'undefined') {
-      const savedRole = localStorage.getItem('adommo_role') as UserRole;
-      if (savedRole) return savedRole;
-    }
-    return 'student';
-  });
-  const [currentUser, setCurrentUser] = useState<User>(() => {
-    if (typeof window !== 'undefined') {
-      const savedUser = localStorage.getItem('adommo_user');
-      if (savedUser) {
-        try {
-          return JSON.parse(savedUser);
-        } catch {}
-      }
-    }
-    return emptyUser;
-  });
-  const [courses, setCourses] = useState<Course[]>(() => {
-    if (typeof window !== 'undefined') {
-      const savedCourses = localStorage.getItem('adommo_courses');
-      if (savedCourses) {
-        try {
-          const parsed = JSON.parse(savedCourses);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            return parsed.map((c: any) => healCourse(c));
-          }
-        } catch {}
-      }
-    }
-    return [];
-  });
+  const [currentRole, setCurrentRole] = useState<UserRole>('student');
+  const [currentUser, setCurrentUser] = useState<User>(emptyUser);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [exams, setExams] = useState<Exam[]>([]);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -162,33 +133,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [liveClasses, setLiveClasses] = useState<LiveClass[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [conversations, setConversations] = useState<ConversationThread[]>([]);
-  const [coupons, setCoupons] = useState<CouponItem[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('adommo_coupons');
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed)) return parsed;
-        } catch {}
-      }
-    }
-    return [];
-  });
+  const [coupons, setCoupons] = useState<CouponItem[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isCoursesLoaded, setIsCoursesLoaded] = useState(false);
-
-  const [teacherKycList, setTeacherKycList] = useState<TeacherKycData[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('adommo_teacher_kyc_list');
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed)) return parsed;
-        } catch {}
-      }
-    }
-    return [];
-  });
+  const [teacherKycList, setTeacherKycList] = useState<TeacherKycData[]>([]);
 
   const saveTeacherKycList = (list: TeacherKycData[]) => {
     setTeacherKycList(list);
@@ -309,6 +257,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           console.error('Failed to parse conversations from storage', e);
         }
       }
+
+      const savedCoupons = localStorage.getItem('adommo_coupons');
+      if (savedCoupons) {
+        try {
+          const parsed = JSON.parse(savedCoupons);
+          if (Array.isArray(parsed)) setCoupons(parsed);
+        } catch {}
+      }
+
+      const savedKyc = localStorage.getItem('adommo_teacher_kyc_list');
+      if (savedKyc) {
+        try {
+          const parsed = JSON.parse(savedKyc);
+          if (Array.isArray(parsed)) setTeacherKycList(parsed);
+        } catch {}
+      }
     } catch (e) {
       console.error('Failed to load from storage', e);
     } finally {
@@ -343,7 +307,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       .then((data) => {
         if (data && data.success && Array.isArray(data.courses)) {
           const healedSummaries = data.courses.map((c: any) => healCourse(c));
-          setCourses(healedSummaries);
+          setCourses((prevCourses) => {
+            return healedSummaries.map((newC: any) => {
+              const existing = prevCourses.find((p) => p.id === newC.id);
+              if (existing && existing.modules && existing.modules.length > 0 && (!newC.modules || newC.modules.length === 0)) {
+                return {
+                  ...newC,
+                  modules: existing.modules,
+                  sections: existing.sections || newC.sections,
+                };
+              }
+              return newC;
+            });
+          });
           try {
             localStorage.setItem('adommo_courses', JSON.stringify(healedSummaries));
           } catch {}
@@ -353,7 +329,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     // Non-blocking full curriculum hydration in background
     const fullCoursesTimer = setTimeout(() => {
-      fetch('/api/courses')
+      fetch('/api/courses?full=true')
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           if (data && data.success && Array.isArray(data.courses)) {
@@ -1028,7 +1004,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     showToast('এনরোলমেন্ট মুছে ফেলা হয়েছে।');
   };
 
-  const loadFullCourse = async (courseId: string): Promise<Course | null> => {
+  const loadFullCourse = useCallback(async (courseId: string): Promise<Course | null> => {
     try {
       const res = await fetch(`/api/courses?id=${encodeURIComponent(courseId)}`);
       if (res.ok) {
@@ -1051,7 +1027,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       console.error('Failed to load full course', err);
     }
     return null;
-  };
+  }, []);
 
   const addCourse = (newCourseData: Partial<Course>) => {
     const regPrice = Number(newCourseData.regularPrice) || 2500;

@@ -2,8 +2,8 @@
   {
     "id": "id_1789449776511_3tloo",
     "createdAt": "2026-09-15T05:22:56.511Z",
-    "siteName": "Adommo EdTech (অদম্য এডটেক)",
-    "liveNotice": "ভর্তি চলছে! Campus 6.0 ও প্রত্যাবর্তন ৫.০ স্পেশাল ব্যাচ। যেকোনো সহযোগিতায় আমাদের হটলাইনে কল করুন: 01819-876543",
+    "siteName": "Adommo EdTech Platform",
+    "liveNotice": "স্বাগতম অদম্য প্ল্যাটফর্মে",
     "supportHotline": "01819-876543",
     "supportEmail": "support@adommo.com",
     "address": "অদম্য এডটেক, ফার্মগেট, ঢাকা - ১২১৫",
@@ -21,6 +21,6 @@
     "adminPin": "1234",
     "twoFactorAuth": true,
     "enableExamSms": true,
-    "updatedAt": "2026-09-15T05:22:56.510Z"
+    "updatedAt": "2026-09-18T05:17:29.306Z"
   }
 ]

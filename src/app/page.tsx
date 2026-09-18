@@ -29,9 +29,14 @@ import {
 
 export default function HomePage() {
   const { courses } = useApp();
+  const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('সকল কোর্স');
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Exact category tabs matching all course creation types
   const categoryTabs = [
@@ -159,7 +164,7 @@ export default function HomePage() {
             href="/courses"
             className="inline-flex items-center gap-2.5 px-8 py-3.5 rounded-full font-bold text-xs sm:text-sm text-white ph-btn-pink shadow-xl shadow-pink-500/25 hover:scale-105 transition-all"
           >
-            <span>সবগুলো কোর্স দেখুন ({publishedCourses.length}টি কোর্স)</span>
+            <span>সবগুলো কোর্স দেখুন {mounted && publishedCourses.length > 0 ? `(${publishedCourses.length}টি কোর্স)` : ''}</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>

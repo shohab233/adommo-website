@@ -42,16 +42,26 @@ export default function ClassroomPage({
   const { courses, isEnrolled, exams, currentUser, showToast, questionBanks, examSubmissions, detailedSubmissions, liveClasses, loadFullCourse } = useApp();
   
   const course = courses.find((c) => c.id === resolvedParams.id);
-  const [isFetchingCourse, setIsFetchingCourse] = useState(!course || !course.modules || course.modules.length === 0);
+  const hasFullModules = !!(course && course.modules && course.modules.length > 0);
+  const [isFetchingCourse, setIsFetchingCourse] = useState(!hasFullModules);
+  const fetchedRef = React.useRef<string | null>(null);
 
   useEffect(() => {
-    if (resolvedParams.id && (!course || !course.modules || course.modules.length === 0)) {
-      setIsFetchingCourse(true);
-      loadFullCourse(resolvedParams.id).finally(() => {
-        setIsFetchingCourse(false);
-      });
+    const courseId = resolvedParams.id;
+    if (!courseId) return;
+
+    if (!hasFullModules) {
+      if (fetchedRef.current !== courseId) {
+        fetchedRef.current = courseId;
+        setIsFetchingCourse(true);
+        loadFullCourse(courseId).finally(() => {
+          setIsFetchingCourse(false);
+        });
+      }
+    } else {
+      setIsFetchingCourse(false);
     }
-  }, [resolvedParams.id, course, loadFullCourse]);
+  }, [resolvedParams.id, hasFullModules, loadFullCourse]);
 
   const [currentLectureId, setCurrentLectureId] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'notes' | 'discussion'>('notes');
@@ -81,14 +91,16 @@ export default function ClassroomPage({
     }
   }, [course]);
 
-  if (isFetchingCourse && !course) {
-    return (
-      <div className="max-w-4xl mx-auto py-24 px-4 text-center space-y-4 bg-white min-h-[60vh] flex flex-col items-center justify-center">
-        <div className="w-10 h-10 border-4 border-pink-200 border-t-[#ed347d] rounded-full animate-spin mx-auto" />
-        <h2 className="text-xl font-bold text-slate-800">ক্লাসরুম প্রস্তুত করা হচ্ছে...</h2>
-        <p className="text-xs text-slate-500">কোর্সের সকল লেকচার ও স্টাডি উপাদান লোড হচ্ছে, এক মুহূর্ত অপেক্ষা করুন।</p>
-      </div>
-    );
+  if (isFetchingCourse || !course || !course.modules || course.modules.length === 0) {
+    if (isFetchingCourse || !course) {
+      return (
+        <div className="max-w-4xl mx-auto py-24 px-4 text-center space-y-4 bg-white min-h-[60vh] flex flex-col items-center justify-center">
+          <div className="w-10 h-10 border-4 border-pink-200 border-t-[#ed347d] rounded-full animate-spin mx-auto" />
+          <h2 className="text-xl font-bold text-slate-800">ক্লাসরুম প্রস্তুত করা হচ্ছে...</h2>
+          <p className="text-xs text-slate-500">কোর্সের সকল লেকচার ও স্টাডি উপাদান লোড হচ্ছে, এক মুহূর্ত অপেক্ষা করুন।</p>
+        </div>
+      );
+    }
   }
 
   if (!course) {
@@ -150,13 +162,14 @@ export default function ClassroomPage({
     mod: CourseModule, 
     theme: 'default' | 'amber' = 'default'
   ) => {
+    const lectures = mod.lectures || [];
     const isExpanded = expandedDrawerChapters[mod.id] !== undefined
       ? expandedDrawerChapters[mod.id]
-      : mod.lectures.some((l) => l.id === currentLectureId);
+      : lectures.some((l) => l.id === currentLectureId);
 
     const isAmber = theme === 'amber';
 
-    const chapterNotes = (mod.lectures || []).flatMap((l) =>
+    const chapterNotes = lectures.flatMap((l) =>
       (l.notes || []).map((n) => ({
         ...n,
         fromLectureId: l.id,
@@ -203,7 +216,7 @@ export default function ClassroomPage({
             <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded-full ${
               isAmber ? 'bg-amber-200/80 text-amber-900' : 'bg-pink-50 text-[#ed347d]'
             }`}>
-              {mod.lectures.length} ক্লাস
+              {lectures.length} ক্লাস
             </span>
             {totalSheetsCount > 0 && (
               <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
@@ -223,7 +236,7 @@ export default function ClassroomPage({
           <div className={`p-2 pt-1 space-y-1.5 border-t ${
             isAmber ? 'border-amber-200/60 bg-white/70' : 'border-slate-100 bg-slate-50/50'
           }`}>
-            {mod.lectures.map((lec) => {
+            {lectures.map((lec) => {
               const isActive = lec.id === currentLectureId;
               const lecNotes = lec.notes || [];
 
@@ -303,7 +316,7 @@ export default function ClassroomPage({
             })}
 
             {/* Direct Module Sheets or When Module Has 0 Lectures */}
-            {mod.lectures.length === 0 && allModNotes.length > 0 && (
+            {lectures.length === 0 && allModNotes.length > 0 && (
               <div className="space-y-1.5 p-1">
                 <div className="text-[10px] font-black text-indigo-700 flex items-center gap-1 mb-1">
                   <FileText className="w-3 h-3" />
@@ -344,7 +357,7 @@ export default function ClassroomPage({
               </div>
             )}
 
-            {mod.lectures.length === 0 && allModNotes.length === 0 && (
+            {lectures.length === 0 && allModNotes.length === 0 && (
               <p className="text-[10px] text-slate-400 italic py-1 text-center">এই অধ্যায়ে এখনো ক্লাস বা শিট যুক্ত নেই</p>
             )}
           </div>

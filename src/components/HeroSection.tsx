@@ -32,9 +32,15 @@ export default function HeroSection({
   categories,
 }: HeroSectionProps) {
   const { courses } = useApp();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const published = courses.filter((c) => !c.isDraft);
 
-  const slides = published.length > 0 
+  const slides = (mounted && published.length > 0)
     ? published.slice(0, 3).map((c, i) => ({
         id: c.id,
         title: c.title,

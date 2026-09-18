@@ -70,8 +70,9 @@ export async function GET(req: NextRequest) {
       paginatedCourses = courses.slice(startIndex, startIndex + limit);
     }
 
-    // 6. Projection: Summaries (default) vs Full modules
-    if (!isFull) {
+    // 6. Projection: Summaries (explicit summary=true or paginated) vs Full modules
+    const shouldReturnSummary = searchParams.get('summary') === 'true' || (limit > 0 && !isFull);
+    if (shouldReturnSummary) {
       const summaryCourses = paginatedCourses.map((c) => {
         const totalLectures =
           c.totalLectures ||

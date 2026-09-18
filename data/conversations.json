@@ -32,5 +32,39 @@
     "unreadCountStudent": 1,
     "unreadCountTeacher": 0,
     "updatedAt": "2026-09-17T13:06:30.738Z"
+  },
+  {
+    "id": "thread_direct_id_1789448797894_erg18_inst_miss_sadiya",
+    "createdAt": "2026-09-18T04:48:49.259Z",
+    "type": "direct",
+    "studentId": "id_1789448797894_erg18",
+    "studentName": "Md Shohab",
+    "studentCollege": "Lohagara Degree Collage (রংপুর)",
+    "studentAvatar": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80",
+    "studentRoll": "#STD-4176",
+    "teacherId": "inst_miss_sadiya",
+    "teacherName": "Miss Sadiya",
+    "teacherAvatar": "https://aparsclassroom.com/assets/postimg/0NC76wJz/aparvaiya-(1).jpg",
+    "courseId": "course_acs_8a1af32c",
+    "courseTitle": "ACS Varsity + GST Special Private Programme 2026",
+    "status": "open",
+    "priority": "normal",
+    "lastMessageText": "চ্যাট শুরু করা হয়েছে",
+    "lastMessageTime": "এখনই",
+    "unreadCountTeacher": 0,
+    "unreadCountStudent": 0,
+    "messages": [
+      {
+        "id": "msg_dir_init_1789706935696",
+        "senderId": "inst_miss_sadiya",
+        "senderName": "Miss Sadiya",
+        "senderRole": "teacher",
+        "senderAvatar": "https://aparsclassroom.com/assets/postimg/0NC76wJz/aparvaiya-(1).jpg",
+        "text": "আসসালামু আলাইকুম! আমি Miss Sadiya। আপনার কোর্স বা অ্যাকাডেমিক পড়াশোনা সংক্রান্ত যেকোনো জিজ্ঞাসা থাকলে নির্দ্বিধায় এখানে লিখতে পারেন।",
+        "createdAt": "এখনই",
+        "isRead": true
+      }
+    ],
+    "updatedAt": "2026-09-18T04:49:06.564Z"
   }
 ]
