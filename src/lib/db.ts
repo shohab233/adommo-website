@@ -331,27 +331,14 @@ export const db = {
   // ASYNC CLOUD-AWARE CRUD METHODS (MONGODB ATLAS PRIMARY, LOCAL FALLBACK)
   // ==========================================================================
   findOneAsync: async <T = any>(collection: string, queryOrFilter: any, mongoFilter?: any): Promise<T | null> => {
-    const directId = typeof queryOrFilter === 'object' && queryOrFilter?.id ? String(queryOrFilter.id).trim() : null;
-    if (directId && isRecordDeleted(collection, directId)) {
-      return null;
-    }
-
-    // 1. Fast check in-memory cache (sub-millisecond)
-    let cached = getCachedCollection<T>(collection);
-    if (!cached) {
-      const localItems = readCollection<T>(collection).filter((item: any) => !isRecordDeleted(collection, item?.id));
-      if (localItems && localItems.length > 0) {
-        setCachedCollection(collection, localItems);
-        cached = localItems;
-      }
-    }
-
+    // 1. Fast check in-memory cache (sub-millisecond for warm lambdas)
+    const cached = getCachedCollection<T>(collection);
     if (cached) {
       const found = cached.find((item: any) => matchDoc(item, queryOrFilter));
-      if (found && !isRecordDeleted(collection, (found as any).id)) return found;
+      if (found) return found;
     }
 
-    // 2. Direct indexed Atlas lookup
+    // 2. Direct indexed Atlas lookup (Primary Source of Truth)
     try {
       const atlas = await getAtlasDb();
       if (atlas) {
@@ -368,16 +355,6 @@ export const db = {
 
         if (item) {
           const { _id, ...clean } = item;
-          if (isRecordDeleted(collection, clean.id)) {
-            return null;
-          }
-          // Seed to in-memory cache and local file
-          const currentCache = getCachedCollection<any>(collection) || [];
-          if (!currentCache.some(c => c.id === clean.id)) {
-            const updated = [...currentCache, clean];
-            setCachedCollection(collection, updated);
-            writeCollection(collection, updated);
-          }
           return clean as unknown as T;
         }
         return null;
@@ -386,52 +363,19 @@ export const db = {
       console.warn(`findOneAsync(${collection}) Atlas warning, falling back to local:`, err.message);
     }
 
-    // 3. Offline Local JSON fallback
-    const items = readCollection<T>(collection).filter((item: any) => !isRecordDeleted(collection, item?.id));
+    // 3. Offline Local JSON fallback (only if Atlas is completely unreachable)
+    const items = readCollection<T>(collection);
     return items.find((item: any) => matchDoc(item, queryOrFilter)) || null;
   },
 
   findManyAsync: async <T = any>(collection: string, queryOrFilter?: any): Promise<T[]> => {
-    // 1. Check in-memory cache
-    let cached = getCachedCollection<T>(collection);
-
-    // 2. If memory cache is cold, seed immediately from local disk mirror (1ms response)
-    if (!cached) {
-      const localItems = readCollection<T>(collection).filter((item: any) => !isRecordDeleted(collection, item?.id));
-      if (localItems && localItems.length > 0) {
-        setCachedCollection(collection, localItems);
-        cached = localItems;
-
-        // Background non-blocking sync from Atlas
-        getAtlasDb().then(async (atlas) => {
-          if (!atlas) return;
-          try {
-            const all = await atlas.collection(collection).find({}).toArray();
-            if (all && all.length > 0) {
-              const cleaned = all
-                .map((doc: any) => {
-                  const { _id, ...clean } = doc;
-                  return clean;
-                })
-                .filter((item: any) => !isRecordDeleted(collection, item?.id));
-              setCachedCollection(collection, cleaned);
-              writeCollection(collection, cleaned);
-            }
-          } catch (e) {}
-        }).catch(() => {});
-      }
-    }
-
+    // 1. Fast check in-memory cache
+    const cached = getCachedCollection<T>(collection);
     if (cached) {
-      const activeCached = cached.filter((item: any) => !isRecordDeleted(collection, item?.id));
-      if (queryOrFilter) {
-        return activeCached.filter((item: any) => matchDoc(item, queryOrFilter));
-      } else {
-        return activeCached;
-      }
+      return queryOrFilter ? cached.filter((item: any) => matchDoc(item, queryOrFilter)) : cached;
     }
 
-    // 3. If neither cache nor local had items, fetch from Atlas directly
+    // 2. Query MongoDB Atlas (Primary Source of Truth)
     try {
       const atlas = await getAtlasDb();
       if (atlas) {
@@ -446,17 +390,14 @@ export const db = {
           results = await col.find({}).toArray();
         }
 
-        const cleaned = (results || [])
-          .map((doc: any) => {
-            const { _id, ...clean } = doc;
-            return clean;
-          })
-          .filter((item: any) => !isRecordDeleted(collection, item?.id));
+        const cleaned = (results || []).map((doc: any) => {
+          const { _id, ...clean } = doc;
+          return clean;
+        });
 
-        // Prime cache and local file
+        // Prime memory cache for subsequent warm requests
         if (!queryOrFilter) {
           setCachedCollection(collection, cleaned);
-          writeCollection(collection, cleaned);
         }
 
         return cleaned as unknown as T[];
@@ -465,8 +406,8 @@ export const db = {
       console.warn(`findManyAsync(${collection}) Atlas warning, falling back to local:`, err.message);
     }
 
-    // 4. Offline Local JSON fallback
-    const items = readCollection<T>(collection).filter((item: any) => !isRecordDeleted(collection, item?.id));
+    // 3. Offline Local JSON fallback (only if Atlas is unreachable)
+    const items = readCollection<T>(collection);
     if (!queryOrFilter) {
       setCachedCollection(collection, items);
     }
