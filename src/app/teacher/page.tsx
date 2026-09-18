@@ -1176,6 +1176,11 @@ export default function TeacherDashboardPage() {
 
       const data = await res.json();
       if (data.success) {
+        loginUser({
+          avatar: profilePhoto,
+          bio: profileBio,
+          college: profileInstitution,
+        });
         setProfileNewPassword('');
         setProfileConfirmPassword('');
         showToast('✅ শিক্ষকের প্রোফাইল ও পাসওয়ার্ড সফলভাবে ডাটাবেজে আপডেট হয়েছে!');
@@ -12030,7 +12035,7 @@ export default function TeacherDashboardPage() {
                             title: 'আগামীকাল রাত ৯টায় বিশেষ মেগা মডেল টেস্ট',
                             body: 'পূর্ণাঙ্গ সিলেবাসের ওপর ১০০ নম্বরের মডেল টেস্ট অনুষ্ঠিত হবে। লিডারবোর্ডে জাতীয় মেধা যাচাইয়ের সুযোগ।',
                             actionLabel: 'পরীক্ষা দিন',
-                            actionUrl: '/exams',
+                            actionUrl: '/exam',
                           })}
                           className="p-2.5 rounded-xl bg-purple-50/70 hover:bg-purple-100/70 border border-purple-200/60 text-left transition-all cursor-pointer"
                         >
@@ -12048,8 +12053,8 @@ export default function TeacherDashboardPage() {
                             priority: 'normal',
                             title: 'নতুন এক্সক্লুসিভ লেকচার শিট PDF আপলোড সম্পন্ন',
                             body: 'আজকের ক্লাসের হ্যান্ডনোট এবং বোর্ড ও বিশ্ববিদ্যালয় পরীক্ষার শর্টকাট ট্রিকস শিট প্রস্তুত। এখনই ডাউনলোড করুন।',
-                            actionLabel: 'PDF ডাউনলোড করুন',
-                            actionUrl: '/courses/course_campus6',
+                            actionLabel: 'কোর্স দেখুন',
+                            actionUrl: '/courses',
                           })}
                           className="p-2.5 rounded-xl bg-emerald-50/70 hover:bg-emerald-100/70 border border-emerald-200/60 text-left transition-all cursor-pointer"
                         >
@@ -12552,7 +12557,7 @@ export default function TeacherDashboardPage() {
                                   setNotifTitle(`${found.title} এর রেজাল্ট ও মেধা তালিকা প্রকাশিত`);
                                   setNotifBody(`মোট নম্বর: ${found.totalMarks}। পদার্থবিজ্ঞান মেগা এক্সামের পূর্ণাঙ্গ ফলাফল ও সল্যুশন শিট প্রস্তুত। এখনই লিডারবোর্ডে আপনার অবস্থান ও নম্বর দেখে নিন।`);
                                   setNotifActionLabel('ফলাফল ও সল্যুশন দেখুন');
-                                  setNotifActionUrl('/exams');
+                                  setNotifActionUrl('/exam');
                                 }
                               }}
                               className="w-full px-3 py-2 rounded-xl border border-purple-200 bg-purple-50/40 text-xs font-bold text-purple-900"
@@ -12574,7 +12579,7 @@ export default function TeacherDashboardPage() {
                                 setNotifTitle('আজ রাত ৯টায় বিশেষ মেগা মডেল টেস্ট শুরু');
                                 setNotifBody('যথাসময়ে ওএমআর প্যানেলে উপস্থিত হয়ে পরীক্ষা শুরু করুন। নেগেটিভ মার্কিং ০.২৫। শুভকামনা!');
                                 setNotifActionLabel('পরীক্ষা দিন');
-                                setNotifActionUrl('/exams');
+                                setNotifActionUrl('/exam');
                               }}
                               className="p-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-800 font-bold text-[11px] text-center border border-purple-200 cursor-pointer"
                             >
@@ -12586,7 +12591,7 @@ export default function TeacherDashboardPage() {
                                 setNotifTitle('মেগা মডেল টেস্টের ফলাফল ও সম্মিলিত মেধা তালিকা প্রকাশিত');
                                 setNotifBody('সম্মিলিত মেধা তালিকা এবং আপনার অর্জিত স্কোর ও ভুল উত্তরের বিশ্লেষণ এখনই দেখুন।');
                                 setNotifActionLabel('ফলাফল দেখুন');
-                                setNotifActionUrl('/exams');
+                                setNotifActionUrl('/exam');
                               }}
                               className="p-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-800 font-bold text-[11px] text-center border border-purple-200 cursor-pointer"
                             >
@@ -12598,7 +12603,7 @@ export default function TeacherDashboardPage() {
                                 setNotifTitle('সিকিউ লিখিত খাতার নম্বর ও শিক্ষকের মূল্যায়ন নোট যুক্ত হয়েছে');
                                 setNotifBody('আপনার সৃজনশীল লিখিত পরীক্ষার প্রতিটি অংশের নম্বর এবং শিক্ষকের পার্সোনাল ফিডব্যাক প্রস্তুত।');
                                 setNotifActionLabel('খাতা দেখুন');
-                                setNotifActionUrl('/exams');
+                                setNotifActionUrl('/exam');
                               }}
                               className="p-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-800 font-bold text-[11px] text-center border border-purple-200 cursor-pointer"
                             >
@@ -12623,7 +12628,7 @@ export default function TeacherDashboardPage() {
                                 senderRole: 'অদম্য এক্সাম কন্ট্রোলার',
                                 senderAvatar: currentUser.avatar,
                                 actionLabel: notifActionLabel.trim() || 'পরীক্ষা ও ফলাফল',
-                                actionUrl: notifActionUrl.trim() || '/exams',
+                                actionUrl: notifActionUrl.trim() || '/exam',
                                 isPinned: notifIsPinned,
                               });
                               setNotifTitle('');
@@ -12669,7 +12674,7 @@ export default function TeacherDashboardPage() {
                                 type="text"
                                 value={notifActionUrl}
                                 onChange={(e) => setNotifActionUrl(e.target.value)}
-                                placeholder="URL (যেমন: /exams)"
+                                placeholder="URL (যেমন: /exam)"
                                 className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs"
                               />
                             </div>
@@ -13813,337 +13818,402 @@ export default function TeacherDashboardPage() {
 
 
           {/* ========================================================================= */}
-          {/* 9. TEACHER EARNINGS & PAYOUT MODULE (100% REAL FROM DATABASE ENROLLMENTS) */}
+          {/* 11. TEACHER EARNINGS & PAYOUTS MODULE */}
           {/* ========================================================================= */}
           {activeMenu === 'earnings' && (() => {
-            const currentSub = ['earnings_overview', 'earnings_withdraw', 'earnings_history'].includes(activeSubMenu)
+            const currentEarningsSub = ['earnings_overview', 'earnings_withdraw', 'earnings_history'].includes(activeSubMenu)
               ? activeSubMenu
               : 'earnings_overview';
 
             return (
-              <div className="space-y-6 animate-fade-in max-w-6xl mx-auto">
-                {/* Header & Submenu Navigation Pills */}
-                <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
+                {/* Header & Submenu Navigation */}
+                <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
+                    <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
                       <DollarSign className="w-5 h-5 text-emerald-600" />
-                      <span>উপার্জন ও পেআউট ড্যাশবোর্ড (Teacher Financial Studio)</span>
+                      <span>শিক্ষক উপার্জন ও পেআউট হাব (Teacher Financials)</span>
                     </h2>
-                    <p className="text-xs text-slate-500">আপনার অনুমোদিত কোর্সের প্রকৃত বিক্রয়, ৮০% কমিশন ও ব্যাংক/ওয়ালেটে উত্তোলনের হিসেব</p>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">
+                      আপনার কোর্সের মোট বিক্রয়, কমিশন অংশ এবং ব্যাংকিং বা মোবাইল ওয়ালেটে উইথড্রল রিকোয়েস্ট
+                    </p>
                   </div>
-                  <div className="flex items-center gap-1.5 bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/80">
-                    {[
-                      { id: 'earnings_overview', label: '১. উপার্জনের হিসাব' },
-                      { id: 'earnings_withdraw', label: '২. টাকা তোলার আবেদন' },
-                      { id: 'earnings_history', label: `৩. পেআউট রেকর্ড (${teacherPayouts.length})` },
-                    ].map(tab => (
+
+                  <button
+                    type="button"
+                    onClick={() => setIsPayoutModalOpen(true)}
+                    disabled={teacherAvailableBalance < 500}
+                    className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs shadow-md shadow-emerald-500/20 active:scale-95 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed self-start sm:self-auto"
+                  >
+                    <WalletCards className="w-4 h-4" />
+                    <span>+ উত্তোলনের আবেদন করুন</span>
+                  </button>
+                </div>
+
+                {/* Submenu Tabs Bar */}
+                <div className="bg-white p-2 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-1.5 overflow-x-auto text-xs">
+                  {[
+                    { id: 'earnings_overview', label: '১. উপার্জনের হিসাব (Overview)', icon: DollarSign },
+                    { id: 'earnings_withdraw', label: '২. উত্তোলনের আবেদন (Request Payout)', icon: WalletCards },
+                    { id: 'earnings_history', label: `৩. পেআউট রেকর্ড ও স্টেটমেন্ট (${teacherPayouts.length})`, icon: Receipt },
+                  ].map((sub) => {
+                    const SubIcon = sub.icon;
+                    const isActive = currentEarningsSub === sub.id;
+                    return (
                       <button
-                        key={tab.id}
+                        key={sub.id}
                         type="button"
-                        onClick={() => setActiveSubMenu(tab.id)}
-                        className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                          currentSub === tab.id
-                            ? 'bg-white text-slate-900 shadow-xs border border-slate-200'
-                            : 'text-slate-600 hover:text-slate-900'
+                        onClick={() => setActiveSubMenu(sub.id)}
+                        className={`px-4 py-2.5 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
+                          isActive
+                            ? 'bg-gradient-to-r from-[#ed347d] to-pink-600 text-white shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                         }`}
                       >
-                        {tab.label}
+                        <SubIcon className="w-3.5 h-3.5" />
+                        <span>{sub.label}</span>
                       </button>
-                    ))}
+                    );
+                  })}
+                </div>
+
+                {/* Top 4 Financial Metric Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Card 1: Gross Sales */}
+                  <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-xs space-y-2">
+                    <span className="text-[11px] font-black text-slate-400 uppercase tracking-wider block">মোট কোর্স বিক্রয়</span>
+                    <div className="text-2xl font-black text-slate-900 font-mono">
+                      ৳ {teacherTotalSales.toLocaleString('en-BD')}
+                    </div>
+                    <span className="text-[11px] text-slate-500 block font-medium">
+                      {teacherEnrollments.filter(e => e.status === 'approved').length} টি অনুমোদিত শিক্ষার্থী ভর্তি
+                    </span>
+                  </div>
+
+                  {/* Card 2: Faculty Share */}
+                  <div className="p-5 rounded-3xl bg-emerald-50/70 border border-emerald-200 shadow-xs space-y-2">
+                    <span className="text-[11px] font-black text-emerald-800 uppercase tracking-wider block">আপনার অর্জিত মোট আয় ({teacherCommissionRate}%)</span>
+                    <div className="text-2xl font-black text-emerald-700 font-mono">
+                      ৳ {teacherEarnedTotal.toLocaleString('en-BD')}
+                    </div>
+                    <span className="text-[11px] text-emerald-600 block font-bold">
+                      রেভিনিউ শেয়ার চুক্তিমতে অর্জিত
+                    </span>
+                  </div>
+
+                  {/* Card 3: Paid Out */}
+                  <div className="p-5 rounded-3xl bg-slate-50 border border-slate-200 shadow-xs space-y-2">
+                    <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider block">পরিশোধিত পেআউট</span>
+                    <div className="text-2xl font-black text-slate-700 font-mono">
+                      ৳ {teacherPaidOutSum.toLocaleString('en-BD')}
+                    </div>
+                    <span className="text-[11px] text-slate-400 block font-medium">
+                      {teacherPayouts.filter(p => p.status === 'paid').length} টি সফল ব্যাংক/MFS ট্রানজেকশন
+                    </span>
+                  </div>
+
+                  {/* Card 4: Available Balance */}
+                  <div className="p-5 rounded-3xl bg-pink-50/80 border border-pink-200 shadow-xs space-y-2 relative overflow-hidden">
+                    <span className="text-[11px] font-black text-[#ed347d] uppercase tracking-wider block">উত্তোলনযোগ্য অবশিষ্ট ব্যালেন্স</span>
+                    <div className="text-2xl font-black text-[#ed347d] font-mono">
+                      ৳ {teacherAvailableBalance.toLocaleString('en-BD')}
+                    </div>
+                    {teacherPendingPayoutSum > 0 ? (
+                      <span className="text-[11px] text-amber-700 block font-bold">
+                        ⏳ ৳ {teacherPendingPayoutSum.toLocaleString('en-BD')} অপেক্ষমাণ
+                      </span>
+                    ) : (
+                      <span className="text-[11px] text-slate-500 block font-medium">
+                        তাৎক্ষণিক উত্তোলনের উপযোগী
+                      </span>
+                    )}
                   </div>
                 </div>
 
-                {/* Subview 1: Earnings Overview */}
-                {currentSub === 'earnings_overview' && (
-                  <div className="space-y-6">
-                    {/* Financial Metrics Cards */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                      <div className="p-5 rounded-3xl bg-slate-50 border border-slate-200 shadow-2xs space-y-1">
-                        <span className="text-[11px] font-black text-slate-400 uppercase tracking-wider">কোর্স মোট বিক্রয়</span>
-                        <div className="text-2xl sm:text-3xl font-black text-slate-900 font-mono">
-                          ৳ {teacherTotalSales.toLocaleString('en-BD')}
-                        </div>
-                        <span className="text-[11px] text-slate-500 font-medium block">
-                          অনুমোদিত {teacherEnrollments.filter(e => e.status === 'approved').length} টি ভর্তির মোট আদায়
-                        </span>
+                {/* Subview 1: Overview & Course-wise breakdown */}
+                {currentEarningsSub === 'earnings_overview' && (
+                  <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs space-y-5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
+                      <div>
+                        <h3 className="text-base font-black text-slate-900">কোর্স ভিত্তিক বিক্রয় ও অর্জিত রাজস্ব রিপোর্ট</h3>
+                        <p className="text-xs text-slate-500">আপনার প্রতিটি কোর্সের এনরোলমেন্ট সংখ্যা এবং রেভিনিউ শেয়ার বণ্টন</p>
                       </div>
-
-                      <div className="p-5 rounded-3xl bg-emerald-50/70 border border-emerald-200 shadow-2xs space-y-1">
-                        <span className="text-[11px] font-black text-emerald-700 uppercase tracking-wider">আপনার প্রাপ্য আয় ({teacherCommissionRate}%)</span>
-                        <div className="text-2xl sm:text-3xl font-black text-emerald-700 font-mono">
-                          ৳ {teacherEarnedTotal.toLocaleString('en-BD')}
-                        </div>
-                        <span className="text-[11px] text-emerald-600 font-bold block">
-                          চুক্তিভিত্তিক সর্বমোট অর্জিত পারিশ্রমিক
-                        </span>
-                      </div>
-
-                      <div className="p-5 rounded-3xl bg-cyan-50/70 border border-cyan-200 shadow-2xs space-y-1">
-                        <span className="text-[11px] font-black text-cyan-700 uppercase tracking-wider">পরিশোধিত পেআউট</span>
-                        <div className="text-2xl sm:text-3xl font-black text-cyan-700 font-mono">
-                          ৳ {teacherPaidOutSum.toLocaleString('en-BD')}
-                        </div>
-                        <span className="text-[11px] text-slate-500 font-medium block">
-                          ব্যাংক/ওয়ালেটে সফলভাবে প্রাপ্ত
-                        </span>
-                      </div>
-
-                      <div className="p-5 rounded-3xl bg-pink-50/80 border border-pink-200 shadow-2xs space-y-1">
-                        <span className="text-[11px] font-black text-[#ed347d] uppercase tracking-wider">উত্তোলনযোগ্য অবশিষ্ট ব্যালেন্স</span>
-                        <div className="text-2xl sm:text-3xl font-black text-[#ed347d] font-mono">
-                          ৳ {teacherAvailableBalance.toLocaleString('en-BD')}
-                        </div>
-                        <div className="flex items-center justify-between pt-1">
-                          <span className="text-[10px] text-pink-600 font-bold">তাৎক্ষণিক উইথড্রলযোগ্য</span>
-                          {teacherAvailableBalance > 0 && (
-                            <button
-                              type="button"
-                              onClick={() => setActiveSubMenu('earnings_withdraw')}
-                              className="px-2.5 py-1 rounded-lg bg-[#ed347d] text-white text-[10px] font-black cursor-pointer shadow-xs active:scale-95"
-                            >
-                              তুলুন →
-                            </button>
-                          )}
-                        </div>
-                      </div>
+                      <span className="px-3 py-1 rounded-xl bg-pink-50 text-[#ed347d] text-xs font-black self-start sm:self-auto">
+                        কমিশন রেট: {teacherCommissionRate}%
+                      </span>
                     </div>
 
-                    {/* Teacher's Courses Revenue Table */}
-                    <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
-                      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                        <h3 className="text-sm font-black text-slate-900">কোর্স ভিত্তিক আয়ের বিবরণী (Course Ledger)</h3>
-                        <span className="text-xs text-slate-500 font-medium">{teacherCourses.length} টি কোর্স</span>
-                      </div>
-
-                      {teacherCourses.length === 0 ? (
-                        <div className="p-8 text-center text-slate-400 text-xs">আপনার কোনো কোর্স তৈরি করা হয়নি।</div>
-                      ) : (
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-left text-xs">
-                            <thead className="bg-slate-50 text-slate-500 font-black uppercase text-[11px]">
-                              <tr>
-                                <th className="p-3">কোর্সের নাম</th>
-                                <th className="p-3 text-center">অনুমোদিত ভর্তি</th>
-                                <th className="p-3 text-right">মোট বিক্রয়</th>
-                                <th className="p-3 text-right font-black text-emerald-700">আপনার আয় ({teacherCommissionRate}%)</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                              {teacherCourses.map(c => {
-                                const enrolls = enrollments.filter(e => e.courseId === c.id && e.status === 'approved');
-                                const cSales = enrolls.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
-                                const cEarned = Math.round(cSales * (teacherCommissionRate / 100));
-                                return (
-                                  <tr key={c.id} className="hover:bg-slate-50">
-                                    <td className="p-3 font-bold text-slate-900">{c.title}</td>
-                                    <td className="p-3 text-center font-mono font-bold text-slate-700">{enrolls.length} জন</td>
-                                    <td className="p-3 text-right font-mono font-black text-slate-900">৳ {cSales.toLocaleString('en-BD')}</td>
-                                    <td className="p-3 text-right font-mono font-black text-emerald-600">৳ {cEarned.toLocaleString('en-BD')}</td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Subview 2: Request Payout */}
-                {currentSub === 'earnings_withdraw' && (
-                  <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs max-w-2xl mx-auto space-y-5">
-                    <div className="border-b border-slate-100 pb-3">
-                      <h3 className="text-base font-black text-slate-900">টাকা তোলার আবেদন (Withdrawal Request)</h3>
-                      <p className="text-xs text-slate-500">আপনার বকেয়া পারিশ্রমিক বিকাশ, নগদ অথবা ব্যাংক অ্যাকাউন্টে উত্তোলন করুন</p>
-                    </div>
-
-                    <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 flex items-center justify-between">
-                      <span className="text-xs font-black text-emerald-900">বর্তমানে উত্তোলনযোগ্য ব্যালেন্স:</span>
-                      <span className="text-xl font-black text-emerald-700 font-mono">৳ {teacherAvailableBalance.toLocaleString('en-BD')}</span>
-                    </div>
-
-                    {teacherAvailableBalance <= 0 ? (
-                      <div className="p-6 text-center text-slate-500 text-xs bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                        আপনার বর্তমান উত্তোলনযোগ্য ব্যালেন্স ৳ ০। শিক্ষার্থীরা কোর্সে ভর্তি হলে এবং পেমেন্ট সম্পন্ন হলে আপনার ব্যালেন্স স্বয়ংক্রিয়ভাবে জমা হবে।
-                      </div>
-                    ) : (
-                      <form onSubmit={handleRequestPayoutSubmit} className="space-y-4 text-xs">
-                        <div>
-                          <label className="font-black text-slate-700 block mb-1">উত্তোলনের পরিমাণ (৳) *</label>
-                          <input
-                            type="number"
-                            required
-                            min="500"
-                            max={teacherAvailableBalance}
-                            value={withdrawForm.amount}
-                            onChange={(e) => setWithdrawForm({ ...withdrawForm, amount: e.target.value })}
-                            placeholder={`সর্বোচ্চ ${teacherAvailableBalance} টাকা`}
-                            className="w-full p-3 rounded-2xl border border-slate-200 focus:outline-none focus:border-[#ed347d] font-mono font-black text-base shadow-2xs"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="font-black text-slate-700 block mb-1">পেমেন্ট মাধ্যম (Withdrawal Method) *</label>
-                          <select
-                            value={withdrawForm.method}
-                            onChange={(e) => setWithdrawForm({ ...withdrawForm, method: e.target.value as any })}
-                            className="w-full p-3 rounded-2xl border border-slate-200 focus:outline-none focus:border-[#ed347d] font-bold shadow-2xs"
-                          >
-                            <option value="bKash">bKash Personal</option>
-                            <option value="Nagad">Nagad Personal</option>
-                            <option value="Bank Transfer">Bank Transfer (BEFTN / NPSB)</option>
-                          </select>
-                        </div>
-
-                        {withdrawForm.method === 'Bank Transfer' ? (
-                          <div className="space-y-3 p-4 bg-slate-50 rounded-2xl border border-slate-200">
-                            <div>
-                              <label className="font-black text-slate-700 block mb-1">ব্যাংকের নাম *</label>
-                              <input
-                                type="text"
-                                required
-                                value={withdrawForm.bankName}
-                                onChange={(e) => setWithdrawForm({ ...withdrawForm, bankName: e.target.value })}
-                                placeholder="উদা: City Bank Ltd. / DBBL / Brac Bank"
-                                className="w-full p-2.5 rounded-xl border border-slate-200 bg-white"
-                              />
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                              <div>
-                                <label className="font-black text-slate-700 block mb-1">শাখার নাম (Branch)</label>
-                                <input
-                                  type="text"
-                                  value={withdrawForm.branchName}
-                                  onChange={(e) => setWithdrawForm({ ...withdrawForm, branchName: e.target.value })}
-                                  placeholder="উদা: ধানমন্ডি শাখা"
-                                  className="w-full p-2.5 rounded-xl border border-slate-200 bg-white"
-                                />
-                              </div>
-                              <div>
-                                <label className="font-black text-slate-700 block mb-1">হিসাবের নাম (Account Name)</label>
-                                <input
-                                  type="text"
-                                  value={withdrawForm.accountName}
-                                  onChange={(e) => setWithdrawForm({ ...withdrawForm, accountName: e.target.value })}
-                                  placeholder={currentUser.name || 'আপনার নাম'}
-                                  className="w-full p-2.5 rounded-xl border border-slate-200 bg-white"
-                                />
-                              </div>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                              <div>
-                                <label className="font-black text-slate-700 block mb-1">অ্যাকাউন্ট নম্বর *</label>
-                                <input
-                                  type="text"
-                                  required
-                                  value={withdrawForm.accountNumber}
-                                  onChange={(e) => setWithdrawForm({ ...withdrawForm, accountNumber: e.target.value })}
-                                  placeholder="১৬ সংখ্যার ব্যাংক একাউন্ট নম্বর"
-                                  className="w-full p-2.5 rounded-xl border border-slate-200 bg-white font-mono"
-                                />
-                              </div>
-                              <div>
-                                <label className="font-black text-slate-700 block mb-1">রাউটিং নম্বর (Routing No)</label>
-                                <input
-                                  type="text"
-                                  value={withdrawForm.routingNumber}
-                                  onChange={(e) => setWithdrawForm({ ...withdrawForm, routingNumber: e.target.value })}
-                                  placeholder="৯ সংখ্যার রাউটিং নম্বর"
-                                  className="w-full p-2.5 rounded-xl border border-slate-200 bg-white font-mono"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          <div>
-                            <label className="font-black text-slate-700 block mb-1">{withdrawForm.method} পার্সোনাল মোবাইল নম্বর *</label>
-                            <input
-                              type="text"
-                              required
-                              value={withdrawForm.accountNumber}
-                              onChange={(e) => setWithdrawForm({ ...withdrawForm, accountNumber: e.target.value })}
-                              placeholder="০১৮১৯-XXXXXX"
-                              className="w-full p-3 rounded-2xl border border-slate-200 focus:outline-none focus:border-[#ed347d] font-mono shadow-2xs"
-                            />
-                          </div>
-                        )}
-
-                        <div>
-                          <label className="font-black text-slate-700 block mb-1">মন্তব্য বা বিশেষ নোট (ঐচ্ছিক)</label>
-                          <input
-                            type="text"
-                            value={withdrawForm.note}
-                            onChange={(e) => setWithdrawForm({ ...withdrawForm, note: e.target.value })}
-                            placeholder="উদা: ফেব্রুয়ারি মাসের রেভিনিউ শেয়ার"
-                            className="w-full p-3 rounded-2xl border border-slate-200 focus:outline-none focus:border-[#ed347d] shadow-2xs"
-                          />
-                        </div>
-
-                        <div className="pt-2">
-                          <button
-                            type="submit"
-                            disabled={isSubmittingPayout}
-                            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#fa507e] to-[#ec376d] text-white font-black shadow-md shadow-pink-500/20 active:scale-98 cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
-                          >
-                            <Send className="w-4 h-4" />
-                            <span>{isSubmittingPayout ? 'আবেদন পাঠানো হচ্ছে...' : 'উইথড্রল রিকোয়েস্ট নিশ্চিত করুন'}</span>
-                          </button>
-                        </div>
-                      </form>
-                    )}
-                  </div>
-                )}
-
-                {/* Subview 3: Payout History */}
-                {currentSub === 'earnings_history' && (
-                  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                      <h3 className="text-sm font-black text-slate-900">পেআউট হিস্ট্রি ও নিষ্পত্তি লগ (Payout Records)</h3>
-                      <button
-                        type="button"
-                        onClick={refreshTeacherPayouts}
-                        className="px-3 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer transition-colors"
-                      >
-                        রিফ্রেশ
-                      </button>
-                    </div>
-
-                    {teacherPayouts.length === 0 ? (
-                      <div className="p-12 text-center text-slate-400 text-xs bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                        এখনো কোনো পেআউট স্টেটমেন্ট তৈরি হয়নি।
+                    {teacherCourses.length === 0 ? (
+                      <div className="p-12 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-slate-400 text-xs">
+                        আপনার কোনো সক্রিয় কোর্স পাওয়া যায়নি। নতুন কোর্স তৈরি করুন।
                       </div>
                     ) : (
                       <div className="overflow-x-auto">
                         <table className="w-full text-left text-xs">
-                          <thead className="bg-slate-50 text-slate-500 font-black uppercase text-[11px]">
+                          <thead className="bg-slate-50 text-slate-500 font-black text-[11px] uppercase tracking-wider rounded-xl">
                             <tr>
-                              <th className="p-3">ভাউচার আইডি</th>
-                              <th className="p-3">তারিখ</th>
-                              <th className="p-3">মাধ্যম</th>
-                              <th className="p-3 font-mono">টাকার অঙ্ক</th>
-                              <th className="p-3">TrxID / রেফারেন্স</th>
-                              <th className="p-3 text-center">স্ট্যাটাস</th>
+                              <th className="p-3.5">কোর্সের নাম</th>
+                              <th className="p-3.5">ক্যাটাগরি</th>
+                              <th className="p-3.5">কোর্স ফি</th>
+                              <th className="p-3.5">মোট ভর্তি</th>
+                              <th className="p-3.5">মোট বিক্রয়</th>
+                              <th className="p-3.5">আপনার প্রাপ্য ({teacherCommissionRate}%)</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100">
-                            {teacherPayouts.map(p => (
-                              <tr key={p.id} className="hover:bg-slate-50">
-                                <td className="p-3 font-mono font-bold text-slate-700">{p.id}</td>
-                                <td className="p-3 text-slate-500">{p.requestedAt || p.paidAt || 'আজকে'}</td>
-                                <td className="p-3 text-cyan-800 font-bold">{p.method} ({p.accountNumber})</td>
-                                <td className="p-3 font-mono font-black text-emerald-600">৳ {p.amount.toLocaleString('en-BD')}</td>
-                                <td className="p-3 font-mono text-[#ed347d] font-bold">{p.trxId || 'প্রক্রিয়াধীন'}</td>
-                                <td className="p-3 text-center">
-                                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-black ${
+                            {teacherCourses.map((c, idx) => {
+                              const cEnrolls = teacherEnrollments.filter(e => e.courseId === c.id && e.status === 'approved');
+                              const cSales = cEnrolls.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+                              const cShare = Math.round(cSales * (teacherCommissionRate / 100));
+
+                              return (
+                                <tr key={`${c.id}_${idx}`} className="hover:bg-slate-50/80 transition-colors">
+                                  <td className="p-3.5">
+                                    <div className="font-bold text-slate-900">{c.title}</div>
+                                    <div className="text-[10px] text-slate-400">{c.batch || 'রেগুলার ব্যাচ'}</div>
+                                  </td>
+                                  <td className="p-3.5">
+                                    <span className="px-2.5 py-0.5 rounded-lg bg-pink-50 text-[#ed347d] font-bold text-[10px]">
+                                      {c.category}
+                                    </span>
+                                  </td>
+                                  <td className="p-3.5 font-mono font-bold text-slate-700">৳ {c.offerPrice || c.regularPrice}</td>
+                                  <td className="p-3.5 font-bold text-slate-900">{cEnrolls.length} জন</td>
+                                  <td className="p-3.5 font-black text-slate-900 font-mono">৳ {cSales.toLocaleString('en-BD')}</td>
+                                  <td className="p-3.5 font-black text-emerald-600 font-mono text-sm">৳ {cShare.toLocaleString('en-BD')}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Subview 2: Request Payout Form */}
+                {currentEarningsSub === 'earnings_withdraw' && (
+                  <form onSubmit={handleRequestPayoutSubmit} className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs space-y-6 max-w-2xl">
+                    <div className="border-b border-slate-100 pb-4">
+                      <h3 className="text-base font-black text-slate-900">টাকা উত্তোলনের নতুন আবেদন (Payout Request)</h3>
+                      <p className="text-xs text-slate-500">
+                        আপনার বর্তমান উত্তোলনযোগ্য ব্যালেন্স: <strong className="text-emerald-600">৳ {teacherAvailableBalance.toLocaleString('en-BD')}</strong>
+                      </p>
+                    </div>
+
+                    <div className="space-y-4 text-xs">
+                      <div>
+                        <label className="font-bold text-slate-700 block mb-1">উত্তোলনের টাকার অঙ্ক (৳)</label>
+                        <input
+                          type="number"
+                          value={withdrawForm.amount}
+                          onChange={(e) => setWithdrawForm({ ...withdrawForm, amount: e.target.value })}
+                          placeholder="যেমন: 5000"
+                          max={teacherAvailableBalance}
+                          className="w-full p-3.5 rounded-2xl border border-slate-200 text-sm font-mono focus:border-[#ed347d] focus:outline-none"
+                        />
+                        <span className="text-[11px] text-slate-400 mt-1 block">
+                          সর্বনিম্ন উত্তোলন সীমা ৳ ৫০০ টাকা। সর্বোচ্চ উত্তোলনযোগ্য: ৳ {teacherAvailableBalance.toLocaleString('en-BD')}
+                        </span>
+                      </div>
+
+                      <div>
+                        <label className="font-bold text-slate-700 block mb-1">উত্তোলনের মাধ্যম নির্বাচন করুন</label>
+                        <div className="grid grid-cols-3 gap-3">
+                          {(['bKash', 'Nagad', 'Bank Transfer'] as const).map((m) => (
+                            <button
+                              key={m}
+                              type="button"
+                              onClick={() => setWithdrawForm({ ...withdrawForm, method: m })}
+                              className={`p-3 rounded-2xl border text-center font-bold text-xs transition-all cursor-pointer ${
+                                withdrawForm.method === m
+                                  ? 'border-[#ed347d] bg-[#fff0f5] text-[#ed347d] shadow-2xs'
+                                  : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                              }`}
+                            >
+                              {m === 'bKash' ? 'বিকাশ (bKash)' : m === 'Nagad' ? 'নগদ (Nagad)' : 'ব্যাংক ট্রান্সফার'}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {withdrawForm.method === 'Bank Transfer' ? (
+                        <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="font-bold text-slate-700 block mb-1">ব্যাংকের নাম</label>
+                              <input
+                                type="text"
+                                value={withdrawForm.bankName}
+                                onChange={(e) => setWithdrawForm({ ...withdrawForm, bankName: e.target.value })}
+                                placeholder="যেমন: City Bank Ltd."
+                                className="w-full p-3 rounded-xl border border-slate-200 bg-white"
+                              />
+                            </div>
+                            <div>
+                              <label className="font-bold text-slate-700 block mb-1">শাখার নাম (Branch)</label>
+                              <input
+                                type="text"
+                                value={withdrawForm.branchName}
+                                onChange={(e) => setWithdrawForm({ ...withdrawForm, branchName: e.target.value })}
+                                placeholder="যেমন: ধানমন্ডি শাখা"
+                                className="w-full p-3 rounded-xl border border-slate-200 bg-white"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="font-bold text-slate-700 block mb-1">হিসাবধারীর পূর্ণ নাম (Account Name)</label>
+                              <input
+                                type="text"
+                                value={withdrawForm.accountName}
+                                onChange={(e) => setWithdrawForm({ ...withdrawForm, accountName: e.target.value })}
+                                placeholder="হিসাবের নাম"
+                                className="w-full p-3 rounded-xl border border-slate-200 bg-white"
+                              />
+                            </div>
+                            <div>
+                              <label className="font-bold text-slate-700 block mb-1">একাউন্ট নম্বর (Account Number)</label>
+                              <input
+                                type="text"
+                                value={withdrawForm.accountNumber}
+                                onChange={(e) => setWithdrawForm({ ...withdrawForm, accountNumber: e.target.value })}
+                                placeholder="1102938475"
+                                className="w-full p-3 rounded-xl border border-slate-200 bg-white font-mono"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="font-bold text-slate-700 block mb-1">রাউটিং নম্বর (Routing No - ঐচ্ছিক)</label>
+                            <input
+                              type="text"
+                              value={withdrawForm.routingNumber}
+                              onChange={(e) => setWithdrawForm({ ...withdrawForm, routingNumber: e.target.value })}
+                              placeholder="225271829"
+                              className="w-full p-3 rounded-xl border border-slate-200 bg-white font-mono"
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <label className="font-bold text-slate-700 block mb-1">
+                            {withdrawForm.method} একাউন্ট মোবাইল নম্বর
+                          </label>
+                          <input
+                            type="text"
+                            value={withdrawForm.accountNumber}
+                            onChange={(e) => setWithdrawForm({ ...withdrawForm, accountNumber: e.target.value })}
+                            placeholder="01XXXXXXXXX"
+                            className="w-full p-3.5 rounded-2xl border border-slate-200 font-mono text-sm"
+                          />
+                        </div>
+                      )}
+
+                      <div>
+                        <label className="font-bold text-slate-700 block mb-1">অ্যাডমিনের উদ্দেশ্যে নোট (ঐচ্ছিক)</label>
+                        <textarea
+                          rows={2}
+                          value={withdrawForm.note}
+                          onChange={(e) => setWithdrawForm({ ...withdrawForm, note: e.target.value })}
+                          placeholder="যেমন: চলতি মাসের রেভিনিউ শেয়ার সেটলমেন্ট"
+                          className="w-full p-3 rounded-2xl border border-slate-200 resize-none"
+                        />
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={isSubmittingPayout || teacherAvailableBalance < 500}
+                        className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-sm shadow-md shadow-emerald-500/20 active:scale-98 transition-all cursor-pointer disabled:opacity-50"
+                      >
+                        {isSubmittingPayout ? 'আবেদন পাঠানো হচ্ছে...' : '💸 উত্তোলনের আবেদন নিশ্চিত করুন'}
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {/* Subview 3: Payouts History & Statement */}
+                {currentEarningsSub === 'earnings_history' && (
+                  <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs space-y-5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
+                      <div>
+                        <h3 className="text-base font-black text-slate-900">পেআউট ও উইথড্রল হিস্ট্রি রেজিস্টার</h3>
+                        <p className="text-xs text-slate-500">আপনার প্রেরিত সকল উত্তোলনের আবেদন, অনুমোদিত ভাউচার ও ট্রানজেকশন হিস্ট্রি</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={refreshTeacherPayouts}
+                        className="text-xs text-[#ed347d] font-bold hover:underline cursor-pointer"
+                      >
+                        🔄 রিফ্রেশ করুন
+                      </button>
+                    </div>
+
+                    {teacherPayouts.length === 0 ? (
+                      <div className="p-12 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-slate-400 text-xs">
+                        এখনো কোনো পেআউট রিকোয়েস্ট বা লেনদেন সম্পন্ন হয়নি।
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-slate-50 text-slate-500 font-black text-[11px] uppercase tracking-wider rounded-xl">
+                            <tr>
+                              <th className="p-3.5">ভাউচার আইডি</th>
+                              <th className="p-3.5">আবেদনের তারিখ</th>
+                              <th className="p-3.5">উত্তোলনের মাধ্যম</th>
+                              <th className="p-3.5">অ্যাকাউন্ট বিবরণ</th>
+                              <th className="p-3.5">টাকার অঙ্ক</th>
+                              <th className="p-3.5">স্ট্যাটাস</th>
+                              <th className="p-3.5">অ্যাডমিন TrxID / মন্তব্য</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {teacherPayouts.map((p, idx) => (
+                              <tr key={`${p.id}_${idx}`} className="hover:bg-slate-50/80 transition-colors">
+                                <td className="p-3.5 font-mono font-bold text-slate-700">{p.id}</td>
+                                <td className="p-3.5 text-slate-500">{p.requestedAt || (p as any).createdAt || 'সম্প্রতি'}</td>
+                                <td className="p-3.5">
+                                  <span className="font-bold text-slate-800">{p.method}</span>
+                                </td>
+                                <td className="p-3.5">
+                                  {p.bankDetails ? (
+                                    <div className="text-[11px]">
+                                      <span className="font-bold text-slate-800 block">{p.bankDetails.bankName}</span>
+                                      <span className="text-slate-500 block font-mono">{p.accountNumber} ({p.bankDetails.branchName})</span>
+                                    </div>
+                                  ) : (
+                                    <span className="font-mono font-bold text-slate-700">{p.accountNumber}</span>
+                                  )}
+                                </td>
+                                <td className="p-3.5 font-black text-slate-900 font-mono text-sm">
+                                  ৳ {p.amount.toLocaleString('en-BD')}
+                                </td>
+                                <td className="p-3.5">
+                                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black ${
                                     p.status === 'paid'
                                       ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                                       : p.status === 'rejected'
                                       ? 'bg-rose-50 text-rose-700 border border-rose-200'
                                       : 'bg-amber-50 text-amber-700 border border-amber-200'
                                   }`}>
-                                    {p.status === 'paid' ? '✓ পরিশোধিত' : p.status === 'rejected' ? '✕ বাতিলকৃত' : 'অপেক্ষমাণ'}
+                                    <span className={`w-1.5 h-1.5 rounded-full ${
+                                      p.status === 'paid' ? 'bg-emerald-500' : p.status === 'rejected' ? 'bg-rose-500' : 'bg-amber-500 animate-pulse'
+                                    }`} />
+                                    {p.status === 'paid' ? '✓ পরিশোধিত' : p.status === 'rejected' ? '✕ বাতিলকৃত' : '⏳ অপেক্ষমাণ'}
                                   </span>
+                                </td>
+                                <td className="p-3.5">
+                                  {p.status === 'paid' ? (
+                                    <div>
+                                      <span className="font-mono font-black text-[#ed347d] text-[11px] block">{p.trxId}</span>
+                                      <span className="text-[10px] text-slate-400">{p.paidAt}</span>
+                                    </div>
+                                  ) : p.status === 'rejected' ? (
+                                    <span className="text-rose-600 text-[11px]">{p.rejectionReason || 'বাতিল করা হয়েছে'}</span>
+                                  ) : (
+                                    <span className="text-slate-400 text-[11px] italic">অ্যাডমিন রিভিউ প্রক্রিয়ায়</span>
+                                  )}
                                 </td>
                               </tr>
                             ))}
@@ -14156,7 +14226,6 @@ export default function TeacherDashboardPage() {
               </div>
             );
           })()}
-
           {/* ========================================================================= */}
           {/* 10. PROFILE & SETTINGS MODULE (ALL 5 SUBMENUS) */}
           {/* ========================================================================= */}
@@ -14580,415 +14649,6 @@ export default function TeacherDashboardPage() {
             );
           })()}
 
-          {/* ========================================================================= */}
-          {/* 11. TEACHER EARNINGS & PAYOUTS MODULE */}
-          {/* ========================================================================= */}
-          {activeMenu === 'earnings' && (() => {
-            const currentEarningsSub = ['earnings_overview', 'earnings_withdraw', 'earnings_history'].includes(activeSubMenu)
-              ? activeSubMenu
-              : 'earnings_overview';
-
-            return (
-              <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
-                {/* Header & Submenu Navigation */}
-                <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div>
-                    <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
-                      <DollarSign className="w-5 h-5 text-emerald-600" />
-                      <span>শিক্ষক উপার্জন ও পেআউট হাব (Teacher Financials)</span>
-                    </h2>
-                    <p className="text-xs text-slate-500 font-medium mt-0.5">
-                      আপনার কোর্সের মোট বিক্রয়, কমিশন অংশ এবং ব্যাংকিং বা মোবাইল ওয়ালেটে উইথড্রল রিকোয়েস্ট
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setIsPayoutModalOpen(true)}
-                    disabled={teacherAvailableBalance < 500}
-                    className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs shadow-md shadow-emerald-500/20 active:scale-95 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed self-start sm:self-auto"
-                  >
-                    <WalletCards className="w-4 h-4" />
-                    <span>+ উত্তোলনের আবেদন করুন</span>
-                  </button>
-                </div>
-
-                {/* Submenu Tabs Bar */}
-                <div className="bg-white p-2 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-1.5 overflow-x-auto text-xs">
-                  {[
-                    { id: 'earnings_overview', label: '১. উপার্জনের হিসাব (Overview)', icon: DollarSign },
-                    { id: 'earnings_withdraw', label: '২. উত্তোলনের আবেদন (Request Payout)', icon: WalletCards },
-                    { id: 'earnings_history', label: `৩. পেআউট রেকর্ড ও স্টেটমেন্ট (${teacherPayouts.length})`, icon: Receipt },
-                  ].map((sub) => {
-                    const SubIcon = sub.icon;
-                    const isActive = currentEarningsSub === sub.id;
-                    return (
-                      <button
-                        key={sub.id}
-                        type="button"
-                        onClick={() => setActiveSubMenu(sub.id)}
-                        className={`px-4 py-2.5 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
-                          isActive
-                            ? 'bg-gradient-to-r from-[#ed347d] to-pink-600 text-white shadow-xs'
-                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                        }`}
-                      >
-                        <SubIcon className="w-3.5 h-3.5" />
-                        <span>{sub.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Top 4 Financial Metric Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {/* Card 1: Gross Sales */}
-                  <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-xs space-y-2">
-                    <span className="text-[11px] font-black text-slate-400 uppercase tracking-wider block">মোট কোর্স বিক্রয়</span>
-                    <div className="text-2xl font-black text-slate-900 font-mono">
-                      ৳ {teacherTotalSales.toLocaleString('en-BD')}
-                    </div>
-                    <span className="text-[11px] text-slate-500 block font-medium">
-                      {teacherEnrollments.filter(e => e.status === 'approved').length} টি অনুমোদিত শিক্ষার্থী ভর্তি
-                    </span>
-                  </div>
-
-                  {/* Card 2: Faculty Share */}
-                  <div className="p-5 rounded-3xl bg-emerald-50/70 border border-emerald-200 shadow-xs space-y-2">
-                    <span className="text-[11px] font-black text-emerald-800 uppercase tracking-wider block">আপনার অর্জিত মোট আয় ({teacherCommissionRate}%)</span>
-                    <div className="text-2xl font-black text-emerald-700 font-mono">
-                      ৳ {teacherEarnedTotal.toLocaleString('en-BD')}
-                    </div>
-                    <span className="text-[11px] text-emerald-600 block font-bold">
-                      রেভিনিউ শেয়ার চুক্তিমতে অর্জিত
-                    </span>
-                  </div>
-
-                  {/* Card 3: Paid Out */}
-                  <div className="p-5 rounded-3xl bg-slate-50 border border-slate-200 shadow-xs space-y-2">
-                    <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider block">পরিশোধিত পেআউট</span>
-                    <div className="text-2xl font-black text-slate-700 font-mono">
-                      ৳ {teacherPaidOutSum.toLocaleString('en-BD')}
-                    </div>
-                    <span className="text-[11px] text-slate-400 block font-medium">
-                      {teacherPayouts.filter(p => p.status === 'paid').length} টি সফল ব্যাংক/MFS ট্রানজেকশন
-                    </span>
-                  </div>
-
-                  {/* Card 4: Available Balance */}
-                  <div className="p-5 rounded-3xl bg-pink-50/80 border border-pink-200 shadow-xs space-y-2 relative overflow-hidden">
-                    <span className="text-[11px] font-black text-[#ed347d] uppercase tracking-wider block">উত্তোলনযোগ্য অবশিষ্ট ব্যালেন্স</span>
-                    <div className="text-2xl font-black text-[#ed347d] font-mono">
-                      ৳ {teacherAvailableBalance.toLocaleString('en-BD')}
-                    </div>
-                    {teacherPendingPayoutSum > 0 ? (
-                      <span className="text-[11px] text-amber-700 block font-bold">
-                        ⏳ ৳ {teacherPendingPayoutSum.toLocaleString('en-BD')} অপেক্ষমাণ
-                      </span>
-                    ) : (
-                      <span className="text-[11px] text-slate-500 block font-medium">
-                        তাৎক্ষণিক উত্তোলনের উপযোগী
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Subview 1: Overview & Course-wise breakdown */}
-                {currentEarningsSub === 'earnings_overview' && (
-                  <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs space-y-5">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
-                      <div>
-                        <h3 className="text-base font-black text-slate-900">কোর্স ভিত্তিক বিক্রয় ও অর্জিত রাজস্ব রিপোর্ট</h3>
-                        <p className="text-xs text-slate-500">আপনার প্রতিটি কোর্সের এনরোলমেন্ট সংখ্যা এবং রেভিনিউ শেয়ার বণ্টন</p>
-                      </div>
-                      <span className="px-3 py-1 rounded-xl bg-pink-50 text-[#ed347d] text-xs font-black self-start sm:self-auto">
-                        কমিশন রেট: {teacherCommissionRate}%
-                      </span>
-                    </div>
-
-                    {teacherCourses.length === 0 ? (
-                      <div className="p-12 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-slate-400 text-xs">
-                        আপনার কোনো সক্রিয় কোর্স পাওয়া যায়নি। নতুন কোর্স তৈরি করুন।
-                      </div>
-                    ) : (
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left text-xs">
-                          <thead className="bg-slate-50 text-slate-500 font-black text-[11px] uppercase tracking-wider rounded-xl">
-                            <tr>
-                              <th className="p-3.5">কোর্সের নাম</th>
-                              <th className="p-3.5">ক্যাটাগরি</th>
-                              <th className="p-3.5">কোর্স ফি</th>
-                              <th className="p-3.5">মোট ভর্তি</th>
-                              <th className="p-3.5">মোট বিক্রয়</th>
-                              <th className="p-3.5">আপনার প্রাপ্য ({teacherCommissionRate}%)</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100">
-                            {teacherCourses.map((c, idx) => {
-                              const cEnrolls = teacherEnrollments.filter(e => e.courseId === c.id && e.status === 'approved');
-                              const cSales = cEnrolls.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
-                              const cShare = Math.round(cSales * (teacherCommissionRate / 100));
-
-                              return (
-                                <tr key={`${c.id}_${idx}`} className="hover:bg-slate-50/80 transition-colors">
-                                  <td className="p-3.5">
-                                    <div className="font-bold text-slate-900">{c.title}</div>
-                                    <div className="text-[10px] text-slate-400">{c.batch || 'রেগুলার ব্যাচ'}</div>
-                                  </td>
-                                  <td className="p-3.5">
-                                    <span className="px-2.5 py-0.5 rounded-lg bg-pink-50 text-[#ed347d] font-bold text-[10px]">
-                                      {c.category}
-                                    </span>
-                                  </td>
-                                  <td className="p-3.5 font-mono font-bold text-slate-700">৳ {c.offerPrice || c.regularPrice}</td>
-                                  <td className="p-3.5 font-bold text-slate-900">{cEnrolls.length} জন</td>
-                                  <td className="p-3.5 font-black text-slate-900 font-mono">৳ {cSales.toLocaleString('en-BD')}</td>
-                                  <td className="p-3.5 font-black text-emerald-600 font-mono text-sm">৳ {cShare.toLocaleString('en-BD')}</td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Subview 2: Request Payout Form */}
-                {currentEarningsSub === 'earnings_withdraw' && (
-                  <form onSubmit={handleRequestPayoutSubmit} className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs space-y-6 max-w-2xl">
-                    <div className="border-b border-slate-100 pb-4">
-                      <h3 className="text-base font-black text-slate-900">টাকা উত্তোলনের নতুন আবেদন (Payout Request)</h3>
-                      <p className="text-xs text-slate-500">
-                        আপনার বর্তমান উত্তোলনযোগ্য ব্যালেন্স: <strong className="text-emerald-600">৳ {teacherAvailableBalance.toLocaleString('en-BD')}</strong>
-                      </p>
-                    </div>
-
-                    <div className="space-y-4 text-xs">
-                      <div>
-                        <label className="font-bold text-slate-700 block mb-1">উত্তোলনের টাকার অঙ্ক (৳)</label>
-                        <input
-                          type="number"
-                          value={withdrawForm.amount}
-                          onChange={(e) => setWithdrawForm({ ...withdrawForm, amount: e.target.value })}
-                          placeholder="যেমন: 5000"
-                          max={teacherAvailableBalance}
-                          className="w-full p-3.5 rounded-2xl border border-slate-200 text-sm font-mono focus:border-[#ed347d] focus:outline-none"
-                        />
-                        <span className="text-[11px] text-slate-400 mt-1 block">
-                          সর্বনিম্ন উত্তোলন সীমা ৳ ৫০০ টাকা। সর্বোচ্চ উত্তোলনযোগ্য: ৳ {teacherAvailableBalance.toLocaleString('en-BD')}
-                        </span>
-                      </div>
-
-                      <div>
-                        <label className="font-bold text-slate-700 block mb-1">উত্তোলনের মাধ্যম নির্বাচন করুন</label>
-                        <div className="grid grid-cols-3 gap-3">
-                          {(['bKash', 'Nagad', 'Bank Transfer'] as const).map((m) => (
-                            <button
-                              key={m}
-                              type="button"
-                              onClick={() => setWithdrawForm({ ...withdrawForm, method: m })}
-                              className={`p-3 rounded-2xl border text-center font-bold text-xs transition-all cursor-pointer ${
-                                withdrawForm.method === m
-                                  ? 'border-[#ed347d] bg-[#fff0f5] text-[#ed347d] shadow-2xs'
-                                  : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
-                              }`}
-                            >
-                              {m === 'bKash' ? 'বিকাশ (bKash)' : m === 'Nagad' ? 'নগদ (Nagad)' : 'ব্যাংক ট্রান্সফার'}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {withdrawForm.method === 'Bank Transfer' ? (
-                        <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div>
-                              <label className="font-bold text-slate-700 block mb-1">ব্যাংকের নাম</label>
-                              <input
-                                type="text"
-                                value={withdrawForm.bankName}
-                                onChange={(e) => setWithdrawForm({ ...withdrawForm, bankName: e.target.value })}
-                                placeholder="যেমন: City Bank Ltd."
-                                className="w-full p-3 rounded-xl border border-slate-200 bg-white"
-                              />
-                            </div>
-                            <div>
-                              <label className="font-bold text-slate-700 block mb-1">শাখার নাম (Branch)</label>
-                              <input
-                                type="text"
-                                value={withdrawForm.branchName}
-                                onChange={(e) => setWithdrawForm({ ...withdrawForm, branchName: e.target.value })}
-                                placeholder="যেমন: ধানমন্ডি শাখা"
-                                className="w-full p-3 rounded-xl border border-slate-200 bg-white"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div>
-                              <label className="font-bold text-slate-700 block mb-1">হিসাবধারীর পূর্ণ নাম (Account Name)</label>
-                              <input
-                                type="text"
-                                value={withdrawForm.accountName}
-                                onChange={(e) => setWithdrawForm({ ...withdrawForm, accountName: e.target.value })}
-                                placeholder="হিসাবের নাম"
-                                className="w-full p-3 rounded-xl border border-slate-200 bg-white"
-                              />
-                            </div>
-                            <div>
-                              <label className="font-bold text-slate-700 block mb-1">একাউন্ট নম্বর (Account Number)</label>
-                              <input
-                                type="text"
-                                value={withdrawForm.accountNumber}
-                                onChange={(e) => setWithdrawForm({ ...withdrawForm, accountNumber: e.target.value })}
-                                placeholder="1102938475"
-                                className="w-full p-3 rounded-xl border border-slate-200 bg-white font-mono"
-                              />
-                            </div>
-                          </div>
-
-                          <div>
-                            <label className="font-bold text-slate-700 block mb-1">রাউটিং নম্বর (Routing No - ঐচ্ছিক)</label>
-                            <input
-                              type="text"
-                              value={withdrawForm.routingNumber}
-                              onChange={(e) => setWithdrawForm({ ...withdrawForm, routingNumber: e.target.value })}
-                              placeholder="225271829"
-                              className="w-full p-3 rounded-xl border border-slate-200 bg-white font-mono"
-                            />
-                          </div>
-                        </div>
-                      ) : (
-                        <div>
-                          <label className="font-bold text-slate-700 block mb-1">
-                            {withdrawForm.method} একাউন্ট মোবাইল নম্বর
-                          </label>
-                          <input
-                            type="text"
-                            value={withdrawForm.accountNumber}
-                            onChange={(e) => setWithdrawForm({ ...withdrawForm, accountNumber: e.target.value })}
-                            placeholder="01XXXXXXXXX"
-                            className="w-full p-3.5 rounded-2xl border border-slate-200 font-mono text-sm"
-                          />
-                        </div>
-                      )}
-
-                      <div>
-                        <label className="font-bold text-slate-700 block mb-1">অ্যাডমিনের উদ্দেশ্যে নোট (ঐচ্ছিক)</label>
-                        <textarea
-                          rows={2}
-                          value={withdrawForm.note}
-                          onChange={(e) => setWithdrawForm({ ...withdrawForm, note: e.target.value })}
-                          placeholder="যেমন: চলতি মাসের রেভিনিউ শেয়ার সেটলমেন্ট"
-                          className="w-full p-3 rounded-2xl border border-slate-200 resize-none"
-                        />
-                      </div>
-
-                      <button
-                        type="submit"
-                        disabled={isSubmittingPayout || teacherAvailableBalance < 500}
-                        className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-sm shadow-md shadow-emerald-500/20 active:scale-98 transition-all cursor-pointer disabled:opacity-50"
-                      >
-                        {isSubmittingPayout ? 'আবেদন পাঠানো হচ্ছে...' : '💸 উত্তোলনের আবেদন নিশ্চিত করুন'}
-                      </button>
-                    </div>
-                  </form>
-                )}
-
-                {/* Subview 3: Payouts History & Statement */}
-                {currentEarningsSub === 'earnings_history' && (
-                  <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs space-y-5">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
-                      <div>
-                        <h3 className="text-base font-black text-slate-900">পেআউট ও উইথড্রল হিস্ট্রি রেজিস্টার</h3>
-                        <p className="text-xs text-slate-500">আপনার প্রেরিত সকল উত্তোলনের আবেদন, অনুমোদিত ভাউচার ও ট্রানজেকশন হিস্ট্রি</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={refreshTeacherPayouts}
-                        className="text-xs text-[#ed347d] font-bold hover:underline cursor-pointer"
-                      >
-                        🔄 রিফ্রেশ করুন
-                      </button>
-                    </div>
-
-                    {teacherPayouts.length === 0 ? (
-                      <div className="p-12 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-slate-400 text-xs">
-                        এখনো কোনো পেআউট রিকোয়েস্ট বা লেনদেন সম্পন্ন হয়নি।
-                      </div>
-                    ) : (
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left text-xs">
-                          <thead className="bg-slate-50 text-slate-500 font-black text-[11px] uppercase tracking-wider rounded-xl">
-                            <tr>
-                              <th className="p-3.5">ভাউচার আইডি</th>
-                              <th className="p-3.5">আবেদনের তারিখ</th>
-                              <th className="p-3.5">উত্তোলনের মাধ্যম</th>
-                              <th className="p-3.5">অ্যাকাউন্ট বিবরণ</th>
-                              <th className="p-3.5">টাকার অঙ্ক</th>
-                              <th className="p-3.5">স্ট্যাটাস</th>
-                              <th className="p-3.5">অ্যাডমিন TrxID / মন্তব্য</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100">
-                            {teacherPayouts.map((p, idx) => (
-                              <tr key={`${p.id}_${idx}`} className="hover:bg-slate-50/80 transition-colors">
-                                <td className="p-3.5 font-mono font-bold text-slate-700">{p.id}</td>
-                                <td className="p-3.5 text-slate-500">{p.requestedAt || (p as any).createdAt || 'সম্প্রতি'}</td>
-                                <td className="p-3.5">
-                                  <span className="font-bold text-slate-800">{p.method}</span>
-                                </td>
-                                <td className="p-3.5">
-                                  {p.bankDetails ? (
-                                    <div className="text-[11px]">
-                                      <span className="font-bold text-slate-800 block">{p.bankDetails.bankName}</span>
-                                      <span className="text-slate-500 block font-mono">{p.accountNumber} ({p.bankDetails.branchName})</span>
-                                    </div>
-                                  ) : (
-                                    <span className="font-mono font-bold text-slate-700">{p.accountNumber}</span>
-                                  )}
-                                </td>
-                                <td className="p-3.5 font-black text-slate-900 font-mono text-sm">
-                                  ৳ {p.amount.toLocaleString('en-BD')}
-                                </td>
-                                <td className="p-3.5">
-                                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black ${
-                                    p.status === 'paid'
-                                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                      : p.status === 'rejected'
-                                      ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                                      : 'bg-amber-50 text-amber-700 border border-amber-200'
-                                  }`}>
-                                    <span className={`w-1.5 h-1.5 rounded-full ${
-                                      p.status === 'paid' ? 'bg-emerald-500' : p.status === 'rejected' ? 'bg-rose-500' : 'bg-amber-500 animate-pulse'
-                                    }`} />
-                                    {p.status === 'paid' ? '✓ পরিশোধিত' : p.status === 'rejected' ? '✕ বাতিলকৃত' : '⏳ অপেক্ষমাণ'}
-                                  </span>
-                                </td>
-                                <td className="p-3.5">
-                                  {p.status === 'paid' ? (
-                                    <div>
-                                      <span className="font-mono font-black text-[#ed347d] text-[11px] block">{p.trxId}</span>
-                                      <span className="text-[10px] text-slate-400">{p.paidAt}</span>
-                                    </div>
-                                  ) : p.status === 'rejected' ? (
-                                    <span className="text-rose-600 text-[11px]">{p.rejectionReason || 'বাতিল করা হয়েছে'}</span>
-                                  ) : (
-                                    <span className="text-slate-400 text-[11px] italic">অ্যাডমিন রিভিউ প্রক্রিয়ায়</span>
-                                  )}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })()}
 
         </main>
 

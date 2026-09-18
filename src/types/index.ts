@@ -52,6 +52,7 @@ export interface User {
   college?: string;
   role: UserRole;
   avatar?: string;
+  bio?: string;
   enrolledCourseIds: string[];
   kycStatus?: 'unsubmitted' | 'pending' | 'approved' | 'rejected';
   kycData?: TeacherKycData;
