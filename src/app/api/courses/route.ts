@@ -281,7 +281,7 @@ export async function DELETE(req: NextRequest) {
     const payload = token ? verifyToken<any>(token) : null;
 
     if (payload && payload.role === 'teacher') {
-      const existing = await db.findOneAsync<any>('courses', (c: any) => c.id === id);
+      const existing = await db.findOneAsync<any>('courses', { id });
       if (existing) {
         const currentName = (payload.name || '').trim().toLowerCase();
         const currentEmail = (payload.email || '').trim().toLowerCase();

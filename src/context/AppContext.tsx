@@ -1164,15 +1164,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       try {
         localStorage.setItem('adommo_courses', JSON.stringify(updated));
       } catch {}
-
-      // Delete course from DB
-      fetch(`/api/courses?id=${encodeURIComponent(courseId)}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      }).catch((err) => console.log('Course delete sync completed', err));
-
       return updated;
     });
+
+    // Delete course from server DB permanently
+    fetch(`/api/courses?id=${encodeURIComponent(courseId)}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    }).catch((err) => console.log('Course delete sync completed', err));
 
     // Remove from enrollments
     setEnrollments((prev) => {

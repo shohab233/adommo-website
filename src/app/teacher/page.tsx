@@ -398,28 +398,39 @@ export default function TeacherDashboardPage() {
   };
 
   // ==================== TEACHER-SPECIFIC DATA FILTERING ====================
-  // Strictly isolate and return ONLY the logged-in teacher's own courses
+  // Strictly isolate and return ONLY the logged-in teacher's own courses (or all for admin)
   const teacherCourses = useMemo(() => {
-    if (!currentUser?.id || (currentUser.role !== 'teacher' && currentRole !== 'teacher')) {
+    if (!currentUser?.id) {
       return [];
     }
 
-    if (currentUser.role === 'admin') {
+    // Admins viewing teacher dashboard can access all courses
+    if (currentUser.role === 'admin' || currentRole === 'admin') {
       return courses;
+    }
+
+    if (currentUser.role !== 'teacher' && currentRole !== 'teacher') {
+      return [];
     }
 
     const currentId = currentUser.id.trim();
     const currentNameClean = (currentUser.name || '').trim().toLowerCase();
     const currentEmailClean = (currentUser.email || '').trim().toLowerCase();
-    const currentPhoneClean = (currentUser.phone || '').trim();
+    const currentPhoneRaw = (currentUser.phone || '').trim();
+    const currentPhoneDigits = currentPhoneRaw.replace(/\D/g, '');
 
     return courses.filter((c) => {
       // 1. Direct Teacher ID match (highest priority)
       if (c.instructorId && c.instructorId === currentId) return true;
       // 2. Direct Teacher Email match
       if (currentEmailClean && c.teacherEmail && c.teacherEmail.trim().toLowerCase() === currentEmailClean) return true;
-      // 3. Direct Teacher Phone match
-      if (currentPhoneClean && c.teacherPhone && c.teacherPhone.trim() === currentPhoneClean) return true;
+      // 3. Normalized Phone match (stripping formatting/country code)
+      if (currentPhoneDigits) {
+        const cPhoneDigits = (c.teacherPhone || '').replace(/\D/g, '');
+        if (cPhoneDigits && (cPhoneDigits === currentPhoneDigits || cPhoneDigits.endsWith(currentPhoneDigits) || currentPhoneDigits.endsWith(cPhoneDigits))) {
+          return true;
+        }
+      }
       // 4. Exact/Close Instructor Name or Mentor Name match
       if (currentNameClean) {
         const instName = (c.instructor?.name || '').trim().toLowerCase();
@@ -428,7 +439,7 @@ export default function TeacherDashboardPage() {
         }
         if (c.mentors?.some((m) => {
           const mName = (m.name || '').trim().toLowerCase();
-          return mName === currentNameClean || mName.includes(currentNameClean) || currentNameClean.includes(mName);
+          return mName && (mName === currentNameClean || mName.includes(currentNameClean) || currentNameClean.includes(mName));
         })) {
           return true;
         }
@@ -517,6 +528,10 @@ export default function TeacherDashboardPage() {
   const [coursewiseFilterId, setCoursewiseFilterId] = useState<string>('all');
   const [studentResultsExamFilter, setStudentResultsExamFilter] = useState<string>('all');
   const [studentResultsSearch, setStudentResultsSearch] = useState<string>('');
+
+  // Search and filter states for My Courses module
+  const [courseSearchQuery, setCourseSearchQuery] = useState<string>('');
+  const [courseCategoryFilter, setCourseCategoryFilter] = useState<string>('all');
 
   // ==================== FORM STATES FOR ALL 10 MODULES ====================
   // 1. Multi-Step Course Creation Wizard State (7 Steps)
@@ -1238,10 +1253,59 @@ export default function TeacherDashboardPage() {
     showToast(`✏️ '${c.title.slice(0, 24)}...' কোর্সটি এডিট করার জন্য প্রস্তুত করা হয়েছে।`);
   };
 
-  const cancelEditingCourse = () => {
+  const resetWizardForm = () => {
     setEditingCourseId(null);
     setWizardStep(1);
     setWTitle('');
+    setWCategory('Engineering');
+    setWBatch('Campus 7.0 Batch');
+    setWLevel('এইচএসসি ও ভর্তি প্রস্তুতি ২০২৬');
+    setWBadge('নতুন সেশন ২০২৬');
+    setWCoverImage('https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80');
+    setWTagline('সহজ ও কার্যকরী উপায়ে বিষয় আয়ত্ত করুন এবং ভর্তি পরীক্ষায় সেরা ফলাফল নিশ্চিত করুন।');
+    setWRegularPrice(3550);
+    setWOfferPrice(2750);
+    setWCouponCode('ADOMMO200');
+    setWCouponDiscount(200);
+    setWCountdownDays(4);
+    setWCountdownHours(14);
+    setWTotalLectures(75);
+    setWTotalExams(30);
+    setWTotalSheets(50);
+    setWFeatures([
+      'ফুল কোর্স সিলেবাস কভারেজ স্পেশাল ক্লাস (GST / Agri / DU)',
+      'Physics, Math, Chemistry, Biology বেসিক ও অ্যাডভান্স কনসেপ্ট',
+      'ভার্সিটি ভিত্তিক বিশেষ মডেল টেস্ট ও ওএমআর এক্সাম',
+      'স্পেশাল মেন্টরশিপ ও নিয়মিত গাইডলাইন সেশন',
+      'গোছানো ক্লাস স্লাইড ও প্রিন্ট উপযোগী লেকচার শিট PDF',
+    ]);
+    setNewFeatureInput('');
+    setWRoutineTitle('অদম্য ক্লাস ও এক্সাম রুটিন (PDF)');
+    setWRoutinePdfUrl('#');
+    setWTrailerUrl('');
+    setWDemoClassUrl('');
+    setWRelatedVideos([]);
+    setNewRvTitle('');
+    setWMentors([
+      {
+        name: currentUser.name || 'কোর্স ইন্সট্রাক্টর',
+        role: 'লিড মেন্টর',
+        institution: currentUser.college || 'অনবোর্ডেড ফ্যাকাল্টি',
+        avatar: currentUser.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+      },
+    ]);
+    setWDescription('এই কোর্সে উচ্চ মাধ্যমিক ও সকল পাবলিক বিশ্ববিদ্যালয়ের ভর্তি পরীক্ষার জন্য সম্পূর্ণ সিলেবাসের পুঙ্খানুপুঙ্খ ব্যাখ্যা, প্রবলেম সলভিং ও মানসম্মত মডেল টেস্ট প্রদান করা হবে।');
+    setWSyllabusModules(['অধ্যায় ০১: পরিচিতি']);
+    setNewModuleInput('');
+    setWFaq([
+      { question: 'আমি কি স্মার্টফোনে ক্লাস ও পরীক্ষা দিতে পারব?', answer: 'হ্যাঁ, যেকোনো স্মার্টফোন, ট্যাব বা কম্পিউটারে হাই-স্পিড প্লেয়ারে লাইভ/রেকর্ডেড ক্লাস দেখা ও ওএমআর এক্সাম দেওয়া যাবে।' },
+      { question: 'লাইভ ক্লাস মিস হলে কি রেকর্ডেড ক্লাস পাব?', answer: 'হ্যাঁ, ভর্তি পরীক্ষা শেষ না হওয়া পর্যন্ত প্রতিটি ক্লাসের ফুল এইচডি রেকর্ডিং স্টুডেন্ট ক্লাসরুমে আনলিমিটেড ভিউ সুবিধা সহ সংরক্ষিত থাকবে।' },
+    ]);
+    setWComboIds([]);
+  };
+
+  const cancelEditingCourse = () => {
+    resetWizardForm();
     showToast('কোর্স এডিট বাতিল করা হয়েছে। নতুন কোর্স ক্রিয়েটর ফর্ম প্রস্তুত।');
   };
 
@@ -1341,9 +1405,7 @@ export default function TeacherDashboardPage() {
 
     if (editingCourseId) {
       updateCourse(editingCourseId, coursePayload);
-      setEditingCourseId(null);
-      setWizardStep(1);
-      setWTitle('');
+      resetWizardForm();
       setActiveMenu('courses');
       setActiveSubMenu(isDraftState ? 'courses_draft' : 'courses_all');
       showToast(isDraftState ? '📁 কোর্সটি ড্রাফট হিসেবে আপডেট ও সংরক্ষণ করা হয়েছে!' : '🎉 কোর্সটি সফলভাবে আপডেট ও লাইভ পাবলিশ করা হয়েছে!');
@@ -1352,9 +1414,8 @@ export default function TeacherDashboardPage() {
 
     addCourse(coursePayload);
 
-    // Reset wizard states
-    setWizardStep(1);
-    setWTitle('');
+    // Reset wizard states cleanly
+    resetWizardForm();
     setActiveMenu('courses');
     setActiveSubMenu(isDraftState ? 'courses_draft' : 'courses_published');
     showToast(isDraftState ? '📁 নতুন কোর্সটি ড্রাফট (খসড়া) হিসেবে সফলভাবে সংরক্ষণ করা হয়েছে!' : '🎉 অভিনন্দন! নতুন কোর্সটি সফলভাবে তৈরি ও লাইভ পাবলিশ করা হয়েছে।');
@@ -2917,6 +2978,9 @@ export default function TeacherDashboardPage() {
                             onClick={() => {
                               setActiveMenu(item.id);
                               setActiveSubMenu(sub.id);
+                              if (sub.id === 'courses_create') {
+                                resetWizardForm();
+                              }
                               if (sub.id === 'courses_import_json') {
                                 setShowCourseUploadModal(true);
                               }
@@ -4048,7 +4112,10 @@ export default function TeacherDashboardPage() {
                     All Courses ({teacherCourses.filter(c => !c.isArchived).length})
                   </button>
                   <button
-                    onClick={() => setActiveSubMenu('courses_create')}
+                    onClick={() => {
+                      resetWizardForm();
+                      setActiveSubMenu('courses_create');
+                    }}
                     className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
                       activeSubMenu === 'courses_create' ? 'bg-[#ed347d] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'
                     }`}
@@ -4073,7 +4140,7 @@ export default function TeacherDashboardPage() {
                       activeSubMenu === 'courses_published' ? 'bg-[#ed347d] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'
                     }`}
                   >
-                    Published Courses ({teacherCourses.filter(c => !c.isDraft && !c.isArchived).length})
+                    Published Courses ({teacherCourses.filter(c => !c.isDraft && !c.isArchived && c.isPublished !== false).length})
                   </button>
                   <button
                     onClick={() => setActiveSubMenu('courses_draft')}
@@ -4081,7 +4148,7 @@ export default function TeacherDashboardPage() {
                       activeSubMenu === 'courses_draft' ? 'bg-[#ed347d] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'
                     }`}
                   >
-                    Draft Courses ({teacherCourses.filter(c => c.isDraft && !c.isArchived).length})
+                    Draft Courses ({teacherCourses.filter(c => (c.isDraft || c.isPublished === false) && !c.isArchived).length})
                   </button>
                   <button
                     onClick={() => setActiveSubMenu('courses_archived')}
@@ -4105,149 +4172,248 @@ export default function TeacherDashboardPage() {
                 </div>
               </div>
 
+              {/* Search & Category Filter Toolbar for Course Tabs */}
+              {(activeSubMenu === 'courses_all' || activeSubMenu === 'courses_published' || activeSubMenu === 'courses_draft' || activeSubMenu === 'courses_archived') && (
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xs">
+                  <div className="relative flex-1">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={courseSearchQuery}
+                      onChange={(e) => setCourseSearchQuery(e.target.value)}
+                      placeholder="কোর্সের নাম, বিষয় বা ব্যাচ লিখে খুঁজুন..."
+                      className="w-full pl-9 pr-8 py-2 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:border-[#ed347d] bg-slate-50/50 focus:bg-white transition-all"
+                    />
+                    {courseSearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setCourseSearchQuery('')}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Filter className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <select
+                      value={courseCategoryFilter}
+                      onChange={(e) => setCourseCategoryFilter(e.target.value)}
+                      className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-white focus:outline-none focus:border-[#ed347d] cursor-pointer"
+                    >
+                      <option value="all">সকল ক্যাটাগরি</option>
+                      <option value="Engineering">ভার্সিটি ও ইঞ্জিনিয়ারিং</option>
+                      <option value="Medical">মেডিকেল এডমিশন</option>
+                      <option value="Agri Admission">কৃষি গুচ্ছ</option>
+                      <option value="HSC">HSC একাডেমিক</option>
+                      <option value="Free Tests">ফ্রি স্পেশাল টেস্ট</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
               {/* View: All / Published Courses */}
               {(activeSubMenu === 'courses_all' || activeSubMenu === 'courses_published') && (() => {
-                const displayedCourses = activeSubMenu === 'courses_published'
-                  ? teacherCourses.filter(c => !c.isDraft && !c.isArchived)
+                const baseCourses = activeSubMenu === 'courses_published'
+                  ? teacherCourses.filter(c => !c.isDraft && !c.isArchived && c.isPublished !== false)
                   : teacherCourses.filter(c => !c.isArchived);
+
+                const displayedCourses = baseCourses.filter((c) => {
+                  if (courseCategoryFilter !== 'all' && c.category !== courseCategoryFilter) return false;
+                  if (courseSearchQuery.trim()) {
+                    const q = courseSearchQuery.toLowerCase();
+                    return (
+                      (c.title || '').toLowerCase().includes(q) ||
+                      (c.batch || '').toLowerCase().includes(q) ||
+                      (c.description || '').toLowerCase().includes(q) ||
+                      (c.category || '').toLowerCase().includes(q)
+                    );
+                  }
+                  return true;
+                });
+
                 return displayedCourses.length === 0 ? (
                   <div className="bg-white p-12 text-center rounded-3xl border border-slate-200/80 shadow-xs space-y-3">
                     <BookOpen className="w-12 h-12 text-pink-300 mx-auto" />
-                    <h3 className="text-base font-bold text-slate-800">বর্তমানে কোনো কোর্স পাওয়া যায়নি</h3>
-                    <p className="text-xs text-slate-500">আপনার পরিচালিত কোনো কোর্স এখনো তৈরি করা হয়নি।</p>
-                    <button
-                      type="button"
-                      onClick={() => setActiveSubMenu('courses_create')}
-                      className="px-5 py-2.5 rounded-xl text-xs font-bold text-white ph-btn-pink cursor-pointer"
-                    >
-                      + নতুন কোর্স তৈরি করুন
-                    </button>
+                    <h3 className="text-base font-bold text-slate-800">
+                      {courseSearchQuery || courseCategoryFilter !== 'all' ? 'ফিল্টারে কোনো কোর্স মেলেনি' : 'বর্তমানে কোনো কোর্স পাওয়া যায়নি'}
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      {courseSearchQuery || courseCategoryFilter !== 'all' ? 'অন্য কোনো নাম বা ক্যাটাগরি দিয়ে চেষ্টা করুন।' : 'আপনার পরিচালিত কোনো কোর্স এখনো তৈরি করা হয়নি।'}
+                    </p>
+                    <div className="flex items-center justify-center gap-2">
+                      {(courseSearchQuery || courseCategoryFilter !== 'all') && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCourseSearchQuery('');
+                            setCourseCategoryFilter('all');
+                          }}
+                          className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 cursor-pointer"
+                        >
+                          ফিল্টার রিসেট
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          resetWizardForm();
+                          setActiveSubMenu('courses_create');
+                        }}
+                        className="px-5 py-2.5 rounded-xl text-xs font-bold text-white ph-btn-pink cursor-pointer"
+                      >
+                        + নতুন কোর্স তৈরি করুন
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {displayedCourses.map((c, idx) => (
-                      <div key={c.id ? `${c.id}_${idx}` : `displayed_course_${idx}`} className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between">
-                        <div>
-                          <img src={c.coverImage} alt={c.title} className="w-full h-44 object-cover" />
-                          <div className="p-5 space-y-3">
-                            <div className="flex items-center justify-between">
-                              <span className="text-[10px] font-extrabold bg-[#fff0f5] text-[#ed347d] px-2.5 py-0.5 rounded-full">
-                                {c.category}
-                              </span>
-                              <div className="flex items-center gap-1.5">
-                                {c.isDraft ? (
-                                  <span className="text-[10px] font-black bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-full">
-                                    খসড়া (Draft)
-                                  </span>
-                                ) : (
-                                  <span className="text-[10px] font-black bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full">
-                                    প্রকাশিত
-                                  </span>
-                                )}
-                                <span className="text-xs font-black text-slate-800">৳ {c.offerPrice}</span>
+                    {displayedCourses.map((c, idx) => {
+                      const lectureCount = c.totalLectures ?? c.modules?.reduce((sum: number, m: any) => sum + (m.lectures?.length || 0), 0) ?? 0;
+                      const examCount = c.totalExams ?? 0;
+
+                      return (
+                        <div key={c.id ? `${c.id}_${idx}` : `displayed_course_${idx}`} className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between">
+                          <div>
+                            <img
+                              src={c.coverImage}
+                              alt={c.title}
+                              className="w-full h-44 object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80';
+                              }}
+                            />
+                            <div className="p-5 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-extrabold bg-[#fff0f5] text-[#ed347d] px-2.5 py-0.5 rounded-full">
+                                  {c.category}
+                                </span>
+                                <div className="flex items-center gap-1.5">
+                                  {c.isDraft || c.isPublished === false ? (
+                                    <span className="text-[10px] font-black bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-full">
+                                      খসড়া (Draft)
+                                    </span>
+                                  ) : (
+                                    <span className="text-[10px] font-black bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full">
+                                      প্রকাশিত
+                                    </span>
+                                  )}
+                                  <span className="text-xs font-black text-slate-800">৳ {c.offerPrice}</span>
+                                </div>
+                              </div>
+                              <h3 className="text-sm font-black text-slate-900 line-clamp-1">{c.title}</h3>
+                              <p className="text-xs text-slate-500 line-clamp-2">{c.description}</p>
+                              
+                              <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600 font-bold">
+                                <span>লেকচার: {lectureCount}</span>
+                                <span>এক্সাম: {examCount}</span>
+                                <span className="text-slate-500 font-mono text-[11px]">{c.batch || '২০২৬ ব্যাচ'}</span>
                               </div>
                             </div>
-                            <h3 className="text-sm font-black text-slate-900 line-clamp-1">{c.title}</h3>
-                            <p className="text-xs text-slate-500 line-clamp-2">{c.description}</p>
-                            
-                            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600 font-bold">
-                              <span>লেকচার: {c.totalLectures}</span>
-                              <span>এক্সাম: {c.totalExams}</span>
-                              <span className="text-slate-500 font-mono text-[11px]">{c.batch || '২০২৬ ব্যাচ'}</span>
-                            </div>
+                          </div>
+
+                          <div className="p-5 pt-0 flex gap-2 flex-wrap items-center">
+                            <button
+                              type="button"
+                              onClick={() => startEditingCourse(c)}
+                              className="px-2.5 py-2 rounded-xl text-xs font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 flex items-center gap-1 cursor-pointer transition-colors"
+                              title="কোর্স তথ্য ও মূল্য এডিট করুন"
+                            >
+                              <Edit3 className="w-3.5 h-3.5 text-amber-600" />
+                              <span>এডিট</span>
+                            </button>
+
+                            {c.isDraft || c.isPublished === false ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  updateCourse(c.id, { isDraft: false, isPublished: true });
+                                  showToast(`🎉 "${c.title}" কোর্সটি সরাসরি লাইভ পাবলিশ করা হয়েছে!`);
+                                }}
+                                className="px-2.5 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 flex items-center gap-1 cursor-pointer transition-colors shadow-xs"
+                                title="সরাসরি পাবলিশ করুন"
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                <span>পাবলিশ</span>
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  updateCourse(c.id, { isDraft: true, isPublished: false });
+                                  showToast(`📁 "${c.title}" কোর্সটি ড্রাফট (খসড়া) করা হয়েছে!`);
+                                }}
+                                className="px-2.5 py-2 rounded-xl text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200 flex items-center gap-1 cursor-pointer transition-colors"
+                                title="ড্রাফটে পাঠান"
+                              >
+                                <Bookmark className="w-3.5 h-3.5 text-amber-600" />
+                                <span>ড্রাফট</span>
+                              </button>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (confirm(`আপনি কি "${c.title}" কোর্সটি আর্কাইভ করতে চান? এটি সক্রিয় তালিকা থেকে লুকিয়ে আর্কাইভ ট্যাবে থাকবে।`)) {
+                                  updateCourse(c.id, { isArchived: true });
+                                  showToast(`📦 "${c.title}" কোর্সটি সফলভাবে আর্কাইভ করা হয়েছে!`);
+                                }
+                              }}
+                              className="px-2.5 py-2 rounded-xl text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 flex items-center gap-1 cursor-pointer transition-colors"
+                              title="কোর্স আর্কাইভ করুন"
+                            >
+                              <Archive className="w-3.5 h-3.5 text-purple-600" />
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (confirm(`আপনি কি নিশ্চিত যে "${c.title}" কোর্সটি ডিলিট করতে চান? এর সকল অধ্যায় ও ক্লাস মুছে যাবে।`)) {
+                                  deleteCourse(c.id);
+                                  showToast('🗑️ কোর্সটি সফলভাবে মুছে ফেলা হয়েছে!');
+                                }
+                              }}
+                              className="px-2 py-2 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 flex items-center gap-1 cursor-pointer transition-colors"
+                              title="কোর্স মুছুন"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                handleSelectCourse(c.id);
+                                setActiveMenu('content');
+                                setActiveSubMenu('content_lectures');
+                              }}
+                              className="flex-1 py-2 rounded-xl text-xs font-bold text-white ph-btn-pink text-center cursor-pointer shadow-xs"
+                              title="কোর্সের ক্লাস, অধ্যায় ও শিট পরিচালনা করুন"
+                            >
+                              কনটেন্ট
+                            </button>
+
+                            <Link
+                              href={`/courses/${c.id}`}
+                              target="_blank"
+                              className="px-2.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 flex items-center gap-1 cursor-pointer transition-colors"
+                              title="কোর্স পেজ প্রিভিউ (শিক্ষার্থীদের জন্য)"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5 text-[#ed347d]" />
+                            </Link>
+
+                            <Link
+                              href={`/classroom/${c.id}`}
+                              target="_blank"
+                              className="px-2.5 py-2 rounded-xl text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 flex items-center gap-1 cursor-pointer transition-colors"
+                              title="লাইভ ক্লাসরুম ভিউ (ভিডিও ও ওএমআর প্লেয়ার)"
+                            >
+                              <GraduationCap className="w-3.5 h-3.5 text-indigo-600" />
+                            </Link>
                           </div>
                         </div>
-
-                        <div className="p-5 pt-0 flex gap-2 flex-wrap">
-                          <button
-                            type="button"
-                            onClick={() => startEditingCourse(c)}
-                            className="px-2.5 py-2 rounded-xl text-xs font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 flex items-center gap-1 cursor-pointer transition-colors"
-                            title="কোর্স তথ্য ও মূল্য এডিট করুন"
-                          >
-                            <Edit3 className="w-3.5 h-3.5 text-amber-600" />
-                            <span>এডিট</span>
-                          </button>
-
-                          {c.isDraft ? (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                updateCourse(c.id, { isDraft: false, isPublished: true });
-                                showToast(`🎉 "${c.title}" কোর্সটি সরাসরি লাইভ পাবলিশ করা হয়েছে!`);
-                              }}
-                              className="px-2.5 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 flex items-center gap-1 cursor-pointer transition-colors shadow-xs"
-                              title="সরাসরি পাবলিশ করুন"
-                            >
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                              <span>পাবলিশ</span>
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                updateCourse(c.id, { isDraft: true, isPublished: false });
-                                showToast(`📁 "${c.title}" কোর্সটি ড্রাফট (খসড়া) করা হয়েছে!`);
-                              }}
-                              className="px-2.5 py-2 rounded-xl text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200 flex items-center gap-1 cursor-pointer transition-colors"
-                              title="ড্রাফটে পাঠান"
-                            >
-                              <Bookmark className="w-3.5 h-3.5 text-amber-600" />
-                              <span>ড্রাফট</span>
-                            </button>
-                          )}
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (confirm(`আপনি কি "${c.title}" কোর্সটি আর্কাইভ করতে চান? এটি সক্রিয় তালিকা থেকে লুকিয়ে আর্কাইভ ট্যাবে থাকবে।`)) {
-                                updateCourse(c.id, { isArchived: true });
-                                showToast(`📦 "${c.title}" কোর্সটি সফলভাবে আর্কাইভ করা হয়েছে!`);
-                              }
-                            }}
-                            className="px-2.5 py-2 rounded-xl text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 flex items-center gap-1 cursor-pointer transition-colors"
-                            title="কোর্স আর্কাইভ করুন"
-                          >
-                            <Archive className="w-3.5 h-3.5 text-purple-600" />
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (confirm(`আপনি কি নিশ্চিত যে "${c.title}" কোর্সটি ডিলিট করতে চান? এর সকল অধ্যায় ও ক্লাস মুছে যাবে।`)) {
-                                deleteCourse(c.id);
-                                showToast('🗑️ কোর্সটি সফলভাবে মুছে ফেলা হয়েছে!');
-                              }
-                            }}
-                            className="px-2 py-2 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 flex items-center gap-1 cursor-pointer transition-colors"
-                            title="কোর্স মুছুন"
-                          >
-                            <Trash2 className="w-3.5 h-3.5 text-rose-600" />
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              setSelectedCourseForSection(c.id);
-                              setSelectedCourseForLec(c.id);
-                              setSelectedCourseForSheet(c.id);
-                              setActiveMenu('content');
-                              setActiveSubMenu('content_lectures');
-                            }}
-                            className="flex-1 py-2 rounded-xl text-xs font-bold text-white ph-btn-pink text-center cursor-pointer"
-                          >
-                            কনটেন্ট
-                          </button>
-                          <Link
-                            href={`/courses/${c.id}`}
-                            target="_blank"
-                            className="px-2.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 flex items-center gap-1 cursor-pointer transition-colors"
-                            title="শিক্ষার্থীদের জন্য ক্লাসরুম প্রিভিউ"
-                          >
-                            <ExternalLink className="w-3.5 h-3.5 text-[#ed347d]" />
-                          </Link>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 );
               })()}
@@ -4358,9 +4524,8 @@ export default function TeacherDashboardPage() {
                         <button
                           type="button"
                           onClick={() => {
-                            setWizardStep(1);
-                            setWTitle('');
-                            showToast('ফর্ম রিসেট করা হয়েছে');
+                            resetWizardForm();
+                            showToast('ফর্ম সম্পূর্ণ রিসেট করা হয়েছে');
                           }}
                           className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
                         >
@@ -5619,7 +5784,20 @@ export default function TeacherDashboardPage() {
 
               {/* View: Draft Courses */}
               {activeSubMenu === 'courses_draft' && (() => {
-                const draftCourses = teacherCourses.filter(c => c.isDraft && !c.isArchived);
+                const baseDraftCourses = teacherCourses.filter(c => (c.isDraft || c.isPublished === false) && !c.isArchived);
+                const draftCourses = baseDraftCourses.filter((c) => {
+                  if (courseCategoryFilter !== 'all' && c.category !== courseCategoryFilter) return false;
+                  if (courseSearchQuery.trim()) {
+                    const q = courseSearchQuery.toLowerCase();
+                    return (
+                      (c.title || '').toLowerCase().includes(q) ||
+                      (c.batch || '').toLowerCase().includes(q) ||
+                      (c.description || '').toLowerCase().includes(q)
+                    );
+                  }
+                  return true;
+                });
+
                 return (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
@@ -5629,7 +5807,10 @@ export default function TeacherDashboardPage() {
                       </div>
                       <button
                         type="button"
-                        onClick={() => setActiveSubMenu('courses_create')}
+                        onClick={() => {
+                          resetWizardForm();
+                          setActiveSubMenu('courses_create');
+                        }}
                         className="px-3.5 py-2 rounded-xl text-xs font-bold text-white ph-btn-pink cursor-pointer"
                       >
                         + নতুন কোর্স
@@ -5639,32 +5820,54 @@ export default function TeacherDashboardPage() {
                     {draftCourses.length === 0 ? (
                       <div className="bg-white p-12 text-center rounded-3xl border border-slate-200 space-y-2">
                         <BookOpen className="w-10 h-10 text-slate-300 mx-auto" />
-                        <p className="text-xs font-bold text-slate-500">বর্তমানে কোনো ড্রাফট কোর্স নেই।</p>
+                        <p className="text-xs font-bold text-slate-500">
+                          {courseSearchQuery || courseCategoryFilter !== 'all' ? 'ফিল্টারে কোনো ড্রাফট কোর্স মেলেনি।' : 'বর্তমানে কোনো ড্রাফট কোর্স নেই।'}
+                        </p>
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {draftCourses.map((c) => (
-                          <div key={c.id} className="bg-white rounded-3xl border border-amber-200 overflow-hidden shadow-xs">
-                            <img src={c.coverImage} alt={c.title} className="w-full h-44 object-cover opacity-85" />
-                            <div className="p-5 space-y-3">
-                              <div className="flex items-center justify-between">
-                                <span className="text-[10px] font-extrabold bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-full">
-                                  খসড়া (Draft)
-                                </span>
-                                <span className="text-xs font-black text-slate-800">৳ {c.offerPrice}</span>
+                        {draftCourses.map((c, idx) => {
+                          const lectureCount = c.totalLectures ?? c.modules?.reduce((sum: number, m: any) => sum + (m.lectures?.length || 0), 0) ?? 0;
+                          const examCount = c.totalExams ?? 0;
+
+                          return (
+                            <div key={c.id ? `${c.id}_draft_${idx}` : `draft_${idx}`} className="bg-white rounded-3xl border border-amber-200 overflow-hidden shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between">
+                              <div>
+                                <img
+                                  src={c.coverImage}
+                                  alt={c.title}
+                                  className="w-full h-44 object-cover opacity-85"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80';
+                                  }}
+                                />
+                                <div className="p-5 space-y-3">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[10px] font-extrabold bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-full">
+                                      খসড়া (Draft)
+                                    </span>
+                                    <span className="text-xs font-black text-slate-800">৳ {c.offerPrice}</span>
+                                  </div>
+                                  <h3 className="text-sm font-black text-slate-900 line-clamp-1">{c.title}</h3>
+                                  <p className="text-xs text-slate-500 line-clamp-2">{c.description}</p>
+                                  
+                                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600 font-bold">
+                                    <span>লেকচার: {lectureCount}</span>
+                                    <span>এক্সাম: {examCount}</span>
+                                    <span className="text-slate-500 font-mono text-[11px]">{c.batch || '২০২৬ ব্যাচ'}</span>
+                                  </div>
+                                </div>
                               </div>
-                              <h3 className="text-sm font-black text-slate-900 line-clamp-1">{c.title}</h3>
-                              <p className="text-xs text-slate-500 line-clamp-2">{c.description}</p>
-                              
-                              <div className="pt-2 flex gap-1.5 flex-wrap">
+
+                              <div className="p-5 pt-0 flex gap-2 flex-wrap items-center">
                                 <button
                                   type="button"
                                   onClick={() => {
                                     updateCourse(c.id, { isDraft: false, isPublished: true });
                                     showToast(`🎉 "${c.title}" কোর্সটি সরাসরি লাইভ পাবলিশ করা হয়েছে!`);
                                   }}
-                                  className="px-3 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 flex items-center justify-center gap-1 cursor-pointer transition-colors shadow-xs"
-                                  title="সরাসরি পাবলিশ করুন"
+                                  className="px-2.5 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 flex items-center justify-center gap-1 cursor-pointer transition-colors shadow-xs"
+                                  title="সরাসরি লাইভ পাবলিশ করুন"
                                 >
                                   <CheckCircle2 className="w-3.5 h-3.5" />
                                   <span>পাবলিশ</span>
@@ -5672,10 +5875,23 @@ export default function TeacherDashboardPage() {
                                 <button
                                   type="button"
                                   onClick={() => startEditingCourse(c)}
-                                  className="flex-1 py-2 rounded-xl text-xs font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 border border-amber-300 flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                                  className="px-2.5 py-2 rounded-xl text-xs font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 border border-amber-300 flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                                  title="কোর্স তথ্য ও মূল্য এডিট করুন"
                                 >
                                   <Edit3 className="w-3.5 h-3.5 text-amber-700" />
                                   <span>এডিট</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    handleSelectCourse(c.id);
+                                    setActiveMenu('content');
+                                    setActiveSubMenu('content_lectures');
+                                  }}
+                                  className="flex-1 py-2 rounded-xl text-xs font-bold text-white ph-btn-pink text-center cursor-pointer shadow-xs"
+                                  title="ড্রাফট কোর্সের ক্লাস, অধ্যায় ও শিট পরিচালনা করুন"
+                                >
+                                  কনটেন্ট
                                 </button>
                                 <button
                                   type="button"
@@ -5698,15 +5914,31 @@ export default function TeacherDashboardPage() {
                                       showToast('🗑️ ড্রাফট কোর্সটি মুছে ফেলা হয়েছে!');
                                     }
                                   }}
-                                  className="px-2.5 py-2 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                                  className="px-2 py-2 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 flex items-center justify-center gap-1 cursor-pointer transition-colors"
                                   title="কোর্স মুছুন"
                                 >
                                   <Trash2 className="w-3.5 h-3.5 text-rose-600" />
                                 </button>
+                                <Link
+                                  href={`/courses/${c.id}`}
+                                  target="_blank"
+                                  className="px-2.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 flex items-center gap-1 cursor-pointer transition-colors"
+                                  title="কোর্স পেজ প্রিভিউ"
+                                >
+                                  <ExternalLink className="w-3.5 h-3.5 text-[#ed347d]" />
+                                </Link>
+                                <Link
+                                  href={`/classroom/${c.id}`}
+                                  target="_blank"
+                                  className="px-2.5 py-2 rounded-xl text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 flex items-center gap-1 cursor-pointer transition-colors"
+                                  title="ক্লাসরুম ভিউ"
+                                >
+                                  <GraduationCap className="w-3.5 h-3.5 text-indigo-600" />
+                                </Link>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -5715,7 +5947,20 @@ export default function TeacherDashboardPage() {
 
               {/* View: Archived Courses */}
               {activeSubMenu === 'courses_archived' && (() => {
-                const archivedList = teacherCourses.filter(c => c.isArchived);
+                const baseArchived = teacherCourses.filter(c => c.isArchived);
+                const archivedList = baseArchived.filter((c) => {
+                  if (courseCategoryFilter !== 'all' && c.category !== courseCategoryFilter) return false;
+                  if (courseSearchQuery.trim()) {
+                    const q = courseSearchQuery.toLowerCase();
+                    return (
+                      (c.title || '').toLowerCase().includes(q) ||
+                      (c.batch || '').toLowerCase().includes(q) ||
+                      (c.description || '').toLowerCase().includes(q)
+                    );
+                  }
+                  return true;
+                });
+
                 return (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
@@ -5728,24 +5973,46 @@ export default function TeacherDashboardPage() {
                     {archivedList.length === 0 ? (
                       <div className="bg-white p-12 text-center rounded-3xl border border-slate-200 space-y-2">
                         <BookOpen className="w-10 h-10 text-slate-300 mx-auto" />
-                        <p className="text-xs font-bold text-slate-500">এই বিভাগে বর্তমানে কোনো আর্কাইভড কোর্স নেই।</p>
+                        <p className="text-xs font-bold text-slate-500">
+                          {courseSearchQuery || courseCategoryFilter !== 'all' ? 'ফিল্টারে কোনো আর্কাইভড কোর্স মেলেনি।' : 'এই বিভাগে বর্তমানে কোনো আর্কাইভড কোর্স নেই।'}
+                        </p>
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {archivedList.map((c) => (
-                          <div key={c.id} className="bg-white rounded-3xl border border-purple-200 overflow-hidden shadow-xs opacity-90 hover:opacity-100 transition-opacity">
-                            <img src={c.coverImage} alt={c.title} className="w-full h-44 object-cover grayscale-[35%]" />
-                            <div className="p-5 space-y-3">
-                              <div className="flex items-center justify-between">
-                                <span className="text-[10px] font-extrabold bg-purple-100 text-purple-800 px-2.5 py-0.5 rounded-full">
-                                  আর্কাইভড (Archived)
-                                </span>
-                                <span className="text-xs font-black text-slate-800">৳ {c.offerPrice}</span>
+                        {archivedList.map((c, idx) => {
+                          const lectureCount = c.totalLectures ?? c.modules?.reduce((sum: number, m: any) => sum + (m.lectures?.length || 0), 0) ?? 0;
+                          const examCount = c.totalExams ?? 0;
+
+                          return (
+                            <div key={c.id ? `${c.id}_arch_${idx}` : `arch_${idx}`} className="bg-white rounded-3xl border border-purple-200 overflow-hidden shadow-xs opacity-90 hover:opacity-100 transition-opacity flex flex-col justify-between">
+                              <div>
+                                <img
+                                  src={c.coverImage}
+                                  alt={c.title}
+                                  className="w-full h-44 object-cover grayscale-[35%]"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80';
+                                  }}
+                                />
+                                <div className="p-5 space-y-3">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[10px] font-extrabold bg-purple-100 text-purple-800 px-2.5 py-0.5 rounded-full">
+                                      আর্কাইভড (Archived)
+                                    </span>
+                                    <span className="text-xs font-black text-slate-800">৳ {c.offerPrice}</span>
+                                  </div>
+                                  <h3 className="text-sm font-black text-slate-900 line-clamp-1">{c.title}</h3>
+                                  <p className="text-xs text-slate-500 line-clamp-2">{c.description}</p>
+                                  
+                                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600 font-bold">
+                                    <span>লেকচার: {lectureCount}</span>
+                                    <span>এক্সাম: {examCount}</span>
+                                    <span className="text-slate-500 font-mono text-[11px]">{c.batch || 'আর্কাইভ'}</span>
+                                  </div>
+                                </div>
                               </div>
-                              <h3 className="text-sm font-black text-slate-900 line-clamp-1">{c.title}</h3>
-                              <p className="text-xs text-slate-500 line-clamp-2">{c.description}</p>
-                              
-                              <div className="pt-2 flex gap-2">
+
+                              <div className="p-5 pt-0 flex gap-2 flex-wrap items-center">
                                 <button
                                   type="button"
                                   onClick={() => {
@@ -5759,21 +6026,50 @@ export default function TeacherDashboardPage() {
                                 </button>
                                 <button
                                   type="button"
+                                  onClick={() => startEditingCourse(c)}
+                                  className="px-2.5 py-2 rounded-xl text-xs font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 flex items-center gap-1 cursor-pointer transition-colors"
+                                  title="কোর্স তথ্য ও মূল্য এডিট করুন"
+                                >
+                                  <Edit3 className="w-3.5 h-3.5 text-amber-600" />
+                                  <span>এডিট</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    handleSelectCourse(c.id);
+                                    setActiveMenu('content');
+                                    setActiveSubMenu('content_lectures');
+                                  }}
+                                  className="px-3 py-2 rounded-xl text-xs font-bold text-white ph-btn-pink text-center cursor-pointer shadow-xs"
+                                  title="আর্কাইভড কোর্সের কনটেন্ট দেখুন"
+                                >
+                                  কনটেন্ট
+                                </button>
+                                <button
+                                  type="button"
                                   onClick={() => {
                                     if (confirm(`আপনি কি নিশ্চিত যে "${c.title}" আর্কাইভড কোর্সটি মুছে ফেলতে চান?`)) {
                                       deleteCourse(c.id);
                                       showToast('🗑️ কোর্সটি মুছে ফেলা হয়েছে!');
                                     }
                                   }}
-                                  className="px-3 py-2 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                                  className="px-2.5 py-2 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 flex items-center justify-center gap-1 cursor-pointer transition-colors"
                                   title="কোর্স মুছুন"
                                 >
                                   <Trash2 className="w-3.5 h-3.5 text-rose-600" />
                                 </button>
+                                <Link
+                                  href={`/courses/${c.id}`}
+                                  target="_blank"
+                                  className="px-2.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 flex items-center gap-1 cursor-pointer transition-colors"
+                                  title="কোর্স পেজ প্রিভিউ"
+                                >
+                                  <ExternalLink className="w-3.5 h-3.5 text-[#ed347d]" />
+                                </Link>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>
