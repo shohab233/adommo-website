@@ -39,9 +39,19 @@ export default function ClassroomPage({
   params: Promise<{ id: string }>;
 }) {
   const resolvedParams = React.use(params);
-  const { courses, isEnrolled, exams, currentUser, showToast, questionBanks, examSubmissions, detailedSubmissions, liveClasses } = useApp();
+  const { courses, isEnrolled, exams, currentUser, showToast, questionBanks, examSubmissions, detailedSubmissions, liveClasses, loadFullCourse } = useApp();
   
   const course = courses.find((c) => c.id === resolvedParams.id);
+  const [isFetchingCourse, setIsFetchingCourse] = useState(!course || !course.modules || course.modules.length === 0);
+
+  useEffect(() => {
+    if (resolvedParams.id && (!course || !course.modules || course.modules.length === 0)) {
+      setIsFetchingCourse(true);
+      loadFullCourse(resolvedParams.id).finally(() => {
+        setIsFetchingCourse(false);
+      });
+    }
+  }, [resolvedParams.id, course, loadFullCourse]);
 
   const [currentLectureId, setCurrentLectureId] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'notes' | 'discussion'>('notes');
@@ -70,6 +80,16 @@ export default function ClassroomPage({
       setCurrentLectureId((prev) => prev || course.modules[0].lectures[0].id);
     }
   }, [course]);
+
+  if (isFetchingCourse && !course) {
+    return (
+      <div className="max-w-4xl mx-auto py-24 px-4 text-center space-y-4 bg-white min-h-[60vh] flex flex-col items-center justify-center">
+        <div className="w-10 h-10 border-4 border-pink-200 border-t-[#ed347d] rounded-full animate-spin mx-auto" />
+        <h2 className="text-xl font-bold text-slate-800">ক্লাসরুম প্রস্তুত করা হচ্ছে...</h2>
+        <p className="text-xs text-slate-500">কোর্সের সকল লেকচার ও স্টাডি উপাদান লোড হচ্ছে, এক মুহূর্ত অপেক্ষা করুন।</p>
+      </div>
+    );
+  }
 
   if (!course) {
     return (

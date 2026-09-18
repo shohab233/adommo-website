@@ -1,16 +1,93 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import ProtectedVideoPlayer from '@/components/ProtectedVideoPlayer';
-import { Play, Sparkles, CheckCircle2, ShieldCheck, ArrowLeft, FileText, ExternalLink, Download, BookOpen } from 'lucide-react';
+import { Play, Sparkles, CheckCircle2, ShieldCheck, ArrowLeft, FileText, ExternalLink, Download, BookOpen, Key, Copy, Check, AlertCircle, RefreshCw } from 'lucide-react';
 
 export default function DemoVideoPage() {
+  const playerContainerRef = useRef<HTMLDivElement>(null);
   const defaultM3u8Url = '/api/stream/phyhunt?slug=cmp6vector_part1&file=master.m3u8';
   const [videoUrl, setVideoUrl] = useState(defaultM3u8Url);
   const [inputUrl, setInputUrl] = useState(defaultM3u8Url);
   const [activeMaterial, setActiveMaterial] = useState<string>('https://drive.google.com/file/d/1sRa-ELNL4XCvUJ2zP_budZH0QgkdEGJO/preview');
   const [customMaterialUrl, setCustomMaterialUrl] = useState<string>('');
+
+  // Physics Hunters AES-128 Key & Token Management
+  const [isKeyCached, setIsKeyCached] = useState<boolean | null>(null);
+  const [keyOrTokenInput, setKeyOrTokenInput] = useState<string>('');
+  const [isSavingKey, setIsSavingKey] = useState<boolean>(false);
+  const [keyStatusMsg, setKeyStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [copiedSnippet, setCopiedSnippet] = useState<boolean>(false);
+
+  const checkKeyStatus = async () => {
+    try {
+      const res = await fetch('/api/stream/phyhunt?slug=cmp6vector_part1&file=status');
+      const data = await res.json();
+      setIsKeyCached(!!data.isKeyCached);
+    } catch {
+      setIsKeyCached(false);
+    }
+  };
+
+  useEffect(() => {
+    checkKeyStatus();
+  }, []);
+
+  const playPreset = (url: string) => {
+    const finalUrl = url + (url.includes('?') ? '&' : '?') + '_r=' + Date.now();
+    setInputUrl(url);
+    setVideoUrl(finalUrl);
+    setTimeout(() => {
+      playerContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 50);
+  };
+
+  const handleSaveKeyOrToken = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!keyOrTokenInput.trim()) return;
+
+    setIsSavingKey(true);
+    setKeyStatusMsg(null);
+    try {
+      const val = keyOrTokenInput.trim();
+      const payload = val.includes(':') 
+        ? { slug: 'cmp6vector_part1', token: val }
+        : { slug: 'cmp6vector_part1', keyHex: val };
+
+      const res = await fetch('/api/stream/phyhunt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'কী বা টোকেন সংরক্ষণ করা সম্ভব হয়নি');
+      }
+
+      setKeyStatusMsg({ type: 'success', text: data.message });
+      setIsKeyCached(true);
+      // Reload video with fresh query to force player reload
+      const newUrl = `/api/stream/phyhunt?slug=cmp6vector_part1&file=master.m3u8&_t=${Date.now()}`;
+      setVideoUrl(newUrl);
+      setInputUrl(newUrl);
+      setKeyOrTokenInput('');
+      setTimeout(() => {
+        playerContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    } catch (err: any) {
+      setKeyStatusMsg({ type: 'error', text: err.message || 'ব্যর্থ হয়েছে' });
+    } finally {
+      setIsSavingKey(false);
+    }
+  };
+
+  const copyPhyhuntSnippet = () => {
+    const snippet = `(async()=>{try{const r=await fetch('/course/lms-v2/api/hls/ticket/?slug=cmp6vector_part1');const d=await r.json();console.log('TOKEN:', d.token);const k=await fetch('/course/lms-v2/api/hls/master-key/?slug=cmp6vector_part1&token='+encodeURIComponent(d.token));const b=await k.arrayBuffer();const hex=Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('');console.log('16-BYTE KEY HEX:', hex);prompt('Permanent 16-Byte Hex Key (Ctrl+C to copy):', hex);}catch(e){alert('Error: '+e.message);}})();`;
+    navigator.clipboard.writeText(snippet);
+    setCopiedSnippet(true);
+    setTimeout(() => setCopiedSnippet(false), 2500);
+  };
 
   const demoMaterials = [
     { title: 'লেকচার স্লাইড (ভেক্টর পার্ট ১)', url: 'https://drive.google.com/file/d/1sRa-ELNL4XCvUJ2zP_budZH0QgkdEGJO/preview' },
@@ -21,7 +98,12 @@ export default function DemoVideoPage() {
   const handleApplyUrl = (e: React.FormEvent) => {
     e.preventDefault();
     if (inputUrl.trim()) {
-      setVideoUrl(inputUrl.trim());
+      const u = inputUrl.trim();
+      const finalUrl = u.includes('_r=') ? u : u + (u.includes('?') ? '&' : '?') + '_r=' + Date.now();
+      setVideoUrl(finalUrl);
+      setTimeout(() => {
+        playerContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
     }
   };
 
@@ -64,17 +146,17 @@ export default function DemoVideoPage() {
             লাইভ HLS ভিডিও প্লেয়ার টেস্ট
           </h1>
           <p className="text-sm sm:text-base text-slate-400 max-w-2xl mx-auto">
-            আপনার প্রদানকৃত BunnyCDN <code className="text-pink-400 bg-pink-950/50 px-2 py-0.5 rounded text-xs font-mono">playlist.m3u8</code> ভিডিওটি আমাদের কাস্টম প্লেয়ারের মাধ্যমে সরাসরি প্লে হচ্ছে।
+            Physics Hunters ও BunnyCDN <code className="text-pink-400 bg-pink-950/50 px-2 py-0.5 rounded text-xs font-mono">playlist.m3u8</code> ভিডিও আমাদের কাস্টম প্লেয়ারের মাধ্যমে সরাসরি প্লে হচ্ছে।
           </p>
         </div>
 
         {/* Main Video Player Showcase */}
-        <div className="bg-slate-900/80 border border-white/10 rounded-3xl p-3 sm:p-5 shadow-2xl backdrop-blur-xl">
+        <div ref={playerContainerRef} className="bg-slate-900/80 border border-white/10 rounded-3xl p-3 sm:p-5 shadow-2xl backdrop-blur-xl">
           <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-black shadow-inner border border-white/5">
             <ProtectedVideoPlayer
               key={videoUrl}
               videoUrl={videoUrl}
-              title="গতিবিদ্যা-০১ (BunnyCDN HLS Stream)"
+              title={videoUrl.includes('phyhunt') ? 'Physics Hunters: ভেক্টর পার্ট-১ (AES-128 HLS Stream)' : 'গতিবিদ্যা-০১ (BunnyCDN HLS Stream)'}
             />
           </div>
 
@@ -125,31 +207,142 @@ export default function DemoVideoPage() {
           </div>
         </div>
 
+        {/* Physics Hunters Key / Token Management Assistant */}
+        {videoUrl.includes('phyhunt') && (
+          <div className={`p-5 rounded-2xl border transition-all ${
+            isKeyCached 
+              ? 'bg-emerald-950/20 border-emerald-500/30' 
+              : 'bg-amber-950/20 border-amber-500/40'
+          } space-y-4`}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                  isKeyCached ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
+                }`}>
+                  <Key className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                    <span>Physics Hunters AES-128 সিক্রেট কী স্ট্যাটাস</span>
+                    {isKeyCached ? (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                        ✓ চিরস্থায়ী কী সংরক্ষিত (Active)
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                        ⚠️ কী বা টোকেন প্রয়োজন (12h Expiration)
+                      </span>
+                    )}
+                  </h4>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    {isKeyCached
+                      ? 'এই ক্লাসের ডিক্রিপশন কী পার্মানেন্টলি সেভ করা আছে, ভিডিও বাধাহীনভাবে প্লে হবে।'
+                      : 'PhyHunt প্ল্যাটফর্মে টোকেনের মেয়াদ প্রতি ১২ ঘণ্টায় শেষ হয়ে যায়। নতুন টোকেন বা 16-Byte Hex Key দিয়ে এটি তাৎক্ষণিক চালু করুন।'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={copyPhyhuntSnippet}
+                  className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 flex items-center gap-1.5 transition-all cursor-pointer"
+                >
+                  {copiedSnippet ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-pink-400" />}
+                  <span>{copiedSnippet ? 'স্ক্রিপ্ট কপি হয়েছে!' : '📋 PhyHunt এক্সট্র্যাক্ট কোড'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={checkKeyStatus}
+                  className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white text-xs border border-slate-700 transition-all cursor-pointer"
+                  title="রিফ্রেশ স্ট্যাটাস"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Quick guide and Input form */}
+            {!isKeyCached && (
+              <div className="p-4 rounded-xl bg-[#0a121e] border border-white/5 space-y-3">
+                <div className="text-xs text-slate-300 leading-relaxed space-y-1">
+                  <p className="font-semibold text-amber-300 flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>কীভাবে PhyHunt থেকে ফ্রেশ টোকেন বা Hex Key আনবেন?</span>
+                  </p>
+                  <ol className="list-decimal list-inside pl-1 text-[11px] text-slate-400 space-y-1">
+                    <li><strong className="text-slate-300">PhyHunt.com</strong>-এ লগইন করে ভেক্টর ক্লাসের পেজে যান।</li>
+                    <li>কিবোর্ডে <strong>F12</strong> চেপে <strong>Console</strong> ট্যাবে যান।</li>
+                    <li>ওপরের <strong>&quot;📋 PhyHunt এক্সট্র্যাক্ট কোড&quot;</strong> বাটনে চাপ দিয়ে কোডটি পেস্ট করে Enter দিন।</li>
+                    <li>পপআপে পাওয়া <strong>16-Byte Hex Key</strong> অথবা <strong>Token</strong> নিচের বক্সে পেস্ট করে সেভ করুন।</li>
+                  </ol>
+                </div>
+
+                <form onSubmit={handleSaveKeyOrToken} className="flex flex-col sm:flex-row gap-2 pt-1">
+                  <input
+                    type="text"
+                    value={keyOrTokenInput}
+                    onChange={(e) => setKeyOrTokenInput(e.target.value)}
+                    placeholder="PhyHunt Token (109980:...) অথবা 32-অক্ষরের Hex Key পেস্ট করুন..."
+                    className="flex-1 bg-black/60 border border-slate-700 focus:border-amber-400 rounded-xl px-4 py-2 text-xs text-white placeholder-slate-500 font-mono focus:outline-none"
+                  />
+                  <button
+                    type="submit"
+                    disabled={isSavingKey || !keyOrTokenInput.trim()}
+                    className="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-emerald-600 hover:opacity-90 text-white text-xs font-bold transition-all disabled:opacity-50 cursor-pointer shadow-md flex items-center justify-center gap-1.5 shrink-0"
+                  >
+                    <Key className="w-3.5 h-3.5" />
+                    <span>{isSavingKey ? 'যাচাই হচ্ছে...' : '🔑 কী সেভ ও আনলক করুন'}</span>
+                  </button>
+                </form>
+
+                {keyStatusMsg && (
+                  <div className={`p-2.5 rounded-lg text-xs font-medium ${
+                    keyStatusMsg.type === 'success' 
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
+                      : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                  }`}>
+                    {keyStatusMsg.text}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {isKeyCached && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-emerald-500/20">
+                <span className="text-xs text-emerald-300 font-medium">
+                  🎉 ১৬-বাইটের AES-128 ডিক্রিপশন কী সফলভাবে সিস্টেমে সংরক্ষিত আছে!
+                </span>
+                <button
+                  type="button"
+                  onClick={() => playPreset('/api/stream/phyhunt?slug=cmp6vector_part1&file=master.m3u8')}
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:opacity-95 text-white text-xs font-black flex items-center gap-2 shadow-lg shadow-emerald-600/30 cursor-pointer transition-all active:scale-[0.98]"
+                >
+                  <Play className="w-4 h-4 fill-white" />
+                  <span>▶️ ভিডিও প্লে করুন ও দেখুন</span>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Custom URL Tester Form */}
         <div className="bg-slate-900/40 border border-white/10 rounded-2xl p-5 space-y-3">
           <div className="flex items-center gap-2 flex-wrap pb-2 border-b border-white/10">
             <span className="text-[11px] text-slate-400 font-bold">টেস্ট প্রিসেট সিলেক্ট করুন:</span>
             <button
               type="button"
-              onClick={() => {
-                const u = '/api/stream/phyhunt?slug=cmp6vector_part1&file=master.m3u8';
-                setInputUrl(u);
-                setVideoUrl(u);
-              }}
-              className="px-3 py-1 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-bold shadow-md cursor-pointer hover:opacity-90"
+              onClick={() => playPreset('/api/stream/phyhunt?slug=cmp6vector_part1&file=master.m3u8')}
+              className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-bold shadow-md cursor-pointer hover:opacity-90"
             >
               🔥 Physics Hunters: ভেক্টর পার্ট-১ (AES-128 Stream)
             </button>
             <button
               type="button"
-              onClick={() => {
-                const u = 'https://vz-2d726a87-cba.b-cdn.net/50734d3b-3248-49c0-948b-ed31ffb9ad28/playlist.m3u8';
-                setInputUrl(u);
-                setVideoUrl(u);
-              }}
-              className="px-3 py-1 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 text-xs font-bold cursor-pointer"
+              onClick={() => playPreset('https://vz-2d726a87-cba.b-cdn.net/50734d3b-3248-49c0-948b-ed31ffb9ad28/playlist.m3u8')}
+              className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 text-xs font-bold cursor-pointer"
             >
-              🐰 BunnyCDN: গতিবিদ্যা-০১
+              🐰 BunnyCDN: গতিবিদ্যা-০১ (সরাসরি সচল)
             </button>
           </div>
 

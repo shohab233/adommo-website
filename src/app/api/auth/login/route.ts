@@ -14,16 +14,25 @@ export async function POST(req: NextRequest) {
     const clean = identifier.trim();
     const cleanLower = clean.toLowerCase();
 
-    // 1. Strictly find user with the requested role
-    let user = await db.findOneAsync<any>('users', (u: any) => 
-      u.role === targetRole && (u.phone === clean || (u.email && u.email.toLowerCase() === cleanLower))
-    );
+    // 1. Strictly find user with the requested role (fast indexed lookup)
+    let user = await db.findOneAsync<any>('users', {
+      role: targetRole,
+      $or: [
+        { phone: clean },
+        { email: cleanLower },
+        { email: clean },
+      ]
+    });
 
     // 2. If not found in targetRole, check if they exist in another role to give helpful guidance
     if (!user) {
-      const otherRoleUser = await db.findOneAsync<any>('users', (u: any) => 
-        u.phone === clean || (u.email && u.email.toLowerCase() === cleanLower)
-      );
+      const otherRoleUser = await db.findOneAsync<any>('users', {
+        $or: [
+          { phone: clean },
+          { email: cleanLower },
+          { email: clean },
+        ]
+      });
 
       if (otherRoleUser) {
         if (targetRole === 'teacher' && otherRoleUser.role === 'student') {

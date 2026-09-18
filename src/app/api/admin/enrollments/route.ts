@@ -55,8 +55,35 @@ export async function PATCH(req: NextRequest) {
       }
 
       return NextResponse.json({ success: true, enrollment: updated });
-    } else if (action === 'reject') {
-      const updated = await db.updateAsync('enrollments', enrollment.id, { status: 'rejected' });
+    } else if (action === 'reject' || action === 'refund') {
+      const newStatus = action === 'refund' ? 'refunded' : 'rejected';
+      const updated = await db.updateAsync('enrollments', enrollment.id, { status: newStatus });
+
+      // If user had access unlocked, remove course from enrolledCourseIds
+      const cleanStudentId = (enrollment.studentId || '').trim();
+      const cleanPhone1 = (enrollment.studentPhone || '').replace(/\D/g, '');
+      const cleanPhone2 = (enrollment.senderPhone || '').replace(/\D/g, '');
+
+      const student = await db.findOneAsync<any>('users', (u: any) => {
+        if (cleanStudentId && u.id === cleanStudentId) return true;
+        const uPhoneClean = (u.phone || '').replace(/\D/g, '');
+        if (uPhoneClean && (uPhoneClean === cleanPhone1 || uPhoneClean === cleanPhone2)) return true;
+        return false;
+      });
+
+      if (student && Array.isArray(student.enrolledCourseIds)) {
+        const remaining = student.enrolledCourseIds.filter((cid: string) => cid !== enrollment.courseId);
+        await db.updateAsync('users', student.id, { enrolledCourseIds: remaining });
+      }
+
+      // Decrement course enrolled count if it was previously approved
+      if (enrollment.status === 'approved') {
+        const course = await db.findOneAsync<any>('courses', (c: any) => c.id === enrollment.courseId);
+        if (course && course.enrolledCount && course.enrolledCount > 0) {
+          await db.updateAsync('courses', course.id, { enrolledCount: course.enrolledCount - 1 });
+        }
+      }
+
       return NextResponse.json({ success: true, enrollment: updated });
     }
 

@@ -1,1 +1,26 @@
-[]
+[
+  {
+    "id": "id_1789449776511_3tloo",
+    "createdAt": "2026-09-15T05:22:56.511Z",
+    "siteName": "Adommo EdTech (অদম্য এডটেক)",
+    "liveNotice": "ভর্তি চলছে! Campus 6.0 ও প্রত্যাবর্তন ৫.০ স্পেশাল ব্যাচ। যেকোনো সহযোগিতায় আমাদের হটলাইনে কল করুন: 01819-876543",
+    "supportHotline": "01819-876543",
+    "supportEmail": "support@adommo.com",
+    "address": "অদম্য এডটেক, ফার্মগেট, ঢাকা - ১২১৫",
+    "bkashMerchant": "0175411940",
+    "nagadMerchant": "0175411940",
+    "rocketMerchant": "0175411940",
+    "maintenanceMode": false,
+    "autoEnrollmentApprove": false,
+    "minPayoutAmount": 5000,
+    "smsGatewayApiKey": "gw_live_adommo_8736152",
+    "smsSenderId": "ADOMMO",
+    "smtpHost": "smtp.sendgrid.net",
+    "smtpPort": 587,
+    "smtpSender": "admission@adommo.com",
+    "adminPin": "1234",
+    "twoFactorAuth": true,
+    "enableExamSms": true,
+    "updatedAt": "2026-09-15T05:22:56.510Z"
+  }
+]

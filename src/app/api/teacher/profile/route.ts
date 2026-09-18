@@ -30,6 +30,7 @@ export async function PATCH(req: NextRequest) {
 
     if (avatar) updates.avatar = avatar;
     if (bio) updates.bio = bio;
+    if (body.college) updates.college = body.college;
 
     if (newPassword && newPassword.trim().length >= 4) {
       updates.passwordHash = hashPassword(newPassword.trim());

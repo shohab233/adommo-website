@@ -45,7 +45,7 @@ import {
   Loader2,
   MousePointerClick
 } from 'lucide-react';
-import { resolveSubjectTitle, isGenericSubjectTitle, isGenericChapterTitle, inferChapterTitleFromClasses } from '@/lib/courseSubjectNormalizer';
+import { resolveSubjectTitle, isGenericSubjectTitle, isGenericChapterTitle, inferChapterTitleFromClasses, inferSubjectTitleFromContent, cleanAndNormalizeChapterTitle, healCourse } from '@/lib/courseSubjectNormalizer';
 
 interface ParsedClass {
   id: string;
@@ -108,6 +108,443 @@ interface ParsedCourseData {
   modules?: any[];
   [key: string]: any;
 }
+
+const TELEGRAM_PROTECTED_SINGLE_CHANNEL_SCRAPER_CODE = String.raw`/**
+ * ADOMMO (অদম্য) — Telegram Protected Single-Channel Scraper (Turbo v4.2)
+ * কপি-প্রটেকশন অন থাকা চ্যানেলের সব ক্লাস (৪২ টি ক্লাস ও ৩ টি অধ্যায়) কোনো ডেটা মিস ছাড়াই সংগ্রহের স্ক্রিপ্ট
+ */
+(function launchAdommoTurboScraper() {
+  console.clear();
+  console.log("%c🚀 ADOMMO — প্রটেক্টেড সিঙ্গেল চ্যানেল টার্বো স্ক্র্যাপার (v4.2) চালুকৃত...", "color: #0284c7; font-size: 16px; font-weight: bold;");
+
+  function toEngDigits(str) {
+    if (!str) return '';
+    const bn = ['০','১','২','৩','৪','৫','৬','৭','৮','৯'];
+    return str.toString().replace(/[০-৯]/g, d => bn.indexOf(d).toString());
+  }
+
+  function toBnDigits(str) {
+    if (!str) return '';
+    const bn = ['০','১','২','৩','৪','৫','৬','৭','৮','৯'];
+    return str.toString().replace(/[0-9]/g, d => bn[parseInt(d, 10)]);
+  }
+
+  const HSC_CHAPTERS = {
+    physics_1: {
+      1: "অধ্যায় ০১: ভৌত জগৎ ও পরিমাপ",
+      2: "অধ্যায় ০২: ভেক্টর",
+      3: "অধ্যায় ০৩: গতিবিদ্যা",
+      4: "অধ্যায় ০৪: নিউটনিয়ান বলবিদ্যা",
+      5: "অধ্যায় ০৫: কাজ, শক্তি ও ক্ষমতা",
+      6: "অধ্যায় ০৬: মহাকর্ষ ও অভিকর্ষ",
+      7: "অধ্যায় ০৭: পদার্থের গাঠনিক ধর্ম",
+      8: "অধ্যায় ০৮: পর্যাবৃত্ত গতি",
+      9: "অধ্যায় ০৯: তরঙ্গ",
+      10: "অধ্যায় ১০: আদর্শ গ্যাস ও গ্যাসের গতিতত্ত্ব"
+    },
+    physics_2: {
+      1: "অধ্যায় ০১: তাপগতিবিদ্যা",
+      2: "অধ্যায় ০২: স্থির তড়িৎ",
+      3: "অধ্যায় ০৩: চল তড়িৎ",
+      4: "অধ্যায় ০৪: তড়িৎ প্রবাহের চৌম্বক ক্রিয়া ও চুম্বকত্ব",
+      5: "অধ্যায় ০৫: তড়িৎচৌম্বকীয় আবেশ ও পরিবর্তী প্রবাহ",
+      6: "অধ্যায় ০৬: জ্যামিতিক আলোকবিজ্ঞান",
+      7: "অধ্যায় ০৭: ভৌত আলোকবিজ্ঞান",
+      8: "অধ্যায় ০৮: আধুনিক পদার্থবিজ্ঞানের সূচনা",
+      9: "অধ্যায় ০৯: পরমাণুর মডেল ও নিউক্লিয়ার পদার্থবিজ্ঞান",
+      10: "অধ্যায় ১০: সেমিকন্ডাক্টর ও ইলেকট্রনিক্স",
+      11: "অধ্যায় ১১: জ্যোতির্বিজ্ঞান"
+    },
+    chemistry_1: {
+      1: "অধ্যায় ০১: ল্যাবরেটরির নিরাপদ ব্যবহার",
+      2: "অধ্যায় ০২: গুণগত রসায়ন",
+      3: "অধ্যায় ০৩: পর্যায়বৃত্ত ধর্ম ও রাসায়নিক বন্ধন",
+      4: "অধ্যায় ০৪: রাসায়নিক পরিবর্তন",
+      5: "অধ্যায় ০৫: কর্মমুখী রসায়ন"
+    },
+    chemistry_2: {
+      1: "অধ্যায় ০১: পরিবেশ রসায়ন",
+      2: "অধ্যায় ০২: জৈব রসায়ন",
+      3: "অধ্যায় ০৩: পরিমাণগত রসায়ন",
+      4: "অধ্যায় ০৪: তড়িৎ রসায়ন",
+      5: "অধ্যায় ০৫: অর্থনৈতিক রসায়ন"
+    },
+    math_1: {
+      1: "অধ্যায় ০১: ম্যাট্রিক্স ও নির্ণায়ক",
+      2: "অধ্যায় ০২: ভেক্টর",
+      3: "অধ্যায় ০৩: সরলরেখা",
+      4: "অধ্যায় ০৪: বৃত্ত",
+      5: "অধ্যায় ০৫: বিন্যাস ও সমাবেশ",
+      6: "অধ্যায় ০৬: ত্রিকোণমিতিক অনুপাত",
+      7: "অধ্যায় ০৭: সংযুক্ত কোণের ত্রিকোণমিতিক অনুপাত",
+      8: "অধ্যায় ০৮: ফাংশন ও লেখচিত্র",
+      9: "অধ্যায় ০৯: অন্তরীকরণ",
+      10: "অধ্যায় ১০: যোগজীকরণ"
+    },
+    math_2: {
+      1: "অধ্যায় ০১: বাস্তব সংখ্যা ও অসমতা",
+      2: "অধ্যায় ০২: যোগাশ্রয়ী প্রোগ্রাম",
+      3: "অধ্যায় ০৩: জটিল সংখ্যা",
+      4: "অধ্যায় ০৪: বহুপদী ও বহুপদী সমীকরণ",
+      5: "অধ্যায় ০৫: দ্বিপদী বিস্তার",
+      6: "অধ্যায় ০৬: কণিক",
+      7: "অধ্যায় ০৭: বিপরীত ত্রিকোণমিতিক ফাংশন ও সমীকরণ",
+      8: "অধ্যায় ০৮: স্থিতিবিদ্যা",
+      9: "অধ্যায় ০৯: সমতলে বস্তুকণার গতি",
+      10: "অধ্যায় ১০: বিস্তার পরিমাপ ও সম্ভাবনা"
+    }
+  };
+
+  const lecturesMap = new Map();
+  const practiceSheetUrls = [];
+  let detectedSubjectKey = 'physics_1';
+  let detectedCourseName = 'ACS 27 Physics Combo (1st Paper)';
+
+  function parseNode(node) {
+    const text = (node.innerText || node.textContent || '').trim();
+    if (!text || text.length < 5) return;
+
+    if (/PHYSICS\s*1ST|পদার্থ\s*১ম/i.test(text)) detectedSubjectKey = 'physics_1';
+    else if (/PHYSICS\s*2ND|পদার্থ\s*২য়/i.test(text)) detectedSubjectKey = 'physics_2';
+    else if (/CHEMISTRY\s*1ST|রসায়ন\s*১ম/i.test(text)) detectedSubjectKey = 'chemistry_1';
+    else if (/CHEMISTRY\s*2ND|রসায়ন\s*২য়/i.test(text)) detectedSubjectKey = 'chemistry_2';
+    else if (/MATH\s*1ST|উচ্চতর\s*গণিত\s*১ম/i.test(text)) detectedSubjectKey = 'math_1';
+    else if (/MATH\s*2ND|উচ্চতর\s*গণিত\s*২য়/i.test(text)) detectedSubjectKey = 'math_2';
+
+    const links = [];
+    const aTags = Array.from(node.querySelectorAll('a'));
+    aTags.forEach(a => {
+      const href = a.href || a.getAttribute('href') || '';
+      if (href && !links.includes(href)) links.push(href);
+    });
+    const urlMatches = text.match(/https?:\/\/[^\s\)\"\'\[\]\>]+/g) || [];
+    urlMatches.forEach(u => {
+      if (!links.includes(u)) links.push(u);
+    });
+
+    if (/PRACTICE\s*SHEET|প্র্যাকটিস\s*শিট|PRACTISE/i.test(text)) {
+      const dLinks = links.filter(l => l.includes('drive.google.com'));
+      dLinks.forEach(dl => {
+        if (!practiceSheetUrls.includes(dl)) practiceSheetUrls.push(dl);
+      });
+      return;
+    }
+
+    const chMatch = text.match(/(?:CHAPTER|অধ্যায়|অধ্যায়|CH)[\s:：\-]*([0-9০-৯]+)/i);
+    const lecMatch = text.match(/(?:LECTURE|লেকচার|CLASS|ক্লাস|LEC|L)[\s:：\-]*([0-9০-৯]+)/i);
+
+    if (!chMatch && !lecMatch) return;
+
+    const chNum = chMatch ? parseInt(toEngDigits(chMatch[1]), 10) : 1;
+    const lecNum = lecMatch ? parseInt(toEngDigits(lecMatch[1]), 10) : 1;
+
+    let videoUrl = '';
+    const ytLink = links.find(l => /youtu\.?be|youtube\.com/i.test(l));
+    if (ytLink) {
+      videoUrl = ytLink;
+    } else {
+      const ytRaw = text.match(/(https?:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)[a-zA-Z0-9_\-\?&=]+)/i);
+      if (ytRaw) videoUrl = ytRaw[1];
+    }
+
+    let slideUrl = '';
+    const driveLink = links.find(l => l.includes('drive.google.com'));
+    if (driveLink) {
+      slideUrl = driveLink;
+    } else {
+      const dRaw = text.match(/(https?:\/\/drive\.google\.com\/[^\s\)\"\'\[\]\>]+)/i);
+      if (dRaw) slideUrl = dRaw[1];
+    }
+
+    const bnLec = lecNum < 10 ? ('০' + lecNum) : toBnDigits(lecNum.toString());
+    let title = 'লেকচার ' + bnLec;
+
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+    for (const l of lines) {
+      if (
+        !l.match(/CHAPTER|LECTURE|SLIDE|YOUTUBE|COURSEMAN|PCBD|ACADEMIC|PAID|CLICK|HTTP|drive\.google/i) &&
+        l.length > 3 && l.length < 50 &&
+        !l.match(/^\d{1,2}:\d{2}/)
+      ) {
+        const clean = l.replace(/^[^\w\u0980-\u09FF]+/g, '').replace(/[^\w\u0980-\u09FF]+$/g, '').trim();
+        if (clean.length > 3) {
+          title += ' : ' + clean;
+          break;
+        }
+      }
+    }
+
+    const key = chNum + '_' + lecNum;
+    if (!lecturesMap.has(key)) {
+      lecturesMap.set(key, {
+        chNum,
+        lecNum,
+        title,
+        videoUrl,
+        lectureSheetPdf: slideUrl
+      });
+      console.log("%c   ✅ সংগৃহীত [অধ্যায় " + chNum + " | লেকচার " + lecNum + "] " + (videoUrl ? "🎥" : "") + (slideUrl ? " 📄" : ""), "color: #10b981; font-weight: bold;");
+      updateHud();
+    } else {
+      const item = lecturesMap.get(key);
+      if (!item.videoUrl && videoUrl) item.videoUrl = videoUrl;
+      if (!item.lectureSheetPdf && slideUrl) item.lectureSheetPdf = slideUrl;
+    }
+  }
+
+  function harvestAllVisible() {
+    const elements = Array.from(document.querySelectorAll(
+      '.Message, .message, [data-mid], [data-message-id], [data-msg-id], .bubble, .message-list-item, .MessageList-element'
+    ));
+    elements.forEach(el => parseNode(el));
+  }
+
+  function getScrollEl() {
+    const list = [
+      document.querySelector('.bubbles.has-groups'),
+      document.querySelector('.bubbles'),
+      document.querySelector('.MessageList.custom-scroll'),
+      document.querySelector('.MessageList'),
+      document.querySelector('.messages-container'),
+      document.querySelector('.scrollable-y'),
+      document.querySelector('.messages-layout .custom-scroll')
+    ];
+    for (const el of list) {
+      if (el && el.scrollHeight > el.clientHeight + 50) return el;
+    }
+    const all = Array.from(document.querySelectorAll('*'));
+    for (const el of all) {
+      try {
+        const st = window.getComputedStyle(el);
+        if ((st.overflowY === 'auto' || st.overflowY === 'scroll') && el.scrollHeight > el.clientHeight + 100) {
+          return el;
+        }
+      } catch(e) {}
+    }
+    return window;
+  }
+
+  const scrollContainer = getScrollEl();
+
+  const hudId = 'adommo_turbo_hud';
+  let hud = document.getElementById(hudId);
+  if (hud) hud.remove();
+  hud = document.createElement('div');
+  hud.id = hudId;
+  hud.style.cssText = 'position:fixed;top:16px;right:16px;z-index:9999999;background:rgba(13,17,23,0.97);backdrop-filter:blur(10px);color:#fff;border:2px solid #10b981;border-radius:16px;padding:16px 20px;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;font-size:13px;box-shadow:0 15px 35px rgba(0,0,0,0.6);display:flex;flex-direction:column;gap:10px;min-width:280px;';
+  
+  hud.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><div style="font-weight:bold;color:#34d399;font-size:14px;display:flex;align-items:center;gap:6px;"><span>⚡</span> <span>অদম্য টার্বো স্ক্র্যাপার v4.2</span></div><button id="adommo_hud_close" style="background:transparent;border:none;color:#94a3b8;cursor:pointer;font-size:16px;padding:0 4px;">✕</button></div><div style="background:#161b22;border:1px solid #30363d;border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:4px;"><div style="color:#94a3b8;font-size:12px;">📊 লাইভ প্রগ্রেস:</div><div id="adommo_count_text" style="color:#10b981;font-weight:bold;font-size:16px;">সংগৃহীত: ০ টি ক্লাস</div><div id="adommo_chap_text" style="color:#38bdf8;font-size:11px;">অধ্যায়: ০ টি | শিট: ০ টি</div><div id="adommo_state_text" style="color:#fbbf24;font-size:11px;margin-top:2px;">🔄 প্রস্তুত...</div></div><div style="display:flex;gap:8px;"><button id="adommo_autoscroll_btn" style="flex:1;background:#0284c7;color:#fff;border:none;border-radius:8px;padding:8px;font-weight:bold;font-size:12px;cursor:pointer;">▶ অটো-স্ক্রোল শুরু</button><button id="adommo_download_btn" style="flex:1;background:#10b981;color:#fff;border:none;border-radius:8px;padding:8px;font-weight:bold;font-size:12px;cursor:pointer;">📥 JSON ডাউনলোড</button></div><div style="color:#94a3b8;font-size:10.5px;line-height:1.4;">💡 <b>টিপস:</b> আপনি মাউসের চাকা দিয়ে ওপরে-নিচে স্ক্রোল করলেও স্ক্রিপ্টটি নিজে নিজেই সব ক্লাস মেমরিতে সংরক্ষণ করে নেবে!</div>';
+  document.body.appendChild(hud);
+
+  const closeBtn = document.getElementById('adommo_hud_close');
+  if (closeBtn) closeBtn.onclick = () => hud.remove();
+
+  function updateHud(state) {
+    const cText = document.getElementById('adommo_count_text');
+    const chText = document.getElementById('adommo_chap_text');
+    const sText = document.getElementById('adommo_state_text');
+
+    const chSet = new Set();
+    lecturesMap.forEach(l => chSet.add(l.chNum));
+
+    if (cText) cText.innerText = 'সংগৃহীত: ' + lecturesMap.size + ' টি ক্লাস';
+    if (chText) chText.innerText = 'অধ্যায়: ' + chSet.size + ' টি | প্র্যাকটিস শিট: ' + practiceSheetUrls.length + ' টি';
+    if (sText && state) sText.innerText = state;
+  }
+
+  const observer = new MutationObserver(() => {
+    harvestAllVisible();
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+
+  harvestAllVisible();
+
+  let isAutoScrolling = false;
+  async function runAutoScroll() {
+    if (isAutoScrolling) return;
+    isAutoScrolling = true;
+    const btn = document.getElementById('adommo_autoscroll_btn');
+    if (btn) btn.innerText = '⏸ থামান';
+
+    updateHud('👆 ওপরে স্ক্রোল করে ১ম ক্লাসে যাওয়া হচ্ছে...');
+
+    function doScroll(delta) {
+      if (scrollContainer === window) {
+        window.scrollBy({ top: delta, behavior: 'auto' });
+      } else {
+        scrollContainer.scrollTop += delta;
+        try {
+          scrollContainer.dispatchEvent(new WheelEvent('wheel', { deltaY: delta, bubbles: true, cancelable: true }));
+        } catch(e) {}
+        try {
+          scrollContainer.dispatchEvent(new Event('scroll', { bubbles: true }));
+        } catch(e) {}
+      }
+    }
+
+    const step = 380;
+
+    let upIdle = 0;
+    let lastUpCount = lecturesMap.size;
+
+    for (let i = 0; i < 150; i++) {
+      if (!isAutoScrolling) break;
+      doScroll(-step);
+      await new Promise(r => setTimeout(r, 450));
+      harvestAllVisible();
+
+      const top = scrollContainer === window ? window.scrollY : scrollContainer.scrollTop;
+      if (top <= 10) {
+        doScroll(-150);
+        await new Promise(r => setTimeout(r, 900));
+        harvestAllVisible();
+        if (lecturesMap.size > lastUpCount) {
+          lastUpCount = lecturesMap.size;
+          upIdle = 0;
+          updateHud('🔄 নতুন ক্লাস পাওয়া গেছে! মোট: ' + lecturesMap.size);
+        } else {
+          upIdle++;
+          if (upIdle >= 6) {
+            console.log("🏁 চ্যাটের শীর্ষে পৌঁছে গেছে!");
+            break;
+          }
+        }
+      } else {
+        upIdle = 0;
+      }
+    }
+
+    updateHud('👇 এবার নিচে নেমে সব ক্লাস হার্ভেস্ট করা হচ্ছে...');
+    let downIdle = 0;
+    let lastDownCount = lecturesMap.size;
+
+    for (let i = 0; i < 150; i++) {
+      if (!isAutoScrolling) break;
+      doScroll(step);
+      await new Promise(r => setTimeout(r, 400));
+      harvestAllVisible();
+
+      const top = scrollContainer === window ? window.scrollY : scrollContainer.scrollTop;
+      const clientH = scrollContainer === window ? window.innerHeight : scrollContainer.clientHeight;
+      const scrollH = scrollContainer === window ? document.documentElement.scrollHeight : scrollContainer.scrollHeight;
+
+      if (top + clientH >= scrollH - 20) {
+        doScroll(150);
+        await new Promise(r => setTimeout(r, 800));
+        harvestAllVisible();
+        if (lecturesMap.size > lastDownCount) {
+          lastDownCount = lecturesMap.size;
+          downIdle = 0;
+          updateHud('🔄 নতুন ক্লাস পাওয়া গেছে! মোট: ' + lecturesMap.size);
+        } else {
+          downIdle++;
+          if (downIdle >= 6) {
+            console.log("🏁 চ্যাটের একদম নিচে পৌঁছে গেছে!");
+            break;
+          }
+        }
+      } else {
+        downIdle = 0;
+      }
+    }
+
+    isAutoScrolling = false;
+    if (btn) btn.innerText = '▶ অটো-স্ক্রোল শুরু';
+    updateHud('✅ সম্পূর্ণ হয়েছে! ' + lecturesMap.size + ' টি ক্লাস সংগৃহীত');
+  }
+
+  const scrollBtn = document.getElementById('adommo_autoscroll_btn');
+  if (scrollBtn) {
+    scrollBtn.onclick = () => {
+      if (isAutoScrolling) {
+        isAutoScrolling = false;
+        scrollBtn.innerText = '▶ অটো-স্ক্রোল শুরু';
+        updateHud('⏸ স্ক্রোল স্থগিত');
+      } else {
+        runAutoScroll();
+      }
+    };
+  }
+
+  function exportJson() {
+    const list = Array.from(lecturesMap.values());
+    if (list.length === 0) {
+      alert("❌ কোনো ক্লাস এখনও পাওয়া যায়নি! পেজটি ওপরে-নিচে স্ক্রোল করুন যাতে ক্লাসগুলো স্ক্রিনে আসে।");
+      return;
+    }
+
+    const finalCourseName = prompt("📌 কোর্সের নাম লিখুন:", detectedCourseName) || detectedCourseName;
+
+    const groups = new Map();
+    list.sort((a, b) => (a.chNum - b.chNum) || (a.lecNum - b.lecNum));
+
+    list.forEach(item => {
+      if (!groups.has(item.chNum)) groups.set(item.chNum, []);
+      groups.get(item.chNum).push(item);
+    });
+
+    const syllabus = HSC_CHAPTERS[detectedSubjectKey] || HSC_CHAPTERS['physics_1'];
+    const sortedChKeys = Array.from(groups.keys()).sort((a, b) => a - b);
+
+    const chapters = [];
+    let chapIndex = 1;
+
+    for (const chNum of sortedChKeys) {
+      const chLectures = groups.get(chNum);
+      chLectures.sort((a, b) => a.lecNum - b.lecNum);
+
+      const chTitle = syllabus[chNum] || ('অধ্যায় ' + (chNum < 10 ? '০' + chNum : chNum));
+      const practicePdf = practiceSheetUrls[chNum - 1] || '';
+
+      const classes = chLectures.map((l, idx) => ({
+        id: 'tg_cl_' + chNum + '_' + (idx + 1),
+        classNo: (idx + 1).toString(),
+        title: l.title,
+        videoUrl: l.videoUrl || undefined,
+        lectureSheetPdf: l.lectureSheetPdf || undefined,
+        practiceSheetPdf: practicePdf || undefined
+      }));
+
+      chapters.push({
+        id: 'tg_chap_' + chapIndex++,
+        title: chTitle,
+        classes: classes
+      });
+    }
+
+    const courseData = {
+      courseId: 'tg_turbo_' + Date.now().toString(36),
+      courseTitle: finalCourseName,
+      source: 'Telegram Single Channel (Turbo v4.2)',
+      extractedAt: new Date().toISOString(),
+      totalSubjects: 1,
+      totalClasses: list.length,
+      subjects: [
+        {
+          id: 'tg_sub_1',
+          title: finalCourseName,
+          chapters: chapters
+        }
+      ]
+    };
+
+    const blob = new Blob([JSON.stringify(courseData, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    const fileName = (finalCourseName.replace(/[\\/:*?"<>|]/g, '_').trim() || 'Course_Data') + '.json';
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    alert("🎉 [" + finalCourseName + "] থেকে সর্বমোট " + list.length + " টি ক্লাস ও " + chapters.length + " টি অধ্যায় সফলভাবে এক্সপোর্ট হয়েছে!\n\n📁 ফাইল: " + fileName + "\n\nএবার Tools পেজে ফাইলটি ড্রপ করলেই সব ভিডিও ও ড্রাইভ শিট সুন্দরভাবে দেখতে পাবেন!");
+  }
+
+  const downBtn = document.getElementById('adommo_download_btn');
+  if (downBtn) downBtn.onclick = exportJson;
+
+  runAutoScroll();
+})();`;
 
 const TELEGRAM_WEB_SCRAPER_CODE = String.raw`/**
  * ADOMMO (অদম্য) — 1-Click Telegram Web Course & Chapter Scraper (Zero-Loss v3)
@@ -599,6 +1036,212 @@ const TELEGRAM_WEB_SCRAPER_CODE = String.raw`/**
   console.log("%c🎉 সফলভাবে এক্সপোর্ট সম্পন্ন হয়েছে! মোট অধ্যায়: " + chapters.length + ", সর্বমোট ক্লাস: " + classList.length, "color: #00c269; font-size: 16px; font-weight: bold;");
 })();`;
 
+const MASTER_HSC_SYLLABUS: Record<string, Record<number, string>> = {
+  physics_1: {
+    1: "অধ্যায় ০১: ভৌত জগৎ ও পরিমাপ",
+    2: "অধ্যায় ০২: ভেক্টর",
+    3: "অধ্যায় ০৩: গতিবিদ্যা",
+    4: "অধ্যায় ০৪: নিউটনিয়ান বলবিদ্যা",
+    5: "অধ্যায় ০৫: কাজ, শক্তি ও ক্ষমতা",
+    6: "অধ্যায় ০৬: মহাকর্ষ ও অভিকর্ষ",
+    7: "অধ্যায় ০৭: পদার্থের গাঠনিক ধর্ম",
+    8: "অধ্যায় ০৮: পর্যাবৃত্ত গতি",
+    9: "অধ্যায় ০৯: তরঙ্গ",
+    10: "অধ্যায় ১০: আদর্শ গ্যাস ও গ্যাসের গতিতত্ত্ব"
+  },
+  physics_2: {
+    1: "অধ্যায় ০১: তাপগতিবিদ্যা",
+    2: "অধ্যায় ০২: স্থির তড়িৎ",
+    3: "অধ্যায় ০৩: চল তড়িৎ",
+    4: "অধ্যায় ০৪: তড়িৎ প্রবাহের চৌম্বক ক্রিয়া ও চুম্বকত্ব",
+    5: "অধ্যায় ০৫: তাড়িতচৌম্বকীয় আবেশ ও পরিবর্তী প্রবাহ",
+    6: "অধ্যায় ০৬: জ্যামিতিক আলোকবিজ্ঞান",
+    7: "অধ্যায় ০৭: ভৌত আলোকবিজ্ঞান",
+    8: "অধ্যায় ০৮: আধুনিক পদার্থবিজ্ঞানের সূচনা",
+    9: "অধ্যায় ০৯: পরমাণুর মডেল ও নিউক্লিয়ার পদার্থবিজ্ঞান",
+    10: "অধ্যায় ১০: সেমিকন্ডাক্টর ও ইলেকট্রনিক্স",
+    11: "অধ্যায় ১১: জ্যোতির্বিজ্ঞান"
+  },
+  chemistry_1: {
+    1: "অধ্যায় ০১: ল্যাবরেটরির নিরাপদ ব্যবহার",
+    2: "অধ্যায় ০২: গুণগত রসায়ন",
+    3: "অধ্যায় ০৩: মৌলের পর্যাবৃত্ত ধর্ম ও রাসায়নিক বন্ধন",
+    4: "অধ্যায় ০৪: রাসায়নিক পরিবর্তন",
+    5: "অধ্যায় ০৫: কর্মমুখী রসায়ন"
+  },
+  chemistry_2: {
+    1: "অধ্যায় ০১: পরিবেশ রসায়ন",
+    2: "অধ্যায় ০২: জৈব রসায়ন",
+    3: "অধ্যায় ০৩: পরিমাণগত রসায়ন",
+    4: "অধ্যায় ০৪: তড়িৎ রসায়ন",
+    5: "অধ্যায় ০৫: অর্থনৈতিক রসায়ন"
+  },
+  math_1: {
+    1: "অধ্যায় ০১: ম্যাট্রিক্স ও নির্ণায়ক",
+    2: "অধ্যায় ০২: ভেক্টর",
+    3: "অধ্যায় ০৩: সরলরেখা",
+    4: "অধ্যায় ০৪: বৃত্ত",
+    5: "অধ্যায় ০৫: বিন্যাস ও সমাবেশ",
+    6: "অধ্যায় ০৬: ত্রিকোণমিতিক অনুপাত",
+    7: "অধ্যায় ০৭: সংযুক্ত কোণের ত্রিকোণমিতিক অনুপাত",
+    8: "অধ্যায় ০৮: ফাংশন ও লেখচিত্র",
+    9: "অধ্যায় ০৯: অন্তরীকরণ",
+    10: "অধ্যায় ১০: যোগজীকরণ"
+  },
+  math_2: {
+    1: "অধ্যায় ০১: বাস্তব সংখ্যা ও অসমতা",
+    2: "অধ্যায় ০২: যোগাশ্রয়ী প্রোগ্রাম",
+    3: "অধ্যায় ০৩: জটিল সংখ্যা",
+    4: "অধ্যায় ০৪: বহুপদী ও বহুপদী সমীকরণ",
+    5: "অধ্যায় ০৫: দ্বিপদী বিস্তার",
+    6: "অধ্যায় ০৬: কণিক",
+    7: "অধ্যায় ০৭: বিপরীত ত্রিকোণমিতিক ফাংশন ও সমীকরণ",
+    8: "অধ্যায় ০৮: স্থিতিবিদ্যা",
+    9: "অধ্যায় ০৯: সমতলে বস্তুকণার গতি",
+    10: "অধ্যায় ১০: বিস্তার পরিমাপ ও সম্ভাবনা"
+  },
+  biology_1: {
+    1: "অধ্যায় ০১: কোষ ও এর গঠন",
+    2: "অধ্যায় ০২: কোষ বিভাজন",
+    3: "অধ্যায় ০৩: কোষ রসায়ন",
+    4: "অধ্যায় ০৪: অনুজীব",
+    5: "অধ্যায় ০৫: শৈবাল ও ছত্রাক",
+    6: "অধ্যায় ০৬: ব্রায়োফাইটা ও টেরিডোফাইটা",
+    7: "অধ্যায় ০৭: নগ্নবীজী ও আবৃতবীজী উদ্ভিদ",
+    8: "অধ্যায় ০৮: টিস্যু ও টিস্যুতন্ত্র",
+    9: "অধ্যায় ০৯: উদ্ভিদ শারীরতত্ত্ব",
+    10: "অধ্যায় ১০: উদ্ভিদ প্রজনন",
+    11: "অধ্যায় ১১: জীবপ্রযুক্তি",
+    12: "অধ্যায় ১২: জীবের পরিবেশ, বিস্তার ও সংরক্ষণ"
+  },
+  biology_2: {
+    1: "অধ্যায় ০১: প্রাণীর বিভিন্নতা ও শ্রেণিবিন্যাস",
+    2: "অধ্যায় ০২: প্রাণীর পরিচিতি",
+    3: "অধ্যায় ০৩: মানব শারীরতত্ত্ব: পরিপাক ও শোষণ",
+    4: "অধ্যায় ০৪: মানব শারীরতত্ত্ব: রক্ত ও সংবহন",
+    5: "অধ্যায় ০৫: মানব শারীরতত্ত্ব: শ্বাসক্রিয়া ও শ্বসন",
+    6: "অধ্যায় ০৬: মানব শারীরতত্ত্ব: বর্জ্য ও নিষ্কাশন",
+    7: "অধ্যায় ০৭: মানব শারীরতত্ত্ব: চলন ও অঙ্গচালনা",
+    8: "অধ্যায় ০৮: মানব শারীরতত্ত্ব: সমন্বয় ও নিয়ন্ত্রণ",
+    9: "অধ্যায় ০৯: মানব জীবনের ধারাবাহিকতা",
+    10: "অধ্যায় ১০: মানবদেহের প্রতিরক্ষা",
+    11: "অধ্যায় ১১: জিনতত্ত্ব ও বিবর্তন",
+    12: "অধ্যায় ১২: প্রাণীর আচরণ"
+  },
+  ict: {
+    1: "অধ্যায় ০১: তথ্য ও যোগাযোগ প্রযুক্তি: বিশ্ব ও বাংলাদেশ প্রেক্ষিত",
+    2: "অধ্যায় ০২: কমিউনিকেশন সিস্টেমস ও নেটওয়ার্কিং",
+    3: "অধ্যায় ০৩: সংখ্যা পদ্ধতি ও ডিজিটাল ডিভাইস",
+    4: "অধ্যায় ০৪: ওয়েব ডিজাইন পরিচিতি এবং HTML",
+    5: "অধ্যায় ০৫: প্রোগ্রামিং ভাষা (C Language)",
+    6: "অধ্যায় ০৬: ডেটাবেজ ম্যানেজমেন্ট সিস্টেম"
+  }
+};
+
+function detectSubjectAndCourse(sampleText: string, defaultName: string = '', forcedSubject: string = 'auto'): {
+  subjectKey: string;
+  subjectTitle: string;
+  courseTitle: string;
+} {
+  const norm = sampleText.normalize('NFKD').normalize('NFC');
+  
+  let extractedChannel = '';
+  const channelMatch = norm.match(/\[\d{1,2}\/\d{1,2}\/\d{4}[^\]]*\]\s*([^:\n]+):/);
+  if (channelMatch && channelMatch[1]) {
+    const raw = channelMatch[1].trim();
+    if (raw.length > 2 && !/^(photo|video|message|user|admin)$/i.test(raw)) {
+      extractedChannel = raw;
+    }
+  }
+
+  const subjectTitleMap: Record<string, string> = {
+    physics_1: 'পদার্থবিজ্ঞান ১ম পত্র',
+    physics_2: 'পদার্থবিজ্ঞান ২য় পত্র',
+    chemistry_1: 'রসায়ন ১ম পত্র',
+    chemistry_2: 'রসায়ন ২য় পত্র',
+    math_1: 'উচ্চতর গণিত ১ম পত্র',
+    math_2: 'উচ্চতর গণিত ২য় পত্র',
+    biology_1: 'উদ্ভিদবিজ্ঞান (জীববিজ্ঞান ১ম পত্র)',
+    biology_2: 'প্রাণিবিজ্ঞান (জীববিজ্ঞান ২য় পত্র)',
+    ict: 'তথ্য ও যোগাযোগ প্রযুক্তি (ICT)'
+  };
+
+  if (forcedSubject && forcedSubject !== 'auto') {
+    return {
+      subjectKey: forcedSubject,
+      subjectTitle: subjectTitleMap[forcedSubject] || 'সাধারণ বিষয়',
+      courseTitle: extractedChannel || defaultName || subjectTitleMap[forcedSubject] || 'Course'
+    };
+  }
+
+  // Strip URLs and placeholder tags so random URL hashes never trigger false positives like 'ict' or 'html'
+  const t = (norm + ' ' + defaultName + ' ' + extractedChannel)
+    .replace(/https?:\/\/[^\s\)\"\'\[\]\>]+/gi, ' ')
+    .replace(/\[\s*(?:photo|video|picture|document|audio|file|contact|location)\s*\]/gi, ' ')
+    .toLowerCase();
+
+  let subjectKey = 'physics_1';
+  let subjectTitle = 'পদার্থবিজ্ঞান ১ম পত্র';
+
+  // 1. Math Detection (High Priority & comprehensive matching)
+  const isMath = /(?:h\.?\s*math|hmath|higher\s*math|math(?:ematics)?|গণিত|উচ্চতর|ম্যাথ|ম্যাট্রিক্স|সরলরেখা|বৃত্ত|বিন্যাস|সমাবেশ|ত্রিকোণমিতি|অন্তরীকরণ|যোগজীকরণ|ক্যালকুলাস|কণিক|জটিল\s*সংখ্যা|বহুপদী|দ্বিপদী|স্থিতিবিদ্যা)/i.test(t);
+  if (isMath) {
+    const isMath2 = /(?:2nd|২য়|২য়|\b2\b|paper\s*2|c2|cycle\s*2|কণিক|জটিল\s*সংখ্যা|বহুপদী|দ্বিপদী|স্থিতিবিদ্যা|বিপরীত\s*ত্রিকোণমিতিক)/i.test(t);
+    if (isMath2) {
+      subjectKey = 'math_2';
+      subjectTitle = 'উচ্চতর গণিত ২য় পত্র';
+    } else {
+      subjectKey = 'math_1';
+      subjectTitle = 'উচ্চতর গণিত ১ম পত্র';
+    }
+  }
+  // 2. Physics Detection
+  else if (/(?:phy(?:sics)?|পদার্থ(?:বিজ্ঞান)?|ভেক্টর|গতিবিদ্যা|নিউটনিয়ান|মহাকর্ষ|পর্যাবৃত্ত|আদর্শ\s*গ্যাস|তাপগতি|স্থির\s*তড়িৎ|চল\s*তড়িৎ|আলোকবিজ্ঞান)/i.test(t)) {
+    const isPhy2 = /(?:2nd|২য়|২য়|\b2\b|paper\s*2|c2|cycle\s*2|তাপগতি|স্থির\s*তড়িৎ|চল\s*তড়িৎ|ভৌত\s*আলোক|জ্যামিতিক\s*আলোক|আধুনিক\s*পদার্থ|সেমিকন্ডাক্টর)/i.test(t);
+    if (isPhy2) {
+      subjectKey = 'physics_2';
+      subjectTitle = 'পদার্থবিজ্ঞান ২য় পত্র';
+    } else {
+      subjectKey = 'physics_1';
+      subjectTitle = 'পদার্থবিজ্ঞান ১ম পত্র';
+    }
+  }
+  // 3. Chemistry Detection
+  else if (/(?:chem(?:istry)?|রসায়ন|রসায়ন|কেমিস্ট্রি|গুণগত|পর্যাবৃত্ত|রাসায়নিক\s*পরিবর্তন|পরিবেশ\s*রসায়ন|জৈব\s*যৌগ|পরিমাণগত|তড়িৎ\s*রসায়ন)/i.test(t)) {
+    const isChem2 = /(?:2nd|২য়|২য়|\b2\b|paper\s*2|c2|cycle\s*2|পরিবেশ\s*রসায়ন|জৈব\s*যৌগ|পরিমাণগত|তড়িৎ\s*রসায়ন|অর্থনৈতিক\s*রসায়ন)/i.test(t);
+    if (isChem2) {
+      subjectKey = 'chemistry_2';
+      subjectTitle = 'রসায়ন ২য় পত্র';
+    } else {
+      subjectKey = 'chemistry_1';
+      subjectTitle = 'রসায়ন ১ম পত্র';
+    }
+  }
+  // 4. Biology Detection
+  else if (/(?:bio(?:logy)?|জীব(?:বিজ্ঞান)?|বায়োলজি|কোষ|অনুজীব|নগ্নবীজী|প্রাণি|প্রাণী|zoology|botany)/i.test(t)) {
+    const isBio2 = /(?:2nd|২য়|২য়|\b2\b|paper\s*2|c2|cycle\s*2|প্রাণি|প্রাণী|zoology|পরিপাক|রক্ত|সংবহন|মানব\s*শারীরতত্ত্ব)/i.test(t);
+    if (isBio2) {
+      subjectKey = 'biology_2';
+      subjectTitle = 'প্রাণিবিজ্ঞান (জীববিজ্ঞান ২য় পত্র)';
+    } else {
+      subjectKey = 'biology_1';
+      subjectTitle = 'উদ্ভিদবিজ্ঞান (জীববিজ্ঞান ১ম পত্র)';
+    }
+  }
+  // 5. ICT Detection (Strict word boundary only)
+  else if (/\bict\b|তথ্য\s*(?:ও|এবং)?\s*যোগাযোগ|digital\s*device|ডিজিটাল\s*ডিভাইস|c\s*programming|\bhtml\b/i.test(t)) {
+    subjectKey = 'ict';
+    subjectTitle = 'তথ্য ও যোগাযোগ প্রযুক্তি (ICT)';
+  } else {
+    const inferred = inferSubjectTitleFromContent(t, defaultName || 'সাধারণ বিষয়');
+    subjectTitle = inferred;
+    subjectKey = 'custom';
+  }
+
+  const courseTitle = extractedChannel || defaultName || subjectTitle;
+  return { subjectKey, subjectTitle, courseTitle };
+}
+
 /**
  * Robust Telegram Desktop 'result.json' Export Parser
  */
@@ -725,6 +1368,23 @@ function parseTelegramDesktopExport(data: any): ParsedCourseData {
       continue;
     }
 
+    // Check single-channel card format (e.g. ☆ CHAPTER : 01 / ☆ LECTURE : 01)
+    const chMatch = fullText.match(/(?:CHAPTER|অধ্যায়|অধ্যায়|CH)[\s:：\-]*([0-9০-৯]+)/i);
+    const lecMatch = fullText.match(/(?:LECTURE|লেকচার|CLASS|ক্লাস|LEC|L)[\s:：\-]*([0-9০-৯]+)/i);
+
+    let detectedChNum: number | null = null;
+    let detectedLecNum: number | null = null;
+    if (chMatch) {
+      const bnDigits = ['০','১','২','৩','৪','৫','৬','৭','৮','৯'];
+      const e = chMatch[1].replace(/[০-৯]/g, d => bnDigits.indexOf(d).toString());
+      detectedChNum = parseInt(e, 10) || null;
+    }
+    if (lecMatch) {
+      const bnDigits = ['০','১','২','৩','৪','৫','৬','৭','৮','৯'];
+      const e = lecMatch[1].replace(/[০-৯]/g, d => bnDigits.indexOf(d).toString());
+      detectedLecNum = parseInt(e, 10) || null;
+    }
+
     // Clean Title & Instructor
     const textLines = fullText.split('\n')
       .map(l => l.trim())
@@ -732,6 +1392,20 @@ function parseTelegramDesktopExport(data: any): ParsedCourseData {
 
     let rawTitle = textLines[0] || 'ক্লাস';
     let cleanTitle = rawTitle.replace(/[✔✅▶⏩🔹📌🔥•\*\_~\|\#]/g, '').trim();
+
+    if (detectedLecNum) {
+      cleanTitle = 'লেকচার ' + (detectedLecNum < 10 ? '০' + detectedLecNum : detectedLecNum.toString());
+      // Check if extra topic name is given
+      for (const line of textLines) {
+        if (!line.match(/CHAPTER|LECTURE|SLIDE|YOUTUBE|COURSEMAN|PCBD|ACADEMIC|PAID|CLICK/i) && line.length > 3 && line.length < 50 && !line.match(/^\d{1,2}:\d{2}/)) {
+          const c = line.replace(/^[^\w\u0980-\u09FF]+/g, '').replace(/[^\w\u0980-\u09FF]+$/g, '').trim();
+          if (c.length > 3) {
+            cleanTitle += ' : ' + c;
+            break;
+          }
+        }
+      }
+    }
 
     let instructor = '';
     if (cleanTitle.includes(' - ')) {
@@ -768,6 +1442,8 @@ function parseTelegramDesktopExport(data: any): ParsedCourseData {
       markedBookPdf: markedBookPdf || undefined,
       practiceSheetPdf: practiceSheetPdf || undefined,
       solutionSheetPdf: solutionSheetPdf || undefined,
+      chapterNumber: detectedChNum || undefined,
+      lectureNumber: detectedLecNum || undefined,
       date: m.date
     });
   }
@@ -779,14 +1455,26 @@ function parseTelegramDesktopExport(data: any): ParsedCourseData {
   for (const [topicTitle, classList] of topicClassesMap.entries()) {
     const isIgnored = IGNORED_TOPICS_REGEX.test(topicTitle);
 
+    // Universally detect subject syllabus for this topic
+    const topicTextSample = topicTitle + ' ' + classList.slice(0, 10).map(c => c.title).join(' ');
+    const { subjectKey: topicSubKey } = detectSubjectAndCourse(topicTextSample, topicTitle);
+    const topicSyllabus = MASTER_HSC_SYLLABUS[topicSubKey] || {};
+
     const chapterMap = new Map<string, ParsedClass[]>();
     classList.forEach((cl) => {
-      let chName = cl.title
-        .replace(/[✔✅▶⏩🔹📌🔥•\*\_~\|\#\(\)\[\]\{\}]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
+      let chName = '';
+      if (cl.chapterNumber && topicSyllabus[cl.chapterNumber]) {
+        chName = topicSyllabus[cl.chapterNumber];
+      } else if (cl.chapterNumber) {
+        chName = 'অধ্যায় ' + (cl.chapterNumber < 10 ? '০' + cl.chapterNumber : cl.chapterNumber);
+      } else {
+        chName = cl.title
+          .replace(/[✔✅▶⏩🔹📌🔥•\*\_~\|\#\(\)\[\]\{\}]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
 
-      chName = chName.replace(/^(?:physics|chemistry|math|biology|ict|বাংলা|গণিত|পদার্থ|রসায়ন|ch-?\d+|chapter-?\d+)\s*[:–—\-]\s*/i, '');
+        chName = chName.replace(/^(?:physics|chemistry|math|biology|ict|বাংলা|গণিত|পদার্থ|রসায়ন|ch-?\d+|chapter-?\d+)\s*[:–—\-]\s*/i, '');
+      }
 
       let prev = '';
       while (chName !== prev) {
@@ -871,6 +1559,290 @@ function parseTelegramDesktopExport(data: any): ParsedCourseData {
     totalClasses: grandTotalClasses,
     subjects: subjects
   };
+}
+
+/**
+ * Smart Parser for Copied Telegram / AyuGram Text
+ * Unicode Styled Fonts (NFKD), Click Here Hyperlinks, Drive & Google Sheets support
+ */
+function parsePastedTelegramText(rawText: string, forcedSubject: string = 'auto'): ParsedCourseData {
+  if (!rawText || !rawText.trim()) {
+    throw new Error('কোনো টেক্সট পাওয়া যায়নি! টেলিগ্রাম থেকে মেসেজ কপি করে পেস্ট করুন।');
+  }
+
+  // 1. Normalize unicode (NFKD decomposes mathematical styled bold/blackboard/italic to ASCII, NFC recomposes Bengali vowels)
+  const text = rawText.normalize('NFKD').normalize('NFC').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+  // Detect subject and course universally
+  const { subjectKey, subjectTitle, courseTitle } = detectSubjectAndCourse(text, 'Telegram Course', forcedSubject);
+  const syllabus = MASTER_HSC_SYLLABUS[subjectKey] || {};
+
+  // Split messages on timestamp headers: [date time] ACS27... or double newlines
+  const messageBlocks = text.split(/(?=\[\d{1,2}\/\d{1,2}\/\d{4}[^\]]*\])/g);
+
+  // Dynamic chapter container: Map<number, { customTitle?: string; classes: ParsedClass[]; practiceSheets: string[] }>
+  const chaptersMap = new Map<number, {
+    customTitle?: string;
+    classes: ParsedClass[];
+    practiceSheets: string[];
+  }>();
+  const namedChapterSlots = new Map<string, number>();
+
+  let currentChapter = 1;
+
+  for (const block of messageBlocks) {
+    const b = block.trim();
+    if (!b) continue;
+
+    // Detect if this block designates or switches chapter
+    // Matches: ✰ CHAPTER : কোষ বিভাজন।, ✰ CHAPTER : 03, অধ্যায় : ০২ (কোষ বিভাজন), CH : 01
+    const chLineMatch = b.match(/(?:CHAPTER|অধ্যায়|অধ্যায়|CH)[\s:：\-]+([^\n\r★✰✪✷📌\"\'\(\)]+)/i);
+    let explicitChNum: number | null = null;
+    let explicitChTitle: string | undefined = undefined;
+
+    if (chLineMatch) {
+      const rawVal = chLineMatch[1].trim()
+        .replace(/[।\.\:\;\|\,\-\_\'\"\`]+$/g, '')
+        .trim();
+
+      if (rawVal) {
+        const bnDigits = ['০','১','২','৩','৪','৫','৬','৭','৮','৯'];
+        const numStartMatch = rawVal.match(/^([0-9০-৯]+)(?:[\s:：\-\.\)]+(.*))?$/);
+
+        if (numStartMatch) {
+          // Case A: Starts with a number (e.g. "03" or "02 - কোষ বিভাজন" or "০২")
+          const rawNumStr = numStartMatch[1].replace(/[০-৯]/g, d => bnDigits.indexOf(d).toString());
+          explicitChNum = parseInt(rawNumStr, 10) || null;
+          if (numStartMatch[2] && numStartMatch[2].trim()) {
+            explicitChTitle = `অধ্যায় ${(explicitChNum && explicitChNum < 10 ? '০' + explicitChNum : explicitChNum)}: ${numStartMatch[2].trim()}`;
+          }
+        } else {
+          // Case B: Direct chapter name (e.g. "কোষ বিভাজন" or "ম্যাট্রিক্স ও নির্ণায়ক")
+          const cleanName = rawVal.replace(/^[0-9০-৯\s:：\-\.]+/g, '').trim();
+
+          // 1. Search in current subject's syllabus first
+          if (syllabus) {
+            for (const [sNum, sTitle] of Object.entries(syllabus)) {
+              const cleanSTitle = sTitle.replace(/^অধ্যায়\s*[0-9০-৯]+:\s*/, '').toLowerCase();
+              if (cleanSTitle.includes(cleanName.toLowerCase()) || cleanName.toLowerCase().includes(cleanSTitle)) {
+                explicitChNum = parseInt(sNum, 10);
+                explicitChTitle = sTitle;
+                break;
+              }
+            }
+          }
+
+          // 2. If not matched in current subject, search across ALL HSC syllabuses
+          if (explicitChNum === null) {
+            for (const [subKey, subSyllabus] of Object.entries(MASTER_HSC_SYLLABUS)) {
+              for (const [sNum, sTitle] of Object.entries(subSyllabus)) {
+                const cleanSTitle = sTitle.replace(/^অধ্যায়\s*[0-9০-৯]+:\s*/, '').toLowerCase();
+                if (cleanSTitle.includes(cleanName.toLowerCase()) || cleanName.toLowerCase().includes(cleanSTitle)) {
+                  explicitChNum = parseInt(sNum, 10);
+                  explicitChTitle = sTitle;
+                  break;
+                }
+              }
+              if (explicitChNum !== null) break;
+            }
+          }
+
+          // 3. If still not matched, assign a dynamic sequential chapter slot
+          if (explicitChNum === null && cleanName) {
+            const key = cleanName.toLowerCase();
+            let slot = namedChapterSlots.get(key);
+            if (!slot) {
+              const existingKeys = Array.from(chaptersMap.keys());
+              slot = (existingKeys.length > 0 ? Math.max(...existingKeys) : 0) + 1;
+              namedChapterSlots.set(key, slot);
+            }
+            explicitChNum = slot;
+            explicitChTitle = `অধ্যায় ${(slot < 10 ? '০' + slot : slot)}: ${cleanName}`;
+          }
+        }
+      }
+    } else {
+      // Check for named chapter mentions like "Vector Class 21"
+      const chNameDetected = cleanAndNormalizeChapterTitle(b);
+      if (chNameDetected && !isGenericChapterTitle(chNameDetected)) {
+        for (const [sNum, sTitle] of Object.entries(syllabus)) {
+          if (sTitle.toLowerCase().includes(chNameDetected.toLowerCase())) {
+            explicitChNum = parseInt(sNum, 10);
+            explicitChTitle = sTitle;
+            break;
+          }
+        }
+      }
+    }
+
+    if (explicitChNum !== null) {
+      currentChapter = explicitChNum;
+    }
+
+    if (!chaptersMap.has(currentChapter)) {
+      chaptersMap.set(currentChapter, {
+        customTitle: explicitChTitle || (syllabus ? syllabus[currentChapter] : undefined),
+        classes: [],
+        practiceSheets: []
+      });
+    } else if (explicitChTitle && !chaptersMap.get(currentChapter)!.customTitle) {
+      chaptersMap.get(currentChapter)!.customTitle = explicitChTitle;
+    }
+
+    // Check if it's a practice sheet block
+    if (b.includes('PRACTICE SHEET') || b.includes('PRACTISE SHEET') || b.includes('প্র্যাকটিস শিট')) {
+      const driveUrls = b.match(/https:\/\/drive\.google\.com\/[^\s\)\"\'\[\]\>]+/g) || [];
+      if (driveUrls.length > 0) {
+        chaptersMap.get(currentChapter)!.practiceSheets.push(...driveUrls);
+      }
+      continue;
+    }
+
+    // Detect Lecture number and parts (e.g. LECTURE : 10 Part 02)
+    let lecNum: number | null = null;
+    let lecSub = '';
+    const lecMatch = b.match(/(?:LECTURE|লেকচার|CLASS|ক্লাস|LEC)[\s:：\-]*([0-9০-৯]+)(?:\s*(?:Part|পার্ট)\s*([0-9০-৯]+))?/i);
+    if (lecMatch) {
+      const bnDigits = ['০','১','২','৩','৪','৫','৬','৭','৮','৯'];
+      const eNum = lecMatch[1].replace(/[০-৯]/g, d => bnDigits.indexOf(d).toString());
+      lecNum = parseInt(eNum, 10);
+      if (lecMatch[2]) {
+        const eSub = lecMatch[2].replace(/[০-৯]/g, d => bnDigits.indexOf(d).toString());
+        lecSub = ' (পার্ট ' + (parseInt(eSub, 10) < 10 ? '০' + eSub : eSub) + ')';
+      }
+    } else {
+      const vMatch = b.match(/Class\s*([0-9০-৯]+)/i);
+      if (vMatch) {
+        const bnDigits = ['০','১','২','৩','৪','৫','৬','৭','৮','৯'];
+        const eNum = vMatch[1].replace(/[০-৯]/g, d => bnDigits.indexOf(d).toString());
+        lecNum = parseInt(eNum, 10);
+      }
+    }
+
+    // Extract YouTube / Video Link
+    let videoUrl = '';
+    const ytMatch = b.match(/(https?:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)[a-zA-Z0-9_\-\?&=]+)/i);
+    if (ytMatch) {
+      videoUrl = ytMatch[1];
+    } else {
+      const fbMatch = b.match(/(https?:\/\/(?:www\.)?(?:facebook\.com|fb\.watch)\/[^\s\)\"\'\[\]\>]+)/i);
+      if (fbMatch) videoUrl = fbMatch[1];
+    }
+
+    // Extract Slide Link (Click Here hyper links or direct links or Google Spreadsheets / Drive)
+    let slideUrl = '';
+    const slideMatch = b.match(/SLIDE\s*[:\s]*(?:Click Here\s*)?\(?\s*\n?\s*(https?:\/\/[^\s\)\"\'\[\]\>]+)/i);
+    if (slideMatch) {
+      slideUrl = slideMatch[1];
+    } else {
+      const altSlide = b.match(/SLIDE\s*[:\s]*([^\n]+)/i);
+      if (altSlide) {
+        const u = altSlide[1].match(/https?:\/\/[^\s\)\"\'\[\]\>]+/);
+        if (u) slideUrl = u[0];
+      }
+    }
+    if (!slideUrl) {
+      const anyDoc = b.match(/https?:\/\/(?:docs\.google\.com|drive\.google\.com)\/[^\s\)\"\'\[\]\>]+/i);
+      if (anyDoc) {
+        slideUrl = anyDoc[0];
+      }
+    }
+
+    // Determine custom lecture title if given
+    const bnDigits = ['০','১','২','৩','৪','৫','৬','৭','৮','৯'];
+    const toBn = (n: number) => n.toString().replace(/[0-9]/g, d => bnDigits[parseInt(d, 10)]);
+    let title = 'লেকচার ' + (lecNum ? (lecNum < 10 ? '০' + toBn(lecNum) : toBn(lecNum)) : '০০') + lecSub;
+
+    // Check extra sub-title
+    const lines = b.split('\n').map(l => l.trim()).filter(Boolean);
+    for (const line of lines) {
+      if (!line.match(/CHAPTER|LECTURE|SLIDE|YOUTUBE|COURSEMAN|PCBD|ACADEMIC|PAID|CLICK|HTTP|drive\.google/i) && line.length > 3 && line.length < 50 && !line.match(/^\d{1,2}:\d{2}/) && !line.startsWith('[')) {
+        const clean = line.replace(/^[^\w\u0980-\u09FF]+/g, '').replace(/[^\w\u0980-\u09FF]+$/g, '').trim();
+        if (clean.length > 3) {
+          title += ' : ' + clean;
+          break;
+        }
+      }
+    }
+
+    if (b.includes('Orientation Class')) {
+      title += ' (Orientation Class)';
+    } else if (b.includes('Last Class')) {
+      title += ' (Last Class)';
+    }
+
+    if (videoUrl || slideUrl || lecNum !== null) {
+      const currentList = chaptersMap.get(currentChapter)!.classes;
+      const classNo = (currentList.length + 1).toString();
+      currentList.push({
+        id: `tg_lec_${currentChapter}_${classNo}`,
+        classNo: classNo,
+        title,
+        videoUrl: videoUrl || undefined,
+        lectureSheetPdf: slideUrl || undefined,
+        paperTag: subjectTitle
+      });
+    }
+  }
+
+  // Convert chaptersMap to sorted array of ParsedChapter
+  const sortedChNumbers = Array.from(chaptersMap.keys()).sort((a, b) => a - b);
+  if (sortedChNumbers.length === 0 || Array.from(chaptersMap.values()).every(c => c.classes.length === 0)) {
+    throw new Error('পেস্ট করা টেক্সটে কোনো ক্লাস বা লেকচার শনাক্ত হয়নি! অনুগ্রহ করে নিশ্চিত করুন যে আপনি মেসেজের টেক্সট কপি করেছেন।');
+  }
+
+  let totalClassesCount = 0;
+  const parsedChapters: ParsedChapter[] = [];
+
+  for (const chNum of sortedChNumbers) {
+    const chData = chaptersMap.get(chNum)!;
+    if (chData.classes.length === 0 && chData.practiceSheets.length === 0) continue;
+
+    totalClassesCount += chData.classes.length;
+
+    // Resolve chapter title
+    let chTitle = chData.customTitle || syllabus[chNum];
+    if (!chTitle) {
+      const inferredFromClasses = inferChapterTitleFromClasses(chData.classes, chNum);
+      if (inferredFromClasses && !isGenericChapterTitle(inferredFromClasses)) {
+        chTitle = `অধ্যায় ${(chNum < 10 ? '০' + chNum : chNum)}: ${inferredFromClasses}`;
+      } else {
+        chTitle = `অধ্যায় ${(chNum < 10 ? '০' + chNum : chNum)}`;
+      }
+    }
+
+    // Attach practice sheets to classes if available
+    const practiceUrl = chData.practiceSheets[0] || undefined;
+    const classesWithSheets = chData.classes.map(c => ({
+      ...c,
+      practiceSheetPdf: c.practiceSheetPdf || practiceUrl
+    }));
+
+    parsedChapters.push({
+      id: `tg_chap_${chNum}`,
+      title: chTitle,
+      classes: classesWithSheets,
+      practiceSheets: chData.practiceSheets
+    });
+  }
+
+  const fullCourseData: ParsedCourseData = {
+    courseId: 'tg_' + Date.now().toString(36),
+    courseTitle: courseTitle,
+    source: 'Telegram Smart Text Paste',
+    extractedAt: new Date().toISOString(),
+    totalSubjects: 1,
+    totalClasses: totalClassesCount,
+    subjects: [
+      {
+        id: 'tg_sub_1',
+        title: subjectTitle,
+        chapters: parsedChapters
+      }
+    ]
+  };
+
+  return healCourse(fullCourseData);
 }
 
 const ACS_BOOKMARKLET_CODE = "javascript:(async%20function%20universalACSExtractor()%20%7B%20console.clear();%20console.log(%22%25c%F0%9F%9A%80%20ADOMMO%20%E2%80%94%20Universal%20ACS%20Multi-Subdomain%20Scraper%20%E0%A6%B6%E0%A7%81%E0%A6%B0%E0%A7%81%20%E0%A6%B9%E0%A6%9A%E0%A7%8D%E0%A6%9B%E0%A7%87...%22,%20%22color:%20#00c269;%20font-size:%2016px;%20font-weight:%20bold;%22);%20let%20token%20=%20'';%20let%20tokenSource%20=%20'';%20for%20(let%20i%20=%200;%20i%20%3C%20localStorage.length;%20i++)%20%7B%20const%20key%20=%20localStorage.key(i);%20const%20val%20=%20localStorage.getItem(key)%20%7C%7C%20'';%20const%20match%20=%20val.match(/ey%5BA-Za-z0-9-_=%5D+%5C.%5BA-Za-z0-9-_=%5D+%5C.?%5BA-Za-z0-9-_.+/=%5D*/);%20if%20(match)%20%7B%20token%20=%20match%5B0%5D;%20tokenSource%20=%20%60localStorage%20%5B$%7Bkey%7D%5D%60;%20break;%20%7D%20%7D%20if%20(!token)%20%7B%20for%20(let%20i%20=%200;%20i%20%3C%20sessionStorage.length;%20i++)%20%7B%20const%20key%20=%20sessionStorage.key(i);%20const%20val%20=%20sessionStorage.getItem(key)%20%7C%7C%20'';%20const%20match%20=%20val.match(/ey%5BA-Za-z0-9-_=%5D+%5C.%5BA-Za-z0-9-_=%5D+%5C.?%5BA-Za-z0-9-_.+/=%5D*/);%20if%20(match)%20%7B%20token%20=%20match%5B0%5D;%20tokenSource%20=%20%60sessionStorage%20%5B$%7Bkey%7D%5D%60;%20break;%20%7D%20%7D%20%7D%20if%20(!token)%20%7B%20const%20cookieMatch%20=%20document.cookie.match(/(?:token%7Caccess_token%7Cjwt)=(%5B%5E;%5D+)/i);%20if%20(cookieMatch)%20%7B%20token%20=%20cookieMatch%5B1%5D;%20tokenSource%20=%20'Cookies';%20%7D%20%7D%20console.log(token%20?%20%60%F0%9F%94%91%20%E0%A6%85%E0%A6%A5%E0%A7%87%E0%A6%A8%E0%A6%9F%E0%A6%BF%E0%A6%95%E0%A7%87%E0%A6%B6%E0%A6%A8%20%E0%A6%9F%E0%A7%8B%E0%A6%95%E0%A7%87%E0%A6%A8%20%E0%A6%AA%E0%A6%BE%E0%A6%93%E0%A7%9F%E0%A6%BE%20%E0%A6%97%E0%A7%87%E0%A6%9B%E0%A7%87%20($%7BtokenSource%7D)!%60%20:%20%60%E2%9A%A0%EF%B8%8F%20%E0%A6%B8%E0%A6%B0%E0%A6%BE%E0%A6%B8%E0%A6%B0%E0%A6%BF%20%E0%A6%9F%E0%A7%8B%E0%A6%95%E0%A7%87%E0%A6%A8%20%E0%A6%AA%E0%A6%BE%E0%A6%93%E0%A7%9F%E0%A6%BE%20%E0%A6%AF%E0%A6%BE%E0%A7%9F%E0%A6%A8%E0%A6%BF,%20%E0%A6%95%E0%A7%81%E0%A6%95%E0%A6%BF%20%E0%A6%A6%E0%A6%BF%E0%A7%9F%E0%A7%87%20%E0%A6%9A%E0%A7%87%E0%A6%B7%E0%A7%8D%E0%A6%9F%E0%A6%BE%20%E0%A6%95%E0%A6%B0%E0%A6%BE%20%E0%A6%B9%E0%A6%AC%E0%A7%87%E0%A5%A4%60);%20let%20API_BASE%20=%20'';%20try%20%7B%20const%20apiResources%20=%20performance.getEntriesByType('resource')%20.map(r%20=%3E%20r.name)%20.filter(n%20=%3E%20n.includes('/api/'));%20const%20detected%20=%20apiResources.find(n%20=%3E%20n.includes('/api/v1/'));%20if%20(detected)%20%7B%20const%20m%20=%20detected.match(/(https?:%5C/%5C/%5B%5E%5C/%5D+%5C/api%5C/v1)/);%20if%20(m)%20API_BASE%20=%20m%5B1%5D;%20%7D%20%7D%20catch%20(e)%20%7B%7D%20if%20(!API_BASE)%20%7B%20const%20host%20=%20location.hostname.toLowerCase();%20if%20(host.includes('engineering'))%20%7B%20API_BASE%20=%20'https://api.engineering.aparsclassroom.com/api/v1';%20%7D%20else%20if%20(host.includes('admission'))%20%7B%20API_BASE%20=%20'https://api.varsity.aparsclassroom.com/api/v1';%20%7D%20else%20if%20(host.includes('varsity')%20%7C%7C%20host.includes('frb'))%20%7B%20API_BASE%20=%20'https://api.varsity.aparsclassroom.com/api/v1';%20%7D%20else%20if%20(host.includes('medical'))%20%7B%20API_BASE%20=%20'https://api.medical.aparsclassroom.com/api/v1';%20%7D%20else%20%7B%20API_BASE%20=%20'https://api.varsity.aparsclassroom.com/api/v1';%20%7D%20%7D%20console.log(%60%F0%9F%8C%90%20%E0%A6%B6%E0%A6%A8%E0%A6%BE%E0%A6%95%E0%A7%8D%E0%A6%A4%E0%A6%95%E0%A7%83%E0%A6%A4%20API%20%E0%A6%8F%E0%A6%A8%E0%A7%8D%E0%A6%A1%E0%A6%AA%E0%A6%AF%E0%A6%BC%E0%A7%87%E0%A6%A8%E0%A7%8D%E0%A6%9F:%20$%7BAPI_BASE%7D%60);%20const%20urlMatch%20=%20location.href.match(/course%5C/(%5Ba-zA-Z0-9-%5D+)/i)%20%7C%7C%20location.href.match(/shop%5C/(%5Ba-zA-Z0-9-%5D+)/i);%20let%20defaultCourse%20=%20urlMatch%20?%20urlMatch%5B1%5D%20:%20'';%20let%20courseInput%20=%20prompt(%22%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8%20%E0%A6%86%E0%A6%87%E0%A6%A1%E0%A6%BF%20%E0%A6%AC%E0%A6%BE%20%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8%20%E0%A6%B2%E0%A6%BF%E0%A6%82%E0%A6%95%20%E0%A6%A6%E0%A6%BF%E0%A6%A8:%22,%20defaultCourse);%20if%20(!courseInput)%20return;%20const%20courseIdMatch%20=%20courseInput.trim().match(/(?:course%7Cshop)%5C/(%5B%5E%5C/?#%5D+)/i);%20const%20courseId%20=%20courseIdMatch%20?%20courseIdMatch%5B1%5D%20:%20courseInput.trim();%20let%20detectedArchiveId%20=%20'';%20try%20%7B%20const%20allLinks%20=%20Array.from(document.querySelectorAll('a%5Bhref*=%22/course/%22%5D,%20a%5Bhref*=%22/shop/%22%5D'));%20const%20archiveLink%20=%20allLinks.find(a%20=%3E%20/archive%7C%E0%A6%86%E0%A6%B0%E0%A7%8D%E0%A6%95%E0%A6%BE%E0%A6%87%E0%A6%AD%7Cprevious%7C%E0%A6%AA%E0%A7%82%E0%A6%B0%E0%A7%8D%E0%A6%AC%7C%E0%A6%AA%E0%A7%81%E0%A6%B0%E0%A7%8D%E0%A6%AC/i.test(a.textContent%20%7C%7C%20'')%20%7C%7C%20/archive%7Cprevious/i.test(a.getAttribute('href')%20%7C%7C%20'')%20);%20if%20(archiveLink)%20%7B%20const%20m%20=%20(archiveLink.getAttribute('href')%20%7C%7C%20'').match(/(?:course%7Cshop)%5C/(%5Ba-zA-Z0-9-%5D+)/i);%20if%20(m%20&&%20m%5B1%5D%20!==%20courseId)%20%7B%20detectedArchiveId%20=%20m%5B1%5D;%20%7D%20%7D%20%7D%20catch%20(e)%20%7B%7D%20if%20(!detectedArchiveId%20&&%20(courseId.includes('c82195b9')%20%7C%7C%20location.href.toLowerCase().includes('frb')))%20%7B%20detectedArchiveId%20=%20'52acc196-55a7-4499-9ca2-dc44ccab3568';%20%7D%20let%20archiveInput%20=%20prompt(%20%22%E0%A6%86%E0%A6%B0%E0%A7%8D%E0%A6%95%E0%A6%BE%E0%A6%87%E0%A6%AD%20%E0%A6%AC%E0%A7%8D%E0%A6%AF%E0%A6%BE%E0%A6%9A%E0%A7%87%E0%A6%B0%20%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8%20%E0%A6%86%E0%A6%87%E0%A6%A1%E0%A6%BF%20%E0%A6%AC%E0%A6%BE%20%E0%A6%B2%E0%A6%BF%E0%A6%82%E0%A6%95:%5C%5Cn(%E0%A6%AA%E0%A7%87%E0%A6%9C%E0%A7%87%20%E0%A6%AA%E0%A6%BE%E0%A6%93%E0%A7%9F%E0%A6%BE%20%E0%A6%86%E0%A6%87%E0%A6%A1%E0%A6%BF%20%E0%A6%A8%E0%A6%BF%E0%A6%9A%E0%A7%87%20%E0%A6%A6%E0%A7%87%E0%A7%9F%E0%A6%BE%20%E0%A6%B9%E0%A7%9F%E0%A7%87%E0%A6%9B%E0%A7%87%E0%A5%A4%20%E0%A6%86%E0%A6%B0%E0%A7%8D%E0%A6%95%E0%A6%BE%E0%A6%87%E0%A6%AD%20%E0%A6%A8%E0%A6%BF%E0%A6%A4%E0%A7%87%20%E0%A6%9A%E0%A6%BE%E0%A6%87%E0%A6%B2%E0%A7%87%20OK%20%E0%A6%A6%E0%A6%BF%E0%A6%A8,%20%E0%A6%A8%E0%A6%BE%20%E0%A6%A5%E0%A6%BE%E0%A6%95%E0%A6%B2%E0%A7%87%20%E0%A6%AB%E0%A6%BE%E0%A6%81%E0%A6%95%E0%A6%BE%20%E0%A6%B0%E0%A6%BE%E0%A6%96%E0%A7%81%E0%A6%A8):%22,%20detectedArchiveId%20);%20let%20archiveCourseId%20=%20'';%20if%20(archiveInput%20&&%20archiveInput.trim())%20%7B%20const%20m%20=%20archiveInput.trim().match(/(?:course%7Cshop)%5C/(%5Ba-zA-Z0-9-%5D+)/i);%20archiveCourseId%20=%20m%20?%20m%5B1%5D%20:%20archiveInput.trim();%20%7D%20const%20headers%20=%20%7B%20'accept':%20'application/json,%20text/plain,%20*/*',%20'x-access-token':%20token,%20'authorization':%20token%20?%20%60Bearer%20$%7Btoken%7D%60%20:%20''%20%7D;%20console.log(%60%F0%9F%93%A6%20%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8%20%E0%A6%86%E0%A6%87%E0%A6%A1%E0%A6%BF:%20$%7BcourseId%7D%60);%20if%20(archiveCourseId)%20%7B%20console.log(%60%F0%9F%97%84%EF%B8%8F%20%E0%A6%86%E0%A6%B0%E0%A7%8D%E0%A6%95%E0%A6%BE%E0%A6%87%E0%A6%AD%20%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8%20%E0%A6%86%E0%A6%87%E0%A6%A1%E0%A6%BF:%20$%7BarchiveCourseId%7D%60);%20%7D%20let%20courseTitle%20=%20'';%20try%20%7B%20const%20cRes%20=%20await%20fetch(%60$%7BAPI_BASE%7D/course/$%7BcourseId%7D%60,%20%7B%20headers,%20credentials:%20'include'%20%7D);%20const%20cJson%20=%20await%20cRes.json();%20if%20(cJson.data?.title%20%7C%7C%20cJson.data?.name)%20%7B%20courseTitle%20=%20cJson.data.title%20%7C%7C%20cJson.data.name;%20%7D%20%7D%20catch(e)%20%7B%7D%20if%20(!courseTitle)%20%7B%20try%20%7B%20const%20h1%20=%20document.querySelector('h1')?.textContent?.trim();%20if%20(h1%20&&%20h1.length%20%3E%202%20&&%20!/apars%7Cdashboard%7Clogin%7Cwelcome/i.test(h1))%20%7B%20courseTitle%20=%20h1;%20%7D%20%7D%20catch%20(e)%20%7B%7D%20%7D%20if%20(!courseTitle%20%7C%7C%20courseTitle%20===%20'ACS%20Admission%20Special%20Private%20Programme')%20%7B%20const%20docTitle%20=%20document.title?.trim();%20if%20(docTitle%20&&%20!/apars%5Cs*classroom/i.test(docTitle))%20%7B%20courseTitle%20=%20docTitle;%20%7D%20%7D%20if%20(!courseTitle)%20%7B%20const%20userTitle%20=%20prompt(%22%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8%E0%A7%87%E0%A6%B0%20%E0%A6%A8%E0%A6%BE%E0%A6%AE%20%E0%A6%A8%E0%A6%BF%E0%A6%B6%E0%A7%8D%E0%A6%9A%E0%A6%BF%E0%A6%A4%20%E0%A6%95%E0%A6%B0%E0%A7%81%E0%A6%A8:%22,%20%22ACS%20Course%22);%20courseTitle%20=%20userTitle?.trim()%20%7C%7C%20%22ACS%20Course%22;%20%7D%20function%20formatDrivePdf(val)%20%7B%20if%20(!val)%20return%20null;%20if%20(typeof%20val%20===%20'string'%20&&%20val.startsWith('http'))%20return%20val;%20return%20%60https://drive.google.com/file/d/$%7Bval%7D/view%60;%20%7D%20async%20function%20scrapeCourseStructure(cId,%20isArchive%20=%20false)%20%7B%20const%20label%20=%20isArchive%20?%20%22%F0%9F%97%84%EF%B8%8F%20%E0%A6%86%E0%A6%B0%E0%A7%8D%E0%A6%95%E0%A6%BE%E0%A6%87%E0%A6%AD%22%20:%20%22%F0%9F%93%9A%20%E0%A6%AE%E0%A7%87%E0%A6%87%E0%A6%A8%22;%20console.log(%60$%7Blabel%7D%20%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8%20%E0%A6%A1%E0%A7%87%E0%A6%9F%E0%A6%BE%20%E0%A6%AB%E0%A7%87%E0%A6%9A%20%E0%A6%95%E0%A6%B0%E0%A6%BE%20%E0%A6%B9%E0%A6%9A%E0%A7%8D%E0%A6%9B%E0%A7%87...%20%5BID:%20$%7BcId%7D%5D%60);%20const%20subRes%20=%20await%20fetch(%60$%7BAPI_BASE%7D/course-subject/subjects/$%7BcId%7D?limit=100%60,%20%7B%20headers,%20credentials:%20'include'%20%7D);%20const%20subJson%20=%20await%20subRes.json();%20const%20rawSubjects%20=%20subJson.data%20%7C%7C%20%5B%5D;%20if%20(!rawSubjects.length)%20%7B%20console.warn(%60%E2%9A%A0%EF%B8%8F%20$%7Blabel%7D%20%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8%E0%A7%87%20%E0%A6%95%E0%A7%8B%E0%A6%A8%E0%A7%8B%20%E0%A6%AC%E0%A6%BF%E0%A6%B7%E0%A7%9F%20%E0%A6%AA%E0%A6%BE%E0%A6%93%E0%A7%9F%E0%A6%BE%20%E0%A6%AF%E0%A6%BE%E0%A7%9F%E0%A6%A8%E0%A6%BF!%60);%20return%20%7B%20subjects:%20%5B%5D,%20totalClasses:%200%20%7D;%20%7D%20console.log(%60%25c%E2%9C%85%20$%7Blabel%7D%20%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8%E0%A7%87%20$%7BrawSubjects.length%7D%20%E0%A6%9F%E0%A6%BF%20%E0%A6%AC%E0%A6%BF%E0%A6%B7%E0%A7%9F%20%E0%A6%AA%E0%A6%BE%E0%A6%93%E0%A7%9F%E0%A6%BE%20%E0%A6%97%E0%A7%87%E0%A6%9B%E0%A7%87!%60,%20%22color:%20#00c269;%20font-weight:%20bold;%22);%20const%20formattedSubjects%20=%20%5B%5D;%20let%20classesCount%20=%200;%20for%20(let%20sIdx%20=%200;%20sIdx%20%3C%20rawSubjects.length;%20sIdx++)%20%7B%20const%20sub%20=%20rawSubjects%5BsIdx%5D;%20const%20subTitle%20=%20sub.title%20%7C%7C%20sub.name%20%7C%7C%20sub.subjectName%20%7C%7C%20sub.courseSubject?.title%20%7C%7C%20sub.courseSubjectName%20%7C%7C%20%60%E0%A6%AC%E0%A6%BF%E0%A6%B7%E0%A7%9F%20$%7BsIdx%20+%201%7D%60;%20console.log(%60%F0%9F%91%89%20%5B$%7BsIdx%20+%201%7D/$%7BrawSubjects.length%7D%5D%20%E0%A6%AC%E0%A6%BF%E0%A6%B7%E0%A7%9F:%20$%7BsubTitle%7D%60);%20const%20chapRes%20=%20await%20fetch(%60$%7BAPI_BASE%7D/course/subject/chapter/course-subject/$%7Bsub.id%7D?courseSubjectId=$%7Bsub.id%7D&limit=1000%60,%20%7B%20headers,%20credentials:%20'include'%20%7D);%20const%20chapJson%20=%20await%20chapRes.json();%20const%20rawChapters%20=%20chapJson.data%20%7C%7C%20%5B%5D;%20const%20isBangla%20=%20/%E0%A6%AC%E0%A6%BE%E0%A6%82%E0%A6%B2%E0%A6%BE%7Cbangla/i.test(subTitle);%20const%20isEnglish%20=%20/english%7C%E0%A6%87%E0%A6%82%E0%A6%B0%E0%A7%87%E0%A6%9C%E0%A6%BF/i.test(subTitle);%20const%20subjectObj%20=%20%7B%20id:%20sub.id,%20title:%20subTitle,%20isArchive:%20isArchive,%20isMultiPaper:%20(isBangla%20%7C%7C%20isEnglish)%20&&%20rawChapters.length%20%3E=%202,%20chapters:%20%5B%5D%20%7D;%20for%20(let%20cIdx%20=%200;%20cIdx%20%3C%20rawChapters.length;%20cIdx++)%20%7B%20const%20ch%20=%20rawChapters%5BcIdx%5D;%20const%20chapTitle%20=%20ch.title%20%7C%7C%20ch.name%20%7C%7C%20ch.chapterName%20%7C%7C%20ch.courseSubjectChapterName%20%7C%7C%20%60%E0%A6%85%E0%A6%A7%E0%A7%8D%E0%A6%AF%E0%A6%BE%E0%A6%AF%E0%A6%BC%20$%7BcIdx%20+%201%7D%60;%20let%20paperTag%20=%20'';%20if%20(isBangla)%20%7B%20paperTag%20=%20cIdx%20===%200%20?%20'%E0%A6%AC%E0%A6%BE%E0%A6%82%E0%A6%B2%E0%A6%BE%20%E0%A7%A7%E0%A6%AE%20%E0%A6%AA%E0%A6%A4%E0%A7%8D%E0%A6%B0%20(%E0%A6%B8%E0%A6%BE%E0%A6%B9%E0%A6%BF%E0%A6%A4%E0%A7%8D%E0%A6%AF)'%20:%20'%E0%A6%AC%E0%A6%BE%E0%A6%82%E0%A6%B2%E0%A6%BE%20%E0%A7%A8%E0%A7%9F%20%E0%A6%AA%E0%A6%A4%E0%A7%8D%E0%A6%B0%20(%E0%A6%AC%E0%A7%8D%E0%A6%AF%E0%A6%BE%E0%A6%95%E0%A6%B0%E0%A6%A3)';%20%7D%20else%20if%20(isEnglish)%20%7B%20paperTag%20=%20cIdx%20===%200%20?%20'English%201st%20Paper'%20:%20'English%202nd%20Paper';%20%7D%20try%20%7B%20const%20classRes%20=%20await%20fetch(%60$%7BAPI_BASE%7D/class/all/videos/$%7Bch.id%7D?limit=1000%60,%20%7B%20headers,%20credentials:%20'include'%20%7D);%20const%20classJson%20=%20await%20classRes.json();%20const%20rawClasses%20=%20classJson.data%20%7C%7C%20%5B%5D;%20const%20classes%20=%20rawClasses.map((cl,%20i)%20=%3E%20%7B%20classesCount++;%20return%20%7B%20id:%20cl.id,%20classNo:%20cl.classNo%20%7C%7C%20(i%20+%201).toString(),%20title:%20cl.classTitle%20%7C%7C%20cl.title%20%7C%7C%20cl.description%20%7C%7C%20%60Class%20$%7Bi%20+%201%7D:%20$%7BchapTitle%7D%60,%20description:%20cl.description%20%7C%7C%20'',%20instructor:%20cl.instructor%20%7C%7C%20cl.instructorName%20%7C%7C%20'ACS%20Instructor',%20hostingType:%20cl.hostingType%20%7C%7C%20'',%20videoId:%20cl.videoId%20%7C%7C%20'',%20videoUrl:%20cl.videoUrl%20%7C%7C%20'',%20hlsPlaylistUrl:%20cl.hlsPlaylistUrl%20%7C%7C%20null,%20iframePlayerUrl:%20cl.iframePlayerUrl%20%7C%7C%20null,%20libraryId:%20cl.libraryId%20%7C%7C%20'610687',%20lectureSheetPdf:%20formatDrivePdf(cl.lectureSheet%20%7C%7C%20cl.lectureSheetPdf),%20practiceSheetPdf:%20formatDrivePdf(cl.practiceSheet%20%7C%7C%20cl.practiceSheetPdf),%20solutionSheetPdf:%20formatDrivePdf(cl.solutionSheet%20%7C%7C%20cl.solutionSheetPdf),%20markedBookPdf:%20formatDrivePdf(cl.markedBook%20%7C%7C%20cl.markedBookPdf),%20paperTag:%20paperTag%20%7C%7C%20null%20%7D;%20%7D);%20subjectObj.chapters.push(%7B%20id:%20ch.id,%20title:%20chapTitle,%20paperTag:%20paperTag%20%7C%7C%20null,%20classes%20%7D);%20%7D%20catch(cErr)%20%7B%20subjectObj.chapters.push(%7B%20id:%20ch.id,%20title:%20chapTitle,%20paperTag:%20paperTag%20%7C%7C%20null,%20classes:%20%5B%5D%20%7D);%20%7D%20%7D%20formattedSubjects.push(subjectObj);%20%7D%20return%20%7B%20subjects:%20formattedSubjects,%20totalClasses:%20classesCount%20%7D;%20%7D%20try%20%7B%20console.log(%22%E0%A7%A7%E0%A6%AE%20%E0%A6%A7%E0%A6%BE%E0%A6%AA:%20%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8%E0%A7%87%E0%A6%B0%20%E0%A6%95%E0%A7%8D%E0%A6%B2%E0%A6%BE%E0%A6%B8%20%E0%A6%B8%E0%A6%82%E0%A6%97%E0%A7%8D%E0%A6%B0%E0%A6%B9%20%E0%A6%B6%E0%A7%81%E0%A6%B0%E0%A7%81%20%E0%A6%B9%E0%A6%9A%E0%A7%8D%E0%A6%9B%E0%A7%87...%22);%20const%20mainData%20=%20await%20scrapeCourseStructure(courseId,%20false);%20const%20fullCourseData%20=%20%7B%20courseId,%20courseTitle,%20extractedAt:%20new%20Date().toISOString(),%20apiBaseUsed:%20API_BASE,%20subdomain:%20location.hostname,%20totalSubjects:%20mainData.subjects.length,%20totalClasses:%20mainData.totalClasses,%20subjects:%20mainData.subjects%20%7D;%20if%20(archiveCourseId)%20%7B%20console.log(%22%E0%A7%A8%E0%A6%AF%E0%A6%BC%20%E0%A6%A7%E0%A6%BE%E0%A6%AA:%20%E0%A6%86%E0%A6%B0%E0%A7%8D%E0%A6%95%E0%A6%BE%E0%A6%87%E0%A6%AD%20%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8%E0%A7%87%E0%A6%B0%20%E0%A6%95%E0%A7%8D%E0%A6%B2%E0%A6%BE%E0%A6%B8%20%E0%A6%B8%E0%A6%82%E0%A6%97%E0%A7%8D%E0%A6%B0%E0%A6%B9%20%E0%A6%B6%E0%A7%81%E0%A6%B0%E0%A7%81%20%E0%A6%B9%E0%A6%9A%E0%A7%8D%E0%A6%9B%E0%A7%87...%22);%20let%20archiveTitle%20=%20%22%E0%A6%86%E0%A6%B0%E0%A7%8D%E0%A6%95%E0%A6%BE%E0%A6%87%E0%A6%AD%20%E0%A6%AC%E0%A7%8D%E0%A6%AF%E0%A6%BE%E0%A6%9A%20(Previous%20Batch%20Archive)%22;%20try%20%7B%20const%20aRes%20=%20await%20fetch(%60$%7BAPI_BASE%7D/course/$%7BarchiveCourseId%7D%60,%20%7B%20headers,%20credentials:%20'include'%20%7D);%20const%20aJson%20=%20await%20aRes.json();%20if%20(aJson.data?.title%20%7C%7C%20aJson.data?.name)%20%7B%20archiveTitle%20=%20%60%E0%A6%86%E0%A6%B0%E0%A7%8D%E0%A6%95%E0%A6%BE%E0%A6%87%E0%A6%AD:%20$%7BaJson.data.title%20%7C%7C%20aJson.data.name%7D%60;%20%7D%20%7D%20catch%20(e)%20%7B%7D%20const%20archiveData%20=%20await%20scrapeCourseStructure(archiveCourseId,%20true);%20fullCourseData.archive%20=%20%7B%20courseId:%20archiveCourseId,%20title:%20archiveTitle,%20totalSubjects:%20archiveData.subjects.length,%20totalClasses:%20archiveData.totalClasses,%20subjects:%20archiveData.subjects%20%7D;%20console.log(%60%25c%F0%9F%97%84%EF%B8%8F%20%E0%A6%86%E0%A6%B0%E0%A7%8D%E0%A6%95%E0%A6%BE%E0%A6%87%E0%A6%AD%20%E0%A6%B8%E0%A6%AB%E0%A6%B2%E0%A6%AD%E0%A6%BE%E0%A6%AC%E0%A7%87%20%E0%A6%8F%E0%A6%95%E0%A7%8D%E0%A6%B8%E0%A6%9F%E0%A7%8D%E0%A6%B0%E0%A7%8D%E0%A6%AF%E0%A6%BE%E0%A6%95%E0%A7%8D%E0%A6%9F%20%E0%A6%B9%E0%A7%9F%E0%A7%87%E0%A6%9B%E0%A7%87!%20($%7BarchiveData.totalClasses%7D%20%E0%A6%9F%E0%A6%BF%20%E0%A6%95%E0%A7%8D%E0%A6%B2%E0%A6%BE%E0%A6%B8)%60,%20%22color:%20#eab308;%20font-weight:%20bold;%22);%20%7D%20const%20totalCombinedClasses%20=%20fullCourseData.totalClasses%20+%20(fullCourseData.archive?.totalClasses%20%7C%7C%200);%20const%20blob%20=%20new%20Blob(%5BJSON.stringify(fullCourseData,%20null,%202)%5D,%20%7B%20type:%20'application/json'%20%7D);%20const%20a%20=%20document.createElement('a');%20a.href%20=%20URL.createObjectURL(blob);%20const%20cleanName%20=%20(courseTitle.replace(/%5B%5Ea-zA-Z0-9%5Cu0980-%5Cu09FF%5D/g,%20'_')%20%7C%7C%20'course')%20+%20'.json';%20a.download%20=%20cleanName;%20document.body.appendChild(a);%20a.click();%20document.body.removeChild(a);%20alert(%60%F0%9F%8E%89%20%E0%A6%B8%E0%A6%AE%E0%A7%8D%E0%A6%AA%E0%A7%82%E0%A6%B0%E0%A7%8D%E0%A6%A3%20%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8%20%E0%A6%B8%E0%A6%AB%E0%A6%B2%E0%A6%AD%E0%A6%BE%E0%A6%AC%E0%A7%87%20%E0%A6%8F%E0%A6%95%E0%A7%8D%E0%A6%B8%E0%A6%AA%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%9F%20%E0%A6%B9%E0%A7%9F%E0%A7%87%E0%A6%9B%E0%A7%87!%5C%5Cn%5C%5Cn%F0%9F%93%8C%20%E0%A6%AE%E0%A7%87%E0%A6%87%E0%A6%A8%20%E0%A6%95%E0%A7%8D%E0%A6%B2%E0%A6%BE%E0%A6%B8:%20$%7BfullCourseData.totalClasses%7D%20%E0%A6%9F%E0%A6%BF%5C%5Cn%F0%9F%93%8C%20%E0%A6%86%E0%A6%B0%E0%A7%8D%E0%A6%95%E0%A6%BE%E0%A6%87%E0%A6%AD%20%E0%A6%95%E0%A7%8D%E0%A6%B2%E0%A6%BE%E0%A6%B8:%20$%7BfullCourseData.archive?.totalClasses%20%7C%7C%200%7D%20%E0%A6%9F%E0%A6%BF%5C%5Cn%F0%9F%93%8C%20%E0%A6%B8%E0%A6%B0%E0%A7%8D%E0%A6%AC%E0%A6%AE%E0%A7%8B%E0%A6%9F%20%E0%A6%95%E0%A7%8D%E0%A6%B2%E0%A6%BE%E0%A6%B8:%20$%7BtotalCombinedClasses%7D%20%E0%A6%9F%E0%A6%BF%5C%5Cn%5C%5Cn%E0%A6%AB%E0%A6%BE%E0%A6%87%E0%A6%B2%20($%7BcleanName%7D)%20%E0%A6%A1%E0%A6%BE%E0%A6%89%E0%A6%A8%E0%A6%B2%E0%A7%8B%E0%A6%A1%20%E0%A6%B9%E0%A7%9F%E0%A7%87%E0%A6%9B%E0%A7%87%E0%A5%A4%20%E0%A6%8F%E0%A6%AC%E0%A6%BE%E0%A6%B0%20%E0%A6%8F%E0%A6%9F%E0%A6%BF%20%E0%A6%86%E0%A6%AE%E0%A6%BE%E0%A6%A6%E0%A7%87%E0%A6%B0%20%E0%A6%93%E0%A7%9F%E0%A7%87%E0%A6%AC%E0%A6%B8%E0%A6%BE%E0%A6%87%E0%A6%9F%E0%A7%87%20%E0%A6%86%E0%A6%AA%E0%A6%B2%E0%A7%8B%E0%A6%A1%20%E0%A6%95%E0%A6%B0%E0%A7%81%E0%A6%A8%E0%A5%A4%60);%20console.log(%22=========================================%22);%20console.log(%60%25c%F0%9F%8E%89%20%E0%A6%B8%E0%A6%AE%E0%A7%8D%E0%A6%AA%E0%A7%82%E0%A6%B0%E0%A7%8D%E0%A6%A3%20%E0%A6%95%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%B8%20%E0%A6%B8%E0%A6%AB%E0%A6%B2%E0%A6%AD%E0%A6%BE%E0%A6%AC%E0%A7%87%20%E0%A6%8F%E0%A6%95%E0%A7%8D%E0%A6%B8%E0%A6%AA%E0%A7%8B%E0%A6%B0%E0%A7%8D%E0%A6%9F%20%E0%A6%B9%E0%A7%9F%E0%A7%87%E0%A6%9B%E0%A7%87!%60,%20%22color:%20#00c269;%20font-size:%2018px;%20font-weight:%20bold;%22);%20console.log(%60%F0%9F%93%8C%20%E0%A6%AE%E0%A7%87%E0%A6%87%E0%A6%A8%20%E0%A6%95%E0%A7%8D%E0%A6%B2%E0%A6%BE%E0%A6%B8:%20$%7BfullCourseData.totalClasses%7D%20%E0%A6%9F%E0%A6%BF%60);%20if%20(fullCourseData.archive)%20%7B%20console.log(%60%F0%9F%93%8C%20%E0%A6%86%E0%A6%B0%E0%A7%8D%E0%A6%95%E0%A6%BE%E0%A6%87%E0%A6%AD%20%E0%A6%95%E0%A7%8D%E0%A6%B2%E0%A6%BE%E0%A6%B8:%20$%7BfullCourseData.archive.totalClasses%7D%20%E0%A6%9F%E0%A6%BF%60);%20%7D%20console.log(%60%F0%9F%93%8C%20%E0%A6%B8%E0%A6%B0%E0%A7%8D%E0%A6%AC%E0%A6%AE%E0%A7%8B%E0%A6%9F%20%E0%A6%95%E0%A7%8D%E0%A6%B2%E0%A6%BE%E0%A6%B8:%20$%7BtotalCombinedClasses%7D%20%E0%A6%9F%E0%A6%BF%60);%20console.log(%60%F0%9F%93%81%20%E0%A6%AB%E0%A6%BE%E0%A6%87%E0%A6%B2%E0%A6%9F%E0%A6%BF%20%E0%A6%A1%E0%A6%BE%E0%A6%89%E0%A6%A8%E0%A6%B2%E0%A7%8B%E0%A6%A1%20%E0%A6%B9%E0%A7%9F%E0%A7%87%E0%A6%9B%E0%A7%87:%20$%7BcleanName%7D%60);%20console.log(%22=========================================%22);%20%7D%20catch%20(err)%20%7B%20console.error(%22%E2%9D%8C%20%E0%A6%8F%E0%A6%95%E0%A7%8D%E0%A6%B8%E0%A6%9F%E0%A7%8D%E0%A6%B0%E0%A6%BE%E0%A6%95%E0%A6%B6%E0%A6%A8%20%E0%A6%A4%E0%A7%8D%E0%A6%B0%E0%A7%81%E0%A6%9F%E0%A6%BF:%22,%20err);%20alert(%22%E0%A6%8F%E0%A6%95%E0%A7%8D%E0%A6%B8%E0%A6%9F%E0%A7%8D%E0%A6%B0%E0%A7%8D%E0%A6%AF%E0%A6%BE%E0%A6%95%E0%A7%8D%E0%A6%9F%20%E0%A6%95%E0%A6%B0%E0%A6%A4%E0%A7%87%20%E0%A6%B8%E0%A6%AE%E0%A6%B8%E0%A7%8D%E0%A6%AF%E0%A6%BE%20%E0%A6%B9%E0%A7%9F%E0%A7%87%E0%A6%9B%E0%A7%87:%20%22%20+%20err.message);%20%7D%20%7D)();";
@@ -963,7 +1935,7 @@ export default function AutomationToolsPage() {
   const [customCourseTitle, setCustomCourseTitle] = useState<string>('');
   const [selectedTopicIds, setSelectedTopicIds] = useState<Record<string, boolean>>({});
   const [activeTab, setActiveTab] = useState<'upload' | 'hierarchy' | 'search' | 'raw'>('upload');
-  const [guideTab, setGuideTab] = useState<'desktop' | 'web' | 'acs'>('acs');
+  const [guideTab, setGuideTab] = useState<'protected' | 'desktop' | 'web' | 'acs'>('protected');
   const [copiedBookmarklet, setCopiedBookmarklet] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>('all');
@@ -973,8 +1945,13 @@ export default function AutomationToolsPage() {
   const [isDragging, setIsDragging] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [copiedTgCode, setCopiedTgCode] = useState(false);
+  const [copiedTgProtectedCode, setCopiedTgProtectedCode] = useState(false);
   const [isImportingToSite, setIsImportingToSite] = useState(false);
   const [toolMode, setToolMode] = useState<'course' | 'exam' | 'details'>('course');
+  const [pastedChatText, setPastedChatText] = useState<string>('');
+  const [pastedSubjectChoice, setPastedSubjectChoice] = useState<string>('auto');
+  const [isProcessingPaste, setIsProcessingPaste] = useState<boolean>(false);
+  const [pasteSuccessNotice, setPasteSuccessNotice] = useState<string | null>(null);
   
   // ACS Course Details Extractor States
   const [detailsUrl, setDetailsUrl] = useState('');
@@ -1445,6 +2422,80 @@ const CHAPTER_SYNONYMS: Record<string, string> = {
     } catch (e) {}
   };
 
+  const handleProcessPastedText = () => {
+    if (!pastedChatText.trim()) {
+      setErrorMsg('দয়া করে AyuGram বা টেলিগ্রাম থেকে কপি করা মেসেজের টেক্সট পেস্ট করুন');
+      return;
+    }
+    try {
+      setIsProcessingPaste(true);
+      setErrorMsg(null);
+      setImportSuccessMsg(null);
+      const parsed = parsePastedTelegramText(pastedChatText, pastedSubjectChoice);
+      setParsedData(parsed);
+      setCustomCourseTitle(parsed.courseTitle || 'ACS Course');
+
+      const subs = getNormalizedSubjects(parsed);
+      const initialTopics: Record<string, boolean> = {};
+      subs.forEach(s => {
+        initialTopics[s.id] = !s.isIgnoredTopic;
+      });
+      setSelectedTopicIds(initialTopics);
+
+      setActiveTab('hierarchy');
+
+      const newExpanded: Record<string, boolean> = {};
+      subs.forEach(s => {
+        (s.chapters || []).forEach(ch => {
+          newExpanded[ch.id] = true;
+        });
+      });
+      setExpandedChapters(newExpanded);
+      setPasteSuccessNotice(`🎉 সফলভাবে ${parsed.totalClasses} টি ক্লাস ও ${(parsed.subjects?.[0]?.chapters || []).length} টি অধ্যায় তৈরি হয়েছে!`);
+      setTimeout(() => setPasteSuccessNotice(null), 6000);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'টেক্সট পার্স করতে সমস্যা হয়েছে');
+    } finally {
+      setIsProcessingPaste(false);
+    }
+  };
+
+  const handlePasteFromClipboard = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text && text.trim()) {
+        setPastedChatText(text);
+      } else {
+        alert('ক্লিপবোর্ডে কোনো টেক্সট পাওয়া যায়নি! আগে টেলিগ্রাম থেকে মেসেজ কপি করুন।');
+      }
+    } catch {
+      alert('ব্রাউজার ক্লিপবোর্ড পারমিশন দেয়নি! সরাসরি বক্সে Ctrl + V দিয়ে পেস্ট করুন।');
+    }
+  };
+
+  const handleLoadAcs27Physics = async () => {
+    try {
+      const res = await fetch('/ACS27_Physics_1st_Paper_Full.json');
+      const data = await res.json();
+      setParsedData(data);
+      setCustomCourseTitle(data.courseTitle || 'ACS 27 Physics Combo (1st Paper)');
+      const subs = getNormalizedSubjects(data);
+      const initialTopics: Record<string, boolean> = {};
+      subs.forEach(s => { initialTopics[s.id] = true; });
+      setSelectedTopicIds(initialTopics);
+      setActiveTab('hierarchy');
+      const newExpanded: Record<string, boolean> = {};
+      subs.forEach(s => {
+        (s.chapters || []).forEach(ch => { newExpanded[ch.id] = true; });
+      });
+      setExpandedChapters(newExpanded);
+      setPasteSuccessNotice('🎉 ACS 27 Physics Combo (1st Paper) কোর্সের সব ৩টি অধ্যায় ও ৪২টি ক্লাস সফলভাবে লোড হয়েছে!');
+      setTimeout(() => setPasteSuccessNotice(null), 6000);
+    } catch (e: any) {
+      setErrorMsg('কোর্স লোড করতে সমস্যা হয়েছে: ' + e.message);
+    }
+  };
+
   const handleFile = (file: File) => {
     if (!file.name.endsWith('.json')) {
       setErrorMsg('দয়া করে একটি সঠিক .json ফাইল নির্বাচন করুন');
@@ -1464,6 +2515,12 @@ const CHAPTER_SYNONYMS: Record<string, string> = {
 
         // Check if Telegram Desktop export
         const isTgDesktop = (parsed.messages && Array.isArray(parsed.messages));
+        
+        if (isTgDesktop && parsed.messages.length === 0) {
+          setErrorMsg('⚠️ এই result.json ফাইলটিতে কোনো মেসেজ নেই (টেলিগ্রাম নতুন লগইনে ২৪ ঘণ্টার সিকিউরিটি লক দেয়)। কিন্তু চিন্তা নেই! AyuGram থেকে সরাসরি মেসেজ সিলেক্ট করে কপি (Ctrl+C) করুন এবং নিচের "AyuGram স্মার্ট টেক্সট পেস্ট" বক্সে পেস্ট (Ctrl+V) করলেই সাথে সাথে ৪২টি ক্লাস লোড হয়ে যাবে!');
+          return;
+        }
+
         let finalData: ParsedCourseData;
 
         if (isTgDesktop) {
@@ -1538,6 +2595,16 @@ const CHAPTER_SYNONYMS: Record<string, string> = {
     }
   };
 
+  const handleCopyTelegramProtectedCode = () => {
+    try {
+      navigator.clipboard.writeText(TELEGRAM_PROTECTED_SINGLE_CHANNEL_SCRAPER_CODE);
+      setCopiedTgProtectedCode(true);
+      setTimeout(() => setCopiedTgProtectedCode(false), 3000);
+    } catch {
+      alert('ক্লিপবোর্ডে কপি করতে সমস্যা হয়েছে!');
+    }
+  };
+
   const handleImportToMainWebsite = async () => {
     if (!parsedData) return;
     try {
@@ -1572,6 +2639,44 @@ const CHAPTER_SYNONYMS: Record<string, string> = {
       setErrorMsg(err.message || 'মেইন ওয়েবসাইটে ইমপোর্ট করতে সমস্যা হয়েছে');
     } finally {
       setIsImportingToSite(false);
+    }
+  };
+
+  const handleDownloadCleanCourseJson = () => {
+    if (!parsedData) return;
+    try {
+      const activeSubs = (normalizedSubjects.length > 0 ? normalizedSubjects : (parsedData.subjects || [])).filter(s => selectedTopicIds[s.id] !== false);
+      if (activeSubs.length === 0) {
+        alert('দয়া করে কমপক্ষে একটি বিষয় নির্বাচন করুন!');
+        return;
+      }
+
+      const totalClassesCount = activeSubs.reduce((acc, s) => acc + (s.chapters?.reduce((cAcc, ch) => cAcc + (ch.classes?.length || 0), 0) || 0), 0);
+      const title = customCourseTitle.trim() || parsedData.courseTitle || parsedData.title || parsedData.name || 'course';
+
+      const exportPayload = {
+        courseId: parsedData.courseId || `course_${Date.now()}`,
+        courseTitle: title,
+        title: title,
+        name: title,
+        source: parsedData.source || 'ADOMMO Smart Course Organizer',
+        extractedAt: new Date().toISOString(),
+        totalSubjects: activeSubs.length,
+        totalClasses: totalClassesCount,
+        subjects: activeSubs
+      };
+
+      const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      const cleanFileName = (title.replace(/[^a-zA-Z0-9\u0980-\u09FF]/g, '_') || 'adommo_course') + '.json';
+      a.download = cleanFileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+    } catch (err: any) {
+      alert('JSON ফাইল ডাউনলোড করতে সমস্যা হয়েছে: ' + (err.message || 'ত্রুটি'));
     }
   };
 
@@ -1711,6 +2816,15 @@ const CHAPTER_SYNONYMS: Record<string, string> = {
               />
               <button
                 type="button"
+                onClick={handleLoadAcs27Physics}
+                className="px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 text-white text-xs sm:text-sm font-black flex items-center justify-center gap-2 hover:opacity-95 shadow-lg shadow-emerald-500/30 cursor-pointer transition-all active:scale-[0.98]"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>⚡ ACS 27 ফিজিক্স (৪২টি ক্লাস) এখনই খুলুন</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => fileInputRef.current?.click()}
                 className="px-5 py-3 rounded-2xl bg-gradient-to-r from-[#ff1361] to-[#ed347d] text-white text-xs sm:text-sm font-black flex items-center justify-center gap-2 hover:opacity-95 shadow-lg shadow-pink-500/20 cursor-pointer transition-all"
               >
@@ -1744,6 +2858,14 @@ const CHAPTER_SYNONYMS: Record<string, string> = {
           <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs sm:text-sm flex items-center gap-3">
             <AlertCircle className="w-5 h-5 shrink-0 text-rose-400" />
             <span>{errorMsg}</span>
+          </div>
+        )}
+
+        {/* Success Notifications */}
+        {pasteSuccessNotice && (
+          <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs sm:text-sm flex items-center gap-3 shadow-lg">
+            <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-400" />
+            <span className="font-bold">{pasteSuccessNotice}</span>
           </div>
         )}
 
@@ -1895,6 +3017,19 @@ const CHAPTER_SYNONYMS: Record<string, string> = {
                 <div className="flex items-center gap-2 bg-[#091424] p-1 rounded-2xl border border-sky-500/20 flex-wrap">
                   <button
                     type="button"
+                    onClick={() => setGuideTab('protected')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                      guideTab === 'protected'
+                        ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span>🔒 প্রটেক্টেড সিঙ্গেল চ্যানেল (No Export)</span>
+                  </button>
+
+                  <button
+                    type="button"
                     onClick={() => setGuideTab('acs')}
                     className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                       guideTab === 'acs'
@@ -1903,7 +3038,7 @@ const CHAPTER_SYNONYMS: Record<string, string> = {
                     }`}
                   >
                     <span className="text-sm">🎓</span>
-                    <span>১. ACS ওয়েবসাইট (F12 ছাড়া বুকমার্কলেট)</span>
+                    <span>১. ACS ওয়েবসাইট</span>
                   </button>
 
                   <button
@@ -1929,12 +3064,87 @@ const CHAPTER_SYNONYMS: Record<string, string> = {
                     }`}
                   >
                     <Globe className="w-3.5 h-3.5" />
-                    <span>৩. টেলিগ্রাম ওয়েব</span>
+                    <span>৩. টেলিগ্রাম ওয়েব গ্রুপ</span>
                   </button>
                 </div>
               </div>
 
-              
+              {/* Guide Content: Protected Single Channel Scraper */}
+              {guideTab === 'protected' && (
+                <div className="space-y-4">
+                  <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-amber-400" />
+                    <div className="space-y-1">
+                      <strong className="text-white block font-bold">চ্যানেলে &quot;Restrict saving content&quot; অন থাকার কারণে ডেক্সটপ অ্যাপে Export Chat History কাজ করছে না?</strong>
+                      <p className="text-slate-300 leading-relaxed text-[11px]">
+                        কোনো সমস্যা নেই! টেলিগ্রাম ওয়েবে (<a href="https://web.telegram.org/k/" target="_blank" rel="noopener noreferrer" className="text-sky-400 underline font-semibold">web.telegram.org/k</a>) সব মেসেজ ব্রাউজারের DOM-এ সরাসরি উন্মুক্ত থাকে। নিচের কোডটি ১ ক্লিকে কপি করে ব্রাউজার কনসোলে পেস্ট করলেই সে ইনডেক্স, লেকচার, ইউটিউব ভিডিও ও ড্রাইভ স্লাইড/প্র্যাকটিস শিট একসাথে গুছিয়ে ডাউনলোড করে দেবে!
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                    <div className="p-4 rounded-2xl bg-[#091424] border border-sky-500/20 space-y-2">
+                      <div className="w-7 h-7 rounded-xl bg-sky-500/20 text-sky-300 flex items-center justify-center font-black">
+                        ১
+                      </div>
+                      <h4 className="font-extrabold text-white">টেলিগ্রাম ওয়েব-K খুলুন</h4>
+                      <p className="text-slate-400 leading-relaxed text-[11px]">
+                        ক্রোমে <a href="https://web.telegram.org/k/" target="_blank" rel="noopener noreferrer" className="text-sky-400 underline font-mono">web.telegram.org/k</a> ওপেন করে আপনার প্রাইভেট বা সুরক্ষিত চ্যানেলে যান।
+                      </p>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-[#091424] border border-sky-500/20 space-y-2">
+                      <div className="w-7 h-7 rounded-xl bg-pink-500/20 text-pink-300 flex items-center justify-center font-black">
+                        ২
+                      </div>
+                      <h4 className="font-extrabold text-white">Console-এ পেস্ট করুন</h4>
+                      <p className="text-slate-400 leading-relaxed text-[11px]">
+                        কীবোর্ডে <kbd className="px-1.5 py-0.5 rounded bg-slate-800 text-pink-300 font-mono text-[10px]">F12</kbd> চেপে <strong>Console</strong> ট্যাবে যান। নিচের বাটন থেকে কোড কপি করে পেস্ট করে <kbd className="px-1.5 py-0.5 rounded bg-slate-800 text-pink-300 font-mono text-[10px]">Enter</kbd> চাপুন।
+                      </p>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-[#091424] border border-sky-500/20 space-y-2">
+                      <div className="w-7 h-7 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center font-black">
+                        ৩
+                      </div>
+                      <h4 className="font-extrabold text-white">স্বয়ংক্রিয় JSON ডাউনলোড</h4>
+                      <p className="text-slate-400 leading-relaxed text-[11px]">
+                        স্ক্রিপ্টটি ইনডেক্স থেকে অধ্যায় মেলাবে, লেকচার ও প্র্যাকটিস শিট সাজাবে এবং <code className="text-pink-400">.json</code> ফাইল সেভ করবে। সেটি নিচে ড্রপ করলেই সম্পূর্ণ কোর্স রেডি!
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-gradient-to-r from-[#091424] via-[#0f243a] to-[#122e48] border border-emerald-500/40 shadow-lg">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-black text-white text-sm flex items-center gap-1.5">
+                          <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                          <span>প্রটেক্টেড সিঙ্গেল চ্যানেল ও ইনডেক্স স্ক্র্যাপার কোড (v4)</span>
+                        </h4>
+                        <span className="px-2 py-0.2 rounded-full text-[9px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                          রেস্ট্রিকশন বাইপাস
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-300">
+                        সাপোর্ট করে: CHAPTER 01, LECTURE 01, SLIDE (ড্রাইভ লিংক), YOUTUBE এবং প্র্যাকটিস শিট পোস্ট
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleCopyTelegramProtectedCode}
+                      className={`px-5 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all shadow-lg cursor-pointer shrink-0 ${
+                        copiedTgProtectedCode
+                          ? 'bg-emerald-600 text-white shadow-emerald-600/30'
+                          : 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white shadow-emerald-500/20'
+                      }`}
+                    >
+                      {copiedTgProtectedCode ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                      <span>{copiedTgProtectedCode ? 'কোড সফলভাবে কপি হয়েছে!' : 'স্ক্রিপ্ট কপি করুন'}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Guide Content: ACS Website Bookmarklet */}
               {guideTab === 'acs' && (
                 <div className="space-y-4">
@@ -2117,6 +3327,135 @@ const CHAPTER_SYNONYMS: Record<string, string> = {
               )}
             </div>
 
+            {/* Smart Direct Text Paste Zone (Bypasses 24h Telegram Export Lockout) */}
+            <div className="p-6 sm:p-7 rounded-3xl bg-gradient-to-br from-[#121b2a] via-[#162238] to-[#0e1626] border-2 border-emerald-500/40 space-y-5 shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-emerald-500/20 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center justify-center font-black text-xl shrink-0">
+                    ⚡
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base sm:text-lg font-black text-white">
+                        AyuGram বা টেলিগ্রাম থেকে সরাসরি টেক্সট পেস্ট (সবচেয়ে সহজ ও দ্রুততম উপায়)
+                      </h3>
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-400 text-slate-950">
+                        ইনস্ট্যান্ট • ২৪ ঘণ্টা অপেক্ষা করতে হবে না
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-300">
+                      AyuGram বা টেলিগ্রামে মেসেজগুলো সিলেক্ট ও কপি করে এখানে পেস্ট করলেই সাথে সাথে সব অধ্যায়, ক্লাস ও শিট স্বয়ংক্রিয়ভাবে সাজিয়ে দেওয়া হবে।
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handlePasteFromClipboard}
+                  className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 flex items-center justify-center gap-2 transition-all cursor-pointer shrink-0"
+                >
+                  <Copy className="w-4 h-4 text-emerald-400" />
+                  <span>📋 ক্লিপবোর্ড থেকে পেস্ট</span>
+                </button>
+              </div>
+
+              {/* Instructions Pill */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                <div className="p-3 rounded-xl bg-[#0a121e] border border-emerald-500/20 flex items-start gap-2">
+                  <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center font-bold text-[11px] shrink-0">১</span>
+                  <span className="text-slate-300 text-[11px] leading-relaxed">
+                    <strong>AyuGram অ্যাপ খুলুন:</strong> চ্যানেলে মেসেজের ওপর Right Click করে <strong>&quot;Select Messages&quot;</strong> দিন।
+                  </span>
+                </div>
+                <div className="p-3 rounded-xl bg-[#0a121e] border border-emerald-500/20 flex items-start gap-2">
+                  <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center font-bold text-[11px] shrink-0">২</span>
+                  <span className="text-slate-300 text-[11px] leading-relaxed">
+                    <strong>সব মেসেজ সিলেক্ট:</strong> ১ম থেকে শেষ ক্লাস পর্যন্ত সিলেক্ট করে কিবোর্ডে <strong>Ctrl + C</strong> চাপুন (কপি হবে)।
+                  </span>
+                </div>
+                <div className="p-3 rounded-xl bg-[#0a121e] border border-emerald-500/20 flex items-start gap-2">
+                  <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center font-bold text-[11px] shrink-0">৩</span>
+                  <span className="text-slate-300 text-[11px] leading-relaxed">
+                    <strong>এখানে পেস্ট:</strong> নিচের বক্সে <strong>Ctrl + V</strong> চাপুন এবং <strong>&quot;স্মার্ট কোর্স ও ক্লাস সাজান&quot;</strong> বাটনে চাপ দিন।
+                  </span>
+                </div>
+              </div>
+
+              {/* Textarea */}
+              <div className="space-y-3">
+                <textarea
+                  value={pastedChatText}
+                  onChange={(e) => setPastedChatText(e.target.value)}
+                  placeholder="AyuGram বা টেলিগ্রাম থেকে কপি করা সব মেসেজের টেক্সট এখানে পেস্ট করুন (Ctrl + V)..."
+                  rows={6}
+                  className="w-full bg-[#0a121e] border border-slate-700/80 rounded-2xl p-4 text-xs font-mono text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-400 transition-colors resize-y leading-relaxed"
+                />
+
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex items-center gap-1.5 bg-[#0a121e] border border-slate-700/80 rounded-xl px-2.5 py-1.5 text-xs">
+                      <span className="text-slate-400 font-medium">বিষয়:</span>
+                      <select
+                        value={pastedSubjectChoice}
+                        onChange={(e) => setPastedSubjectChoice(e.target.value)}
+                        className="bg-transparent text-emerald-300 font-semibold focus:outline-none cursor-pointer text-xs"
+                      >
+                        <option value="auto" className="bg-[#121b2a] text-slate-200">🤖 স্বয়ংক্রিয় শনাক্তকরণ (Auto Detect)</option>
+                        <option value="math_1" className="bg-[#121b2a] text-slate-200">📐 উচ্চতর গণিত ১ম পত্র</option>
+                        <option value="math_2" className="bg-[#121b2a] text-slate-200">📐 উচ্চতর গণিত ২য় পত্র</option>
+                        <option value="physics_1" className="bg-[#121b2a] text-slate-200">⚛️ পদার্থবিজ্ঞান ১ম পত্র</option>
+                        <option value="physics_2" className="bg-[#121b2a] text-slate-200">⚛️ পদার্থবিজ্ঞান ২য় পত্র</option>
+                        <option value="chemistry_1" className="bg-[#121b2a] text-slate-200">🧪 রসায়ন ১ম পত্র</option>
+                        <option value="chemistry_2" className="bg-[#121b2a] text-slate-200">🧪 রসায়ন ২য় পত্র</option>
+                        <option value="biology_1" className="bg-[#121b2a] text-slate-200">🌿 জীববিজ্ঞান ১ম পত্র (উদ্ভিদবিজ্ঞান)</option>
+                        <option value="biology_2" className="bg-[#121b2a] text-slate-200">🐾 জীববিজ্ঞান ২য় পত্র (প্রাণিবিজ্ঞান)</option>
+                        <option value="ict" className="bg-[#121b2a] text-slate-200">💻 তথ্য ও যোগাযোগ প্রযুক্তি (ICT)</option>
+                      </select>
+                    </div>
+
+                    <div className="text-[11px] text-slate-400">
+                      {pastedChatText.trim() ? (
+                        <span className="text-emerald-300 font-medium">
+                          ✓ {pastedChatText.length} অক্ষর পেস্ট করা হয়েছে
+                        </span>
+                      ) : (
+                        <span>যেকোনো বিষয়ের এক বা একাধিক মেসেজ একসাথে পেস্ট করতে পারবেন</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {pastedChatText.trim() && (
+                      <button
+                        type="button"
+                        onClick={() => setPastedChatText('')}
+                        className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-all cursor-pointer"
+                      >
+                        মুছে ফেলুন
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleProcessPastedText}
+                      disabled={isProcessingPaste || !pastedChatText.trim()}
+                      className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:opacity-95 text-white text-xs sm:text-sm font-black flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 cursor-pointer disabled:opacity-50 transition-all active:scale-[0.98]"
+                    >
+                      {isProcessingPaste ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                      <span>🚀 স্মার্ট কোর্স ও ক্লাস সাজান</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4 my-2">
+              <div className="h-px bg-slate-800 flex-1" />
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">অথবা JSON ফাইল ড্রপ করুন</span>
+              <div className="h-px bg-slate-800 flex-1" />
+            </div>
+
             {/* Dropzone for JSON file */}
             <div
               onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
@@ -2206,9 +3545,18 @@ const CHAPTER_SYNONYMS: Record<string, string> = {
                   <div className="flex items-center gap-2.5 flex-wrap shrink-0">
                     <button
                       type="button"
+                      onClick={handleDownloadCleanCourseJson}
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-black flex items-center gap-1.5 transition-all shadow-md shadow-emerald-600/20 cursor-pointer active:scale-95"
+                    >
+                      <FileJson className="w-3.5 h-3.5" />
+                      <span>📥 সম্পূর্ণ কোর্স JSON ডাউনলোড</span>
+                    </button>
+
+                    <button
+                      type="button"
                       onClick={handleImportToMainWebsite}
                       disabled={isImportingToSite}
-                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-pink-600 to-emerald-600 hover:from-pink-500 hover:to-emerald-500 text-white text-xs font-black flex items-center gap-1.5 transition-all shadow-md shadow-pink-600/20 cursor-pointer disabled:opacity-50"
+                      className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold flex items-center gap-1.5 transition-all border border-slate-700 cursor-pointer disabled:opacity-50"
                     >
                       {isImportingToSite ? (
                         <>
@@ -2217,8 +3565,8 @@ const CHAPTER_SYNONYMS: Record<string, string> = {
                         </>
                       ) : (
                         <>
-                          <Sparkles className="w-3.5 h-3.5" />
-                          <span>মেইন সাইটে ড্রাফট হিসেবে যোগ করুন</span>
+                          <Sparkles className="w-3.5 h-3.5 text-pink-400" />
+                          <span>মেইন সাইটে ডিরেক্ট যোগ (অপশনাল)</span>
                         </>
                       )}
                     </button>

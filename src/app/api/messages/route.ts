@@ -27,25 +27,40 @@ export async function POST(req: NextRequest) {
     if (action === 'send_message' && threadId && message) {
       let thread = await db.findOneAsync<any>('conversations', (c: any) => c.id === threadId);
       if (!thread) {
+        const meta = body.threadMeta || {};
         thread = await db.createAsync('conversations', {
           id: threadId,
-          type: threadId.startsWith('thread_batch') ? 'batch_group' : (threadId.startsWith('thread_direct') ? 'direct' : 'doubt'),
-          studentName: message.senderName || 'ব্যবহারকারী',
-          status: 'pending',
+          type: threadId.startsWith('thread_batch') ? 'batch_group' : (threadId.startsWith('thread_direct') ? 'direct' : (threadId.startsWith('thread_support') ? 'support' : 'doubt')),
+          studentId: meta.studentId || message.senderId,
+          studentName: meta.studentName || message.senderName || 'ব্যবহারকারী',
+          studentCollege: meta.studentCollege || 'শিক্ষার্থী',
+          studentAvatar: meta.studentAvatar || message.senderAvatar,
+          courseId: meta.courseId,
+          courseTitle: meta.courseTitle,
+          teacherId: meta.teacherId,
+          teacherName: meta.teacherName,
+          teacherAvatar: meta.teacherAvatar,
+          ticketNumber: meta.ticketNumber,
+          status: body.markSolved ? 'solved' : 'pending',
           messages: [],
         });
       }
 
       const updatedMessages = [...(thread.messages || []), message];
-      const updatedThread = await db.updateAsync('conversations', thread.id, {
+      const updates: any = {
         messages: updatedMessages,
         lastMessageText: message.text || 'ছবি সংযুক্ত করা হয়েছে',
         lastMessageTime: 'এইমাত্র',
         lastUpdated: Date.now(),
         unreadCountTeacher: message.senderRole === 'student' ? (thread.unreadCountTeacher || 0) + 1 : (thread.unreadCountTeacher || 0),
         unreadCountStudent: message.senderRole === 'teacher' ? (thread.unreadCountStudent || 0) + 1 : (thread.unreadCountStudent || 0),
-      });
+      };
 
+      if (body.markSolved) {
+        updates.status = 'solved';
+      }
+
+      const updatedThread = await db.updateAsync('conversations', thread.id, updates);
       return NextResponse.json({ success: true, thread: updatedThread });
     }
 

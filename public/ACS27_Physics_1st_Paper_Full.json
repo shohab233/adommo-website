@@ -1,0 +1,387 @@
+{
+  "courseId": "course_acs27_phy_c1",
+  "courseTitle": "ACS 27 Physics Combo (1st Paper)",
+  "source": "Telegram Protected Channel (AyuGram)",
+  "extractedAt": "2026-09-15T13:19:17.990Z",
+  "totalSubjects": 1,
+  "totalClasses": 42,
+  "subjects": [
+    {
+      "id": "tg_sub_1",
+      "title": "পদার্থবিজ্ঞান ১ম পত্র",
+      "chapters": [
+        {
+          "id": "tg_chap_1",
+          "title": "অধ্যায় ০১: ভৌত জগৎ ও পরিমাপ",
+          "classes": [
+            {
+              "id": "tg_lec_1_1",
+              "classNo": "1",
+              "title": "লেকচার ০১",
+              "videoUrl": "https://youtu.be/L21uif24uJM?si=CjDT1z4vycdlIXnq",
+              "lectureSheetPdf": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRSsEgW-P5Gu5ZBH_KH_LXmEk_ZLlYjOPjAwSvC3QnZMLgpmE9KNJhrYSBVxQTwxBYuEez4vpui00k_/pubhtml",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1H5qQdt5cdSK0v97nLjAjdd-mQTWJoj_w/view?usp=sharing"
+            },
+            {
+              "id": "tg_lec_1_2",
+              "classNo": "2",
+              "title": "লেকচার ০২",
+              "videoUrl": "https://youtu.be/LBbLA5MJVUI?si=aMQLZGdHNv6eZoaq",
+              "lectureSheetPdf": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRSsEgW-P5Gu5ZBH_KH_LXmEk_ZLlYjOPjAwSvC3QnZMLgpmE9KNJhrYSBVxQTwxBYuEez4vpui00k_/pubhtml",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1H5qQdt5cdSK0v97nLjAjdd-mQTWJoj_w/view?usp=sharing"
+            },
+            {
+              "id": "tg_lec_1_3",
+              "classNo": "3",
+              "title": "লেকচার ০৩",
+              "videoUrl": "https://youtu.be/nx43aMbhhEE?si=CPrZ6rked_02ydqZ",
+              "lectureSheetPdf": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRSsEgW-P5Gu5ZBH_KH_LXmEk_ZLlYjOPjAwSvC3QnZMLgpmE9KNJhrYSBVxQTwxBYuEez4vpui00k_/pubhtml",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1H5qQdt5cdSK0v97nLjAjdd-mQTWJoj_w/view?usp=sharing"
+            },
+            {
+              "id": "tg_lec_1_4",
+              "classNo": "4",
+              "title": "লেকচার ০৪",
+              "videoUrl": "https://youtu.be/mrWCySrrcFY?si=CFaSzFW9NVPQ4Vdp",
+              "lectureSheetPdf": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRSsEgW-P5Gu5ZBH_KH_LXmEk_ZLlYjOPjAwSvC3QnZMLgpmE9KNJhrYSBVxQTwxBYuEez4vpui00k_/pubhtml",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1H5qQdt5cdSK0v97nLjAjdd-mQTWJoj_w/view?usp=sharing"
+            },
+            {
+              "id": "tg_lec_1_5",
+              "classNo": "5",
+              "title": "লেকচার ০৫",
+              "videoUrl": "https://youtu.be/YnkwA6hDW2E?si=YWie5lailDJiKQZM",
+              "lectureSheetPdf": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRSsEgW-P5Gu5ZBH_KH_LXmEk_ZLlYjOPjAwSvC3QnZMLgpmE9KNJhrYSBVxQTwxBYuEez4vpui00k_/pubhtml",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1H5qQdt5cdSK0v97nLjAjdd-mQTWJoj_w/view?usp=sharing"
+            },
+            {
+              "id": "tg_lec_1_6",
+              "classNo": "6",
+              "title": "লেকচার ০৬",
+              "videoUrl": "https://youtu.be/zjXA49_KUGc?si=2Am9JvtSDnC-XFhw",
+              "lectureSheetPdf": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRSsEgW-P5Gu5ZBH_KH_LXmEk_ZLlYjOPjAwSvC3QnZMLgpmE9KNJhrYSBVxQTwxBYuEez4vpui00k_/pubhtml",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1H5qQdt5cdSK0v97nLjAjdd-mQTWJoj_w/view?usp=sharing"
+            }
+          ],
+          "practiceSheets": [
+            "https://drive.google.com/file/d/1H5qQdt5cdSK0v97nLjAjdd-mQTWJoj_w/view?usp=sharing",
+            "https://drive.google.com/file/d/1TY6TeiOR-s_zx2ehEZewuAh8U7l9189Y/view?usp=sharing",
+            "https://drive.google.com/file/d/1OQbeP2eQl72j9uRgEn2zGYN-moCPprXW/view?usp=sharing"
+          ]
+        },
+        {
+          "id": "tg_chap_2",
+          "title": "অধ্যায় ০২: ভেক্টর",
+          "classes": [
+            {
+              "id": "tg_lec_2_1",
+              "classNo": "1",
+              "title": "লেকচার ০২ (HSC 27 Orientation Class)",
+              "videoUrl": "https://youtu.be/m7NHfSMXOzE?si=kcLcdsQ6ObSYh1Fr",
+              "lectureSheetPdf": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRSsEgW-P5Gu5ZBH_KH_LXmEk_ZLlYjOPjAwSvC3QnZMLgpmE9KNJhrYSBVxQTwxBYuEez4vpui00k_/pubhtml",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1gl-XZNx0a78JW2dZQWyGNf4OmgoK0Awt/view?usp=sharing"
+            },
+            {
+              "id": "tg_lec_2_2",
+              "classNo": "2",
+              "title": "লেকচার ০৩",
+              "videoUrl": "https://youtu.be/_NHCEniCejE?si=MKPTc6AymxBBS65E",
+              "lectureSheetPdf": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRSsEgW-P5Gu5ZBH_KH_LXmEk_ZLlYjOPjAwSvC3QnZMLgpmE9KNJhrYSBVxQTwxBYuEez4vpui00k_/pubhtml",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1gl-XZNx0a78JW2dZQWyGNf4OmgoK0Awt/view?usp=sharing"
+            },
+            {
+              "id": "tg_lec_2_3",
+              "classNo": "3",
+              "title": "লেকচার ০৪",
+              "videoUrl": "https://youtu.be/Pw-L_raVZJA?si=4Yn5d5DqlRPzOXuo",
+              "lectureSheetPdf": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRSsEgW-P5Gu5ZBH_KH_LXmEk_ZLlYjOPjAwSvC3QnZMLgpmE9KNJhrYSBVxQTwxBYuEez4vpui00k_/pubhtml",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1gl-XZNx0a78JW2dZQWyGNf4OmgoK0Awt/view?usp=sharing"
+            },
+            {
+              "id": "tg_lec_2_4",
+              "classNo": "4",
+              "title": "লেকচার ০৫",
+              "videoUrl": "https://youtu.be/xnw4BL0VPiE?si=utY-WIIDJ7xqSpAW",
+              "lectureSheetPdf": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRSsEgW-P5Gu5ZBH_KH_LXmEk_ZLlYjOPjAwSvC3QnZMLgpmE9KNJhrYSBVxQTwxBYuEez4vpui00k_/pubhtml",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1gl-XZNx0a78JW2dZQWyGNf4OmgoK0Awt/view?usp=sharing"
+            },
+            {
+              "id": "tg_lec_2_5",
+              "classNo": "5",
+              "title": "লেকচার ০৬",
+              "videoUrl": "https://youtu.be/G-ziUuh1OUw?si=w24J6mn55nFeS34A",
+              "lectureSheetPdf": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRSsEgW-P5Gu5ZBH_KH_LXmEk_ZLlYjOPjAwSvC3QnZMLgpmE9KNJhrYSBVxQTwxBYuEez4vpui00k_/pubhtml",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1gl-XZNx0a78JW2dZQWyGNf4OmgoK0Awt/view?usp=sharing"
+            },
+            {
+              "id": "tg_lec_2_6",
+              "classNo": "6",
+              "title": "লেকচার ০৭",
+              "videoUrl": "https://youtu.be/Dwb_FP6qzis?si=ABkWxyySJZmUXIny",
+              "lectureSheetPdf": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRSsEgW-P5Gu5ZBH_KH_LXmEk_ZLlYjOPjAwSvC3QnZMLgpmE9KNJhrYSBVxQTwxBYuEez4vpui00k_/pubhtml",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1gl-XZNx0a78JW2dZQWyGNf4OmgoK0Awt/view?usp=sharing"
+            },
+            {
+              "id": "tg_lec_2_7",
+              "classNo": "7",
+              "title": "লেকচার ০৮",
+              "videoUrl": "https://youtu.be/i3_-FcEk95M?si=5W-E0BhXcucis-kc",
+              "lectureSheetPdf": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRSsEgW-P5Gu5ZBH_KH_LXmEk_ZLlYjOPjAwSvC3QnZMLgpmE9KNJhrYSBVxQTwxBYuEez4vpui00k_/pubhtml",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1gl-XZNx0a78JW2dZQWyGNf4OmgoK0Awt/view?usp=sharing"
+            },
+            {
+              "id": "tg_lec_2_8",
+              "classNo": "8",
+              "title": "লেকচার ০৯",
+              "videoUrl": "https://youtu.be/Rof0e4UzUpU?si=LQiY5gQEMA40N5F9",
+              "lectureSheetPdf": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRSsEgW-P5Gu5ZBH_KH_LXmEk_ZLlYjOPjAwSvC3QnZMLgpmE9KNJhrYSBVxQTwxBYuEez4vpui00k_/pubhtml",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1gl-XZNx0a78JW2dZQWyGNf4OmgoK0Awt/view?usp=sharing"
+            },
+            {
+              "id": "tg_lec_2_9",
+              "classNo": "9",
+              "title": "লেকচার ১০",
+              "videoUrl": "https://youtu.be/8K_rZBEcWY8?si=9l_QBqtHHmLaJrMA",
+              "lectureSheetPdf": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRSsEgW-P5Gu5ZBH_KH_LXmEk_ZLlYjOPjAwSvC3QnZMLgpmE9KNJhrYSBVxQTwxBYuEez4vpui00k_/pubhtml",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1gl-XZNx0a78JW2dZQWyGNf4OmgoK0Awt/view?usp=sharing"
+            },
+            {
+              "id": "tg_lec_2_10",
+              "classNo": "10",
+              "title": "লেকচার ১০ (পার্ট ০02)",
+              "videoUrl": "https://youtu.be/wluAoo6FG30?si=HzOvbdKT9YF2mI9z",
+              "lectureSheetPdf": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRSsEgW-P5Gu5ZBH_KH_LXmEk_ZLlYjOPjAwSvC3QnZMLgpmE9KNJhrYSBVxQTwxBYuEez4vpui00k_/pubhtml",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1gl-XZNx0a78JW2dZQWyGNf4OmgoK0Awt/view?usp=sharing"
+            },
+            {
+              "id": "tg_lec_2_11",
+              "classNo": "11",
+              "title": "লেকচার ১১",
+              "videoUrl": "https://youtu.be/ZRFj1S655A4?si=ASOSqtX5R6-UKgiH",
+              "lectureSheetPdf": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRSsEgW-P5Gu5ZBH_KH_LXmEk_ZLlYjOPjAwSvC3QnZMLgpmE9KNJhrYSBVxQTwxBYuEez4vpui00k_/pubhtml",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1gl-XZNx0a78JW2dZQWyGNf4OmgoK0Awt/view?usp=sharing"
+            },
+            {
+              "id": "tg_lec_2_12",
+              "classNo": "12",
+              "title": "লেকচার ১২",
+              "videoUrl": "https://youtu.be/o9f6NVtDf9M?si=3maF_Wwx7_navc67",
+              "lectureSheetPdf": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRSsEgW-P5Gu5ZBH_KH_LXmEk_ZLlYjOPjAwSvC3QnZMLgpmE9KNJhrYSBVxQTwxBYuEez4vpui00k_/pubhtml",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1gl-XZNx0a78JW2dZQWyGNf4OmgoK0Awt/view?usp=sharing"
+            },
+            {
+              "id": "tg_lec_2_13",
+              "classNo": "13",
+              "title": "লেকচার ১২ (পার্ট ০02)",
+              "videoUrl": "https://youtu.be/_gvVqnyHogc?si=XcoVvMKE3YHcNmmh",
+              "lectureSheetPdf": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRSsEgW-P5Gu5ZBH_KH_LXmEk_ZLlYjOPjAwSvC3QnZMLgpmE9KNJhrYSBVxQTwxBYuEez4vpui00k_/pubhtml",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1gl-XZNx0a78JW2dZQWyGNf4OmgoK0Awt/view?usp=sharing"
+            },
+            {
+              "id": "tg_lec_2_14",
+              "classNo": "14",
+              "title": "লেকচার ১৩",
+              "videoUrl": "https://youtu.be/ubSRjwv3xMQ?si=0Q8y_VrGElXzTe7w",
+              "lectureSheetPdf": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRSsEgW-P5Gu5ZBH_KH_LXmEk_ZLlYjOPjAwSvC3QnZMLgpmE9KNJhrYSBVxQTwxBYuEez4vpui00k_/pubhtml",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1gl-XZNx0a78JW2dZQWyGNf4OmgoK0Awt/view?usp=sharing"
+            },
+            {
+              "id": "tg_lec_2_15",
+              "classNo": "15",
+              "title": "লেকচার ১৪",
+              "videoUrl": "https://youtu.be/AxIPUtDXek0?si=X1zOcf6rM2gNyT4k",
+              "lectureSheetPdf": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRSsEgW-P5Gu5ZBH_KH_LXmEk_ZLlYjOPjAwSvC3QnZMLgpmE9KNJhrYSBVxQTwxBYuEez4vpui00k_/pubhtml",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1gl-XZNx0a78JW2dZQWyGNf4OmgoK0Awt/view?usp=sharing"
+            },
+            {
+              "id": "tg_lec_2_16",
+              "classNo": "16",
+              "title": "লেকচার ১৫",
+              "videoUrl": "https://youtu.be/gYMayQJYs-0?si=ESViNQbbobctG-tb",
+              "lectureSheetPdf": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRSsEgW-P5Gu5ZBH_KH_LXmEk_ZLlYjOPjAwSvC3QnZMLgpmE9KNJhrYSBVxQTwxBYuEez4vpui00k_/pubhtml",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1gl-XZNx0a78JW2dZQWyGNf4OmgoK0Awt/view?usp=sharing"
+            },
+            {
+              "id": "tg_lec_2_17",
+              "classNo": "17",
+              "title": "লেকচার ১৬",
+              "videoUrl": "https://youtu.be/OnXvDYcVVq0?si=VxLs6pVzelU8NO8N",
+              "lectureSheetPdf": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRSsEgW-P5Gu5ZBH_KH_LXmEk_ZLlYjOPjAwSvC3QnZMLgpmE9KNJhrYSBVxQTwxBYuEez4vpui00k_/pubhtml",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1gl-XZNx0a78JW2dZQWyGNf4OmgoK0Awt/view?usp=sharing"
+            },
+            {
+              "id": "tg_lec_2_18",
+              "classNo": "18",
+              "title": "লেকচার ১৭",
+              "videoUrl": "https://youtu.be/AGWHvhbo1L8?si=WWGtvroAgqQkofRi",
+              "lectureSheetPdf": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRSsEgW-P5Gu5ZBH_KH_LXmEk_ZLlYjOPjAwSvC3QnZMLgpmE9KNJhrYSBVxQTwxBYuEez4vpui00k_/pubhtml",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1gl-XZNx0a78JW2dZQWyGNf4OmgoK0Awt/view?usp=sharing"
+            },
+            {
+              "id": "tg_lec_2_19",
+              "classNo": "19",
+              "title": "লেকচার ১৮",
+              "videoUrl": "https://youtu.be/T3ALNVjkNSk?si=gaRgOS8Ll2VGwAmj",
+              "lectureSheetPdf": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRSsEgW-P5Gu5ZBH_KH_LXmEk_ZLlYjOPjAwSvC3QnZMLgpmE9KNJhrYSBVxQTwxBYuEez4vpui00k_/pubhtml",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1gl-XZNx0a78JW2dZQWyGNf4OmgoK0Awt/view?usp=sharing"
+            },
+            {
+              "id": "tg_lec_2_20",
+              "classNo": "20",
+              "title": "লেকচার ১৯",
+              "videoUrl": "https://youtu.be/O2ouOI57gGU?si=qnkE1mJ2skVlyJlI",
+              "lectureSheetPdf": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRSsEgW-P5Gu5ZBH_KH_LXmEk_ZLlYjOPjAwSvC3QnZMLgpmE9KNJhrYSBVxQTwxBYuEez4vpui00k_/pubhtml",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1gl-XZNx0a78JW2dZQWyGNf4OmgoK0Awt/view?usp=sharing"
+            },
+            {
+              "id": "tg_lec_2_21",
+              "classNo": "21",
+              "title": "লেকচার ১৯ (পার্ট ০02)",
+              "videoUrl": "https://youtu.be/lz6tLpbi6tQ?si=oqUPg5mbQYJSjIZN",
+              "lectureSheetPdf": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRSsEgW-P5Gu5ZBH_KH_LXmEk_ZLlYjOPjAwSvC3QnZMLgpmE9KNJhrYSBVxQTwxBYuEez4vpui00k_/pubhtml",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1gl-XZNx0a78JW2dZQWyGNf4OmgoK0Awt/view?usp=sharing"
+            },
+            {
+              "id": "tg_lec_2_22",
+              "classNo": "22",
+              "title": "লেকচার ২০ (Last Class)",
+              "videoUrl": "https://youtu.be/BXeOTM8sP6Y?si=mgLmauiH7CGYHEOF",
+              "lectureSheetPdf": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRSsEgW-P5Gu5ZBH_KH_LXmEk_ZLlYjOPjAwSvC3QnZMLgpmE9KNJhrYSBVxQTwxBYuEez4vpui00k_/pubhtml",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1gl-XZNx0a78JW2dZQWyGNf4OmgoK0Awt/view?usp=sharing"
+            }
+          ],
+          "practiceSheets": [
+            "https://drive.google.com/file/d/1gl-XZNx0a78JW2dZQWyGNf4OmgoK0Awt/view?usp=sharing",
+            "https://drive.google.com/file/d/1MD4HrJUSYuPZx8ug8xtBNzzk6nP_5wk7/view?usp=sharing",
+            "https://drive.google.com/file/d/1jxugsy8Gj0aDir7SUr--lxoXuGAZ1l3c/view?usp=sharing",
+            "https://drive.google.com/file/d/1SDOoQph12tGj2ztCXMqZVmuMnvsRInaI/view?usp=sharing"
+          ]
+        },
+        {
+          "id": "tg_chap_3",
+          "title": "অধ্যায় ০৩: গতিবিদ্যা",
+          "classes": [
+            {
+              "id": "tg_lec_3_1",
+              "classNo": "1",
+              "title": "লেকচার ০১",
+              "videoUrl": "https://youtu.be/Y8pxyQNKuNM?si=FstuRXhtY6WaKlDs",
+              "lectureSheetPdf": "https://drive.google.com/file/d/1C3wcX8v43jmRM-W2__hwaz0ah3wJlMVd/view?usp=sharing",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1Cl6DNxkkaBbhhvgFp3dOaCR6C8CXJhnk/view?usp=sharing"
+            },
+            {
+              "id": "tg_lec_3_2",
+              "classNo": "2",
+              "title": "লেকচার ০২",
+              "videoUrl": "https://youtu.be/pfAVlq92poc?si=TUF_J3tx97H_RlHs",
+              "lectureSheetPdf": "https://drive.google.com/file/d/11nPIDYsIOT7rg3R_3Pg8RKNo0qtnhmLX/view?usp=sharing",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1Cl6DNxkkaBbhhvgFp3dOaCR6C8CXJhnk/view?usp=sharing"
+            },
+            {
+              "id": "tg_lec_3_3",
+              "classNo": "3",
+              "title": "লেকচার ০৩",
+              "videoUrl": "https://youtu.be/4pFsAEi02LE?si=OmxE034GSLCIPlSo",
+              "lectureSheetPdf": "https://drive.google.com/file/d/1UIsvSNwR4YIsXHtnYczJuPNHPwQ-OMMb/view?usp=sharing",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1Cl6DNxkkaBbhhvgFp3dOaCR6C8CXJhnk/view?usp=sharing"
+            },
+            {
+              "id": "tg_lec_3_4",
+              "classNo": "4",
+              "title": "লেকচার ০৪",
+              "videoUrl": "https://youtu.be/4juI6QmEwYI?si=VAiWcH5i9UvenR7H",
+              "lectureSheetPdf": "https://drive.google.com/file/d/1tJovSXrYBfhfLGQH0ft6rI0RG9azruzy/view?usp=sharing",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1Cl6DNxkkaBbhhvgFp3dOaCR6C8CXJhnk/view?usp=sharing"
+            },
+            {
+              "id": "tg_lec_3_5",
+              "classNo": "5",
+              "title": "লেকচার ০৫",
+              "videoUrl": "https://youtu.be/x3D3aTPTrJY?si=mUXtK2910QX7RhSE",
+              "lectureSheetPdf": "https://drive.google.com/file/d/1THAuyD1WQA7VO5J1d3QFil-KdHkcdE2D/view?usp=sharing",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1Cl6DNxkkaBbhhvgFp3dOaCR6C8CXJhnk/view?usp=sharing"
+            },
+            {
+              "id": "tg_lec_3_6",
+              "classNo": "6",
+              "title": "লেকচার ০৬",
+              "videoUrl": "https://youtu.be/Cqjw4_B0SVo?si=lLPqz-15Z9JZ2zY6",
+              "lectureSheetPdf": "https://drive.google.com/file/d/1l9YTJ3vLqc0D9EMblfHPY9ja3udY5wq8/view?usp=sharing",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1Cl6DNxkkaBbhhvgFp3dOaCR6C8CXJhnk/view?usp=sharing"
+            },
+            {
+              "id": "tg_lec_3_7",
+              "classNo": "7",
+              "title": "লেকচার ০৭",
+              "videoUrl": "https://youtu.be/gFOToYVzxSQ",
+              "lectureSheetPdf": "https://drive.google.com/file/d/1wGmDBx4UfA4R7kZk6dxWiTzVX401omqc/view?usp=sharing",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1Cl6DNxkkaBbhhvgFp3dOaCR6C8CXJhnk/view?usp=sharing"
+            },
+            {
+              "id": "tg_lec_3_8",
+              "classNo": "8",
+              "title": "লেকচার ০৮",
+              "videoUrl": "https://youtu.be/0a7fyGIa4tk",
+              "lectureSheetPdf": "https://drive.google.com/file/d/1b-QzMqVoH9kGkluOQ5lE-6Lf_FYFYiMd/view?usp=sharing",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1Cl6DNxkkaBbhhvgFp3dOaCR6C8CXJhnk/view?usp=sharing"
+            },
+            {
+              "id": "tg_lec_3_9",
+              "classNo": "9",
+              "title": "লেকচার ০৯",
+              "videoUrl": "https://youtu.be/XvFXk0aO0Tk",
+              "lectureSheetPdf": "https://drive.google.com/file/d/1MPJohhGny1QHhTFi3SMZ6j1XERjM4E2I/view?usp=sharing",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1Cl6DNxkkaBbhhvgFp3dOaCR6C8CXJhnk/view?usp=sharing"
+            },
+            {
+              "id": "tg_lec_3_10",
+              "classNo": "10",
+              "title": "লেকচার ১০",
+              "videoUrl": "https://youtu.be/y4GxQB6OzJ8",
+              "lectureSheetPdf": "https://drive.google.com/file/d/1MVRZ8vG9duSdDfRmuhokFhlbJxzpuTZr/view?usp=sharing",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1Cl6DNxkkaBbhhvgFp3dOaCR6C8CXJhnk/view?usp=sharing"
+            },
+            {
+              "id": "tg_lec_3_11",
+              "classNo": "11",
+              "title": "লেকচার ১১",
+              "videoUrl": "https://youtu.be/uOi9c2kQ7AE",
+              "lectureSheetPdf": "https://drive.google.com/file/d/1QyjZ8UUS7oDK1sMK0c2CGNZ1VpDR6N4u/view?usp=sharing",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1Cl6DNxkkaBbhhvgFp3dOaCR6C8CXJhnk/view?usp=sharing"
+            },
+            {
+              "id": "tg_lec_3_12",
+              "classNo": "12",
+              "title": "লেকচার ১২",
+              "videoUrl": "https://youtu.be/Hr3CRGn2sgQ",
+              "lectureSheetPdf": null,
+              "practiceSheetPdf": "https://drive.google.com/file/d/1Cl6DNxkkaBbhhvgFp3dOaCR6C8CXJhnk/view?usp=sharing"
+            },
+            {
+              "id": "tg_lec_3_13",
+              "classNo": "13",
+              "title": "লেকচার ১৩",
+              "videoUrl": "https://youtu.be/6vr_uAguWXc",
+              "lectureSheetPdf": "https://drive.google.com/file/d/161lKiXbOFSi2ehiD2jAEWiO4NH441PE6/view?usp=sharing",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1Cl6DNxkkaBbhhvgFp3dOaCR6C8CXJhnk/view?usp=sharing"
+            },
+            {
+              "id": "tg_lec_3_14",
+              "classNo": "14",
+              "title": "লেকচার ১৪",
+              "videoUrl": "https://youtu.be/joRFELXcbEk",
+              "lectureSheetPdf": "https://drive.google.com/file/d/1AMLFQCoYYSLbGHi4_LQUUgdwsb1NJ2AW/view?usp=sharing",
+              "practiceSheetPdf": "https://drive.google.com/file/d/1Cl6DNxkkaBbhhvgFp3dOaCR6C8CXJhnk/view?usp=sharing"
+            }
+          ],
+          "practiceSheets": [
+            "https://drive.google.com/file/d/1Cl6DNxkkaBbhhvgFp3dOaCR6C8CXJhnk/view?usp=sharing",
+            "https://drive.google.com/file/d/14cxm6aOScDMclla2Tib3au0M75o-Gxg6/view?usp=sharing",
+            "https://drive.google.com/file/d/147OVBNCKSFAPrVcmBOlxmcqykNCgsL1u/view?usp=sharing",
+            "https://drive.google.com/file/d/1Drw9PHs8BU7rl7OH2xrwbJFly3WFVPVM/view?usp=sharing"
+          ]
+        }
+      ]
+    }
+  ]
+}

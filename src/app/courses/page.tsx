@@ -19,6 +19,7 @@ export default function AllCoursesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState<'default' | 'price-low' | 'price-high' | 'enrolled'>('default');
+  const [visibleCount, setVisibleCount] = useState(12);
 
   const categories = [
     { label: 'সকল কোর্স', value: 'all' },
@@ -30,7 +31,7 @@ export default function AllCoursesPage() {
   ];
 
   const uniqueCourses = Array.from(new Map(courses.map((c) => [c.id, c])).values());
-  const publishedCourses = uniqueCourses.filter((c) => !c.isDraft);
+  const publishedCourses = uniqueCourses.filter((c) => !c.isDraft && !c.isArchived);
 
   const filteredCourses = publishedCourses
     .filter((c) => {
@@ -51,6 +52,9 @@ export default function AllCoursesPage() {
       if (sortBy === 'enrolled') return b.enrolledCount - a.enrolledCount;
       return 0;
     });
+
+  const displayedCourses = filteredCourses.slice(0, visibleCount);
+  const hasMore = visibleCount < filteredCourses.length;
 
   return (
     <div className="bg-white min-h-screen pb-20 pt-6 font-sans">
@@ -157,10 +161,24 @@ export default function AllCoursesPage() {
 
         {/* Course Cards Grid */}
         {filteredCourses.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
-            {filteredCourses.map((course) => (
-              <CourseCard key={course.id} course={course} />
-            ))}
+          <div className="space-y-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
+              {displayedCourses.map((course) => (
+                <CourseCard key={course.id} course={course} />
+              ))}
+            </div>
+
+            {hasMore && (
+              <div className="pt-6 pb-2 text-center">
+                <button
+                  type="button"
+                  onClick={() => setVisibleCount((prev) => prev + 12)}
+                  className="px-8 py-3.5 rounded-full bg-gradient-to-r from-[#ed347d] to-[#d9226b] text-white font-black text-xs hover:shadow-lg hover:shadow-pink-500/25 transition-all active:scale-95"
+                >
+                  আরও কোর্স দেখুন ({filteredCourses.length - visibleCount}টি বাকি)
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           <div className="text-center py-20 bg-slate-50 rounded-3xl border border-slate-200 p-8 space-y-3">

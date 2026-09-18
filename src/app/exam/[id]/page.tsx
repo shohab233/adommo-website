@@ -375,23 +375,8 @@ export default function ExamPage({
     // CQ score calculation: award simulated marks based on student written completion
     let cqMarksTotal = 0;
     if (isCombined || isWrittenOnly) {
-      creativeQuestions.forEach((cq) => {
-        const answersForCq = writtenAnswers[cq.id] || {};
-        cq.subQuestions.forEach((sq) => {
-          const writtenLen = (answersForCq[sq.part] || '').trim().length;
-          if (writtenLen > 20) {
-            cqMarksTotal += sq.marks * 0.9;
-          } else if (writtenLen > 5) {
-            cqMarksTotal += sq.marks * 0.6;
-          } else if (writtenLen > 0) {
-            cqMarksTotal += sq.marks * 0.4;
-          }
-        });
-      });
-      cqMarksTotal = Math.round(cqMarksTotal * 10) / 10;
-      if (cqMarksTotal === 0 && (isCombined || isWrittenOnly)) {
-        cqMarksTotal = Math.round((exam.cqMarks || 70) * 0.75);
-      }
+      // Written CQ requires teacher grading
+      cqMarksTotal = 0;
     }
 
     const totalCalculatedScore = isCombined ? (mcqScore + cqMarksTotal) : (isWrittenOnly ? cqMarksTotal : mcqScore);

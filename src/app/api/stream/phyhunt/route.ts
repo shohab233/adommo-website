@@ -1,18 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server';
+import fs from 'fs';
+import path from 'path';
 
-/**
- * 🎬 ADOMMO x Physics Hunters Video Streaming Proxy
- * Bypasses Cloudflare Referer checks & proxies AES-128 M3U8 and .ts segments
- */
+const KEY_CACHE_DIR = path.join(process.cwd(), '.cache', 'phyhunt_keys');
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const slug = searchParams.get('slug') || 'cmp6vector_part1';
   const file = searchParams.get('file') || 'master.m3u8';
   const token = searchParams.get('token') || '109980:cmp6vector_part1:1789428291:eeefcfb169ab62fc';
+  const cacheFile = path.join(KEY_CACHE_DIR, `${slug}.key`);
+
+  // Check if status check requested
+  if (file === 'status') {
+    const isCached = fs.existsSync(cacheFile);
+    return NextResponse.json({
+      slug,
+      isKeyCached: isCached,
+      cacheFile: isCached ? cacheFile : null
+    });
+  }
 
   // 1. Master Key endpoint
   if (file === 'key') {
+    // Check permanent local disk cache first
+    if (fs.existsSync(cacheFile)) {
+      try {
+        const cachedKey = fs.readFileSync(cacheFile);
+        if (cachedKey.length === 16) {
+          return new NextResponse(cachedKey, {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/octet-stream',
+              'Access-Control-Allow-Origin': '*',
+              'Cache-Control': 'public, max-age=31536000, immutable'
+            }
+          });
+        }
+      } catch (e) {
+        console.error('Error reading key cache:', e);
+      }
+    }
+
     const keyUrl = `https://www.phyhunt.com/course/lms-v2/api/hls/master-key/?slug=${encodeURIComponent(slug)}&token=${encodeURIComponent(token)}`;
     try {
       const keyRes = await fetch(keyUrl, {
@@ -24,11 +53,23 @@ export async function GET(request: NextRequest) {
       });
 
       if (!keyRes.ok) {
-        return new NextResponse('Key fetch failed: ' + keyRes.status, { status: keyRes.status });
+        return new NextResponse(`Key fetch failed: ${keyRes.status} (PhyHunt token expired or authentication required)`, { status: keyRes.status });
       }
 
       const keyBuffer = await keyRes.arrayBuffer();
-      return new NextResponse(Buffer.from(keyBuffer), {
+      const buf = Buffer.from(keyBuffer);
+
+      // Save key permanently to disk cache so it never expires again
+      if (buf.length === 16) {
+        try {
+          if (!fs.existsSync(KEY_CACHE_DIR)) fs.mkdirSync(KEY_CACHE_DIR, { recursive: true });
+          fs.writeFileSync(cacheFile, buf);
+        } catch (e) {
+          console.error('Failed to write key cache file:', e);
+        }
+      }
+
+      return new NextResponse(buf, {
         status: 200,
         headers: {
           'Content-Type': 'application/octet-stream',
@@ -123,4 +164,52 @@ export async function GET(request: NextRequest) {
   }
 
   return new NextResponse('Invalid request', { status: 400 });
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { slug = 'cmp6vector_part1', keyHex, token } = body;
+    const cacheFile = path.join(KEY_CACHE_DIR, `${slug}.key`);
+
+    if (keyHex && typeof keyHex === 'string') {
+      const cleanHex = keyHex.trim().replace(/^0x/i, '');
+      const buf = Buffer.from(cleanHex, 'hex');
+      if (buf.length === 16) {
+        if (!fs.existsSync(KEY_CACHE_DIR)) fs.mkdirSync(KEY_CACHE_DIR, { recursive: true });
+        fs.writeFileSync(cacheFile, buf);
+        return NextResponse.json({ success: true, message: '16-byte AES-128 key saved permanently!' });
+      } else {
+        return NextResponse.json({ success: false, message: `Invalid key length: expected 16 bytes (32 hex characters), got ${buf.length} bytes.` }, { status: 400 });
+      }
+    }
+
+    if (token && typeof token === 'string') {
+      const keyUrl = `https://www.phyhunt.com/course/lms-v2/api/hls/master-key/?slug=${encodeURIComponent(slug)}&token=${encodeURIComponent(token.trim())}`;
+      const keyRes = await fetch(keyUrl, {
+        headers: {
+          'Referer': 'https://www.phyhunt.com/',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        },
+        cache: 'no-store'
+      });
+
+      if (!keyRes.ok) {
+        return NextResponse.json({ success: false, message: `PhyHunt rejected token with HTTP ${keyRes.status}. Token may be expired or invalid.` }, { status: 400 });
+      }
+
+      const keyBuffer = await keyRes.arrayBuffer();
+      const buf = Buffer.from(keyBuffer);
+      if (buf.length === 16) {
+        if (!fs.existsSync(KEY_CACHE_DIR)) fs.mkdirSync(KEY_CACHE_DIR, { recursive: true });
+        fs.writeFileSync(cacheFile, buf);
+        const hex = buf.toString('hex');
+        return NextResponse.json({ success: true, message: 'Master key successfully fetched and permanently saved!', keyHex: hex });
+      }
+    }
+
+    return NextResponse.json({ success: false, message: 'Please provide either a valid keyHex (32 hex characters) or a fresh token.' }, { status: 400 });
+  } catch (err: any) {
+    return NextResponse.json({ success: false, message: err.message }, { status: 500 });
+  }
 }

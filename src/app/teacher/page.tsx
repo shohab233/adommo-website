@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
-import { Course, CourseModule, CreativeQuestion, QuestionBankItem, DetailedExamSubmission } from '@/types';
+import { Course, CourseModule, CreativeQuestion, QuestionBankItem, DetailedExamSubmission, PayoutRecord } from '@/types';
 import AdommoLogo from '@/components/AdommoLogo';
 import TeacherKycScreen from '@/components/TeacherKycScreen';
 import CourseJsonUploadModal from '@/components/CourseJsonUploadModal';
@@ -65,6 +65,7 @@ import {
   Archive,
   CheckSquare,
   BookMarked,
+  Bookmark,
   Flame,
   Sliders,
   FileCheck,
@@ -73,6 +74,10 @@ import {
   Pin,
   Filter,
   AlertTriangle,
+  Building2,
+  CreditCard,
+  WalletCards,
+  Receipt,
 } from 'lucide-react';
 
 export default function TeacherDashboardPage() {
@@ -507,6 +512,11 @@ export default function TeacherDashboardPage() {
       (e.trxId && e.trxId.toLowerCase().includes(q))
     );
   }, [todayEnrollments, todaySearch]);
+
+  // Search and filter states for students module submenus
+  const [coursewiseFilterId, setCoursewiseFilterId] = useState<string>('all');
+  const [studentResultsExamFilter, setStudentResultsExamFilter] = useState<string>('all');
+  const [studentResultsSearch, setStudentResultsSearch] = useState<string>('');
 
   // ==================== FORM STATES FOR ALL 10 MODULES ====================
   // 1. Multi-Step Course Creation Wizard State (7 Steps)
@@ -975,12 +985,163 @@ export default function TeacherDashboardPage() {
   const [directSearchQuery, setDirectSearchQuery] = useState<string>('');
   const [selectedZoomImage, setSelectedZoomImage] = useState<string | null>(null);
 
-  // 8. Teacher Profile Settings
+  // ==================== 8. TEACHER EARNINGS & PAYOUTS MODULE ====================
+  const [teacherPayouts, setTeacherPayouts] = useState<PayoutRecord[]>([]);
+  const [isPayoutModalOpen, setIsPayoutModalOpen] = useState(false);
+  const [isSubmittingPayout, setIsSubmittingPayout] = useState(false);
+  const [withdrawForm, setWithdrawForm] = useState({
+    amount: '',
+    method: 'bKash' as 'bKash' | 'Nagad' | 'Bank Transfer',
+    accountNumber: '',
+    bankName: 'সিটি ব্যাংক লিমিটেড',
+    branchName: '',
+    accountName: '',
+    routingNumber: '',
+    note: '',
+  });
+
+  const refreshTeacherPayouts = () => {
+    if (!currentUser?.id) return;
+    fetch(`/api/admin/payouts?teacherId=${currentUser.id}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.success && Array.isArray(data.payouts)) {
+          setTeacherPayouts(data.payouts);
+        }
+      })
+      .catch((err) => console.log('Teacher payouts error:', err));
+  };
+
+  useEffect(() => {
+    if (currentUser?.id) {
+      refreshTeacherPayouts();
+    }
+  }, [currentUser?.id]);
+
+  const teacherCommissionRate = (currentUser as any)?.commissionPercent || 80;
+  const teacherEarnedTotal = Math.round(teacherTotalSales * (teacherCommissionRate / 100));
+  const teacherPaidOutSum = useMemo(() => {
+    return teacherPayouts
+      .filter((p) => p.status === 'paid')
+      .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  }, [teacherPayouts]);
+  const teacherPendingPayoutSum = useMemo(() => {
+    return teacherPayouts
+      .filter((p) => p.status === 'pending')
+      .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  }, [teacherPayouts]);
+  const teacherAvailableBalance = Math.max(0, teacherEarnedTotal - teacherPaidOutSum - teacherPendingPayoutSum);
+
+  const handleRequestPayoutSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const withdrawAmount = Number(withdrawForm.amount);
+    if (!withdrawAmount || withdrawAmount <= 0) {
+      showToast('⚠️ সঠিক উত্তোলনের টাকার অঙ্ক লিখুন!');
+      return;
+    }
+    if (withdrawAmount > teacherAvailableBalance) {
+      showToast(`⚠️ উত্তোলনের পরিমাণ বর্তমান ব্যালেন্স (৳ ${teacherAvailableBalance.toLocaleString('en-BD')}) এর বেশি হতে পারবে না!`);
+      return;
+    }
+    if (withdrawAmount < 500) {
+      showToast('⚠️ সর্বনিম্ন উত্তোলনের পরিমাণ ৫০০ টাকা!');
+      return;
+    }
+
+    if (withdrawForm.method === 'Bank Transfer') {
+      if (!withdrawForm.bankName.trim() || !withdrawForm.accountNumber.trim() || !withdrawForm.accountName.trim()) {
+        showToast('⚠️ ব্যাংকের নাম, হিসাবের নাম ও একাউন্ট নম্বর প্রদান করুন!');
+        return;
+      }
+    } else {
+      if (!withdrawForm.accountNumber.trim()) {
+        showToast('⚠️ মোবাইল নম্বর প্রদান করুন!');
+        return;
+      }
+    }
+
+    try {
+      setIsSubmittingPayout(true);
+      const res = await fetch('/api/admin/payouts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          teacherId: currentUser.id,
+          teacherName: currentUser.name || 'শিক্ষক',
+          teacherEmail: currentUser.email || '',
+          teacherPhone: currentUser.phone || '',
+          amount: withdrawAmount,
+          method: withdrawForm.method,
+          accountNumber: withdrawForm.accountNumber.trim(),
+          bankDetails: withdrawForm.method === 'Bank Transfer' ? {
+            bankName: withdrawForm.bankName.trim(),
+            branchName: withdrawForm.branchName.trim(),
+            accountName: withdrawForm.accountName.trim(),
+            accountNumber: withdrawForm.accountNumber.trim(),
+            routingNumber: withdrawForm.routingNumber.trim(),
+          } : null,
+          note: withdrawForm.note.trim() || 'ফ্যাকাল্টি রেগুলার উইথড্রল রিকোয়েস্ট',
+          status: 'pending',
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setIsPayoutModalOpen(false);
+        setWithdrawForm({
+          amount: '',
+          method: 'bKash',
+          accountNumber: '',
+          bankName: 'সিটি ব্যাংক লিমিটেড',
+          branchName: '',
+          accountName: '',
+          routingNumber: '',
+          note: '',
+        });
+        refreshTeacherPayouts();
+        showToast(`🎉 ৳ ${withdrawAmount.toLocaleString('en-BD')} টাকা উত্তোলনের আবেদন সফলভাবে পাঠানো হয়েছে! অ্যাডমিন যাচাইপূর্বক নিষ্পত্তি করবেন।`);
+      } else {
+        showToast(data.error || 'আবেদন পাঠাতে সমস্যা হয়েছে!');
+      }
+    } catch {
+      showToast('সার্ভারে যোগাযোগ করতে ব্যর্থ হয়েছে!');
+    } finally {
+      setIsSubmittingPayout(false);
+    }
+  };
+
+  // 9. Teacher Profile Settings
   const [profileBio, setProfileBio] = useState((currentUser as any)?.bio || 'অনবোর্ডেড শিক্ষক ও ফ্যাকাল্টি মেম্বার।');
   const [profilePhoto, setProfilePhoto] = useState(currentUser.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80');
+  const [profileInstitution, setProfileInstitution] = useState(currentUser.college || 'ঢাকা বিশ্ববিদ্যালয়');
+  const [profileSubjectState, setProfileSubjectState] = useState(teacherSubject || 'পদার্থবিজ্ঞান (Physics)');
   const [profileNewPassword, setProfileNewPassword] = useState('');
   const [profileConfirmPassword, setProfileConfirmPassword] = useState('');
+  const [showProfilePassword, setShowProfilePassword] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  // Notification Preferences State
+  const [teacherNotifPrefs, setTeacherNotifPrefs] = useState<{
+    enrollmentAlert: boolean;
+    doubtAlert: boolean;
+    cqScriptAlert: boolean;
+    liveReminder: boolean;
+    weeklySummary: boolean;
+  }>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('adommo_teacher_notif_prefs');
+        if (saved) return JSON.parse(saved);
+      } catch {}
+    }
+    return {
+      enrollmentAlert: true,
+      doubtAlert: true,
+      cqScriptAlert: true,
+      liveReminder: true,
+      weeklySummary: false,
+    };
+  });
 
   const handleSaveProfile = async () => {
     if (profileNewPassword && profileNewPassword !== profileConfirmPassword) {
@@ -994,6 +1155,11 @@ export default function TeacherDashboardPage() {
 
     try {
       setIsSavingProfile(true);
+      // Persist notification preferences
+      try {
+        localStorage.setItem('adommo_teacher_notif_prefs', JSON.stringify(teacherNotifPrefs));
+      } catch {}
+
       const res = await fetch('/api/teacher/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -1003,6 +1169,7 @@ export default function TeacherDashboardPage() {
           email: currentUser.email,
           avatar: profilePhoto,
           bio: profileBio,
+          college: profileInstitution,
           newPassword: profileNewPassword || undefined,
         }),
       });
@@ -1073,7 +1240,7 @@ export default function TeacherDashboardPage() {
     showToast('কোর্স এডিট বাতিল করা হয়েছে। নতুন কোর্স ক্রিয়েটর ফর্ম প্রস্তুত।');
   };
 
-  const handlePublishWizardCourse = (_saveAsDraft?: boolean) => {
+  const handlePublishWizardCourse = (saveAsDraft?: boolean) => {
     if (!wTitle.trim()) {
       showToast('দয়া করে কোর্সের নাম লিখুন (ধাপ ১)');
       setWizardStep(1);
@@ -1086,6 +1253,10 @@ export default function TeacherDashboardPage() {
 
     const leadMentor = wMentors[0];
     const existingCourse = editingCourseId ? courses.find(c => c.id === editingCourseId) : null;
+
+    const isDraftState = saveAsDraft !== undefined 
+      ? saveAsDraft 
+      : (existingCourse ? (existingCourse.isDraft ?? false) : false);
 
     const discountExpires = new Date(
       Date.now() + (Number(wCountdownDays || 0) * 86400000) + (Number(wCountdownHours || 0) * 3600000)
@@ -1149,8 +1320,9 @@ export default function TeacherDashboardPage() {
       comboCourseIds: wComboIds || existingCourse?.comboCourseIds || [],
       couponCode: wCouponCode,
       couponDiscount: Number(wCouponDiscount) || 200,
-      isDraft: false,
-      isPublished: true,
+      isDraft: isDraftState,
+      isPublished: !isDraftState,
+      isArchived: false,
       instructorId: currentUser.id || existingCourse?.instructorId || '',
       teacherEmail: currentUser.email || existingCourse?.teacherEmail || '',
       teacherPhone: currentUser.phone || existingCourse?.teacherPhone || '',
@@ -1168,8 +1340,8 @@ export default function TeacherDashboardPage() {
       setWizardStep(1);
       setWTitle('');
       setActiveMenu('courses');
-      setActiveSubMenu('courses_all');
-      showToast('🎉 কোর্সটি সফলভাবে আপডেট ও লাইভ পাবলিশ করা হয়েছে!');
+      setActiveSubMenu(isDraftState ? 'courses_draft' : 'courses_all');
+      showToast(isDraftState ? '📁 কোর্সটি ড্রাফট হিসেবে আপডেট ও সংরক্ষণ করা হয়েছে!' : '🎉 কোর্সটি সফলভাবে আপডেট ও লাইভ পাবলিশ করা হয়েছে!');
       return;
     }
 
@@ -1179,8 +1351,8 @@ export default function TeacherDashboardPage() {
     setWizardStep(1);
     setWTitle('');
     setActiveMenu('courses');
-    setActiveSubMenu('courses_all');
-    showToast('🎉 অভিনন্দন! নতুন কোর্সটি সফলভাবে তৈরি ও লাইভ পাবলিশ করা হয়েছে।');
+    setActiveSubMenu(isDraftState ? 'courses_draft' : 'courses_published');
+    showToast(isDraftState ? '📁 নতুন কোর্সটি ড্রাফট (খসড়া) হিসেবে সফলভাবে সংরক্ষণ করা হয়েছে!' : '🎉 অভিনন্দন! নতুন কোর্সটি সফলভাবে তৈরি ও লাইভ পাবলিশ করা হয়েছে।');
   };
 
   const handleCreateCourse = (e: React.FormEvent) => {
@@ -2491,8 +2663,18 @@ export default function TeacherDashboardPage() {
       ]
     },
     {
+      id: 'earnings',
+      label: '৯. উপার্জন ও পেআউট (Earnings)',
+      icon: DollarSign,
+      subMenus: [
+        { id: 'earnings_overview', label: '১. উপার্জনের হিসাব (Overview)' },
+        { id: 'earnings_withdraw', label: '২. উত্তোলনের আবেদন (Request Payout)' },
+        { id: 'earnings_history', label: '৩. পেআউট রেকর্ড ও স্টেটমেন্ট (History)' },
+      ]
+    },
+    {
       id: 'settings',
-      label: '৯. Profile & Settings',
+      label: '১০. Profile & Settings',
       icon: Settings,
       subMenus: [
         { id: 'profile_view', label: 'Teacher Profile' },
@@ -2656,7 +2838,8 @@ export default function TeacherDashboardPage() {
                 idx === 1 ? 'কোর্স ও কনটেন্ট' :
                 idx === 3 ? 'পরীক্ষা ও মূল্যায়ন' :
                 idx === 4 ? 'ইন্টারঅ্যাকশন ও স্টুডিও' :
-                idx === 8 ? 'অ্যাকাউন্ট ও সেটিংস' : null;
+                idx === 8 ? 'উপার্জন ও পেআউট' :
+                idx === 9 ? 'অ্যাকাউন্ট ও সেটিংস' : null;
 
               return (
                 <div key={item.id} className="space-y-1">
@@ -3115,8 +3298,8 @@ export default function TeacherDashboardPage() {
                         </div>
 
                         <div className="space-y-3">
-                          {teacherCourses.slice(0, 3).map((c) => (
-                            <div key={c.id} className="flex items-center justify-between p-3.5 rounded-2xl border border-slate-100 hover:bg-slate-50 transition-colors">
+                          {teacherCourses.slice(0, 3).map((c, idx) => (
+                            <div key={c.id ? `${c.id}_${idx}` : `course_idx_${idx}`} className="flex items-center justify-between p-3.5 rounded-2xl border border-slate-100 hover:bg-slate-50 transition-colors">
                               <div className="flex items-center gap-3">
                                 <img src={c.coverImage} alt={c.title} className="w-12 h-12 rounded-xl object-cover" />
                                 <div>
@@ -3857,7 +4040,7 @@ export default function TeacherDashboardPage() {
                       activeSubMenu === 'courses_all' ? 'bg-[#ed347d] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'
                     }`}
                   >
-                    All Courses ({teacherCourses.length})
+                    All Courses ({teacherCourses.filter(c => !c.isArchived).length})
                   </button>
                   <button
                     onClick={() => setActiveSubMenu('courses_create')}
@@ -3885,7 +4068,7 @@ export default function TeacherDashboardPage() {
                       activeSubMenu === 'courses_published' ? 'bg-[#ed347d] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'
                     }`}
                   >
-                    Published Courses ({teacherCourses.filter(c => !c.isDraft).length})
+                    Published Courses ({teacherCourses.filter(c => !c.isDraft && !c.isArchived).length})
                   </button>
                   <button
                     onClick={() => setActiveSubMenu('courses_draft')}
@@ -3893,7 +4076,7 @@ export default function TeacherDashboardPage() {
                       activeSubMenu === 'courses_draft' ? 'bg-[#ed347d] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'
                     }`}
                   >
-                    Draft Courses ({teacherCourses.filter(c => c.isDraft).length})
+                    Draft Courses ({teacherCourses.filter(c => c.isDraft && !c.isArchived).length})
                   </button>
                   <button
                     onClick={() => setActiveSubMenu('courses_archived')}
@@ -3901,7 +4084,7 @@ export default function TeacherDashboardPage() {
                       activeSubMenu === 'courses_archived' ? 'bg-[#ed347d] text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'
                     }`}
                   >
-                    Archived Courses (০)
+                    Archived Courses ({teacherCourses.filter(c => c.isArchived).length})
                   </button>
                 </div>
 
@@ -3920,8 +4103,8 @@ export default function TeacherDashboardPage() {
               {/* View: All / Published Courses */}
               {(activeSubMenu === 'courses_all' || activeSubMenu === 'courses_published') && (() => {
                 const displayedCourses = activeSubMenu === 'courses_published'
-                  ? teacherCourses.filter(c => !c.isDraft)
-                  : teacherCourses;
+                  ? teacherCourses.filter(c => !c.isDraft && !c.isArchived)
+                  : teacherCourses.filter(c => !c.isArchived);
                 return displayedCourses.length === 0 ? (
                   <div className="bg-white p-12 text-center rounded-3xl border border-slate-200/80 shadow-xs space-y-3">
                     <BookOpen className="w-12 h-12 text-pink-300 mx-auto" />
@@ -3937,8 +4120,8 @@ export default function TeacherDashboardPage() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {displayedCourses.map((c) => (
-                      <div key={c.id} className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between">
+                    {displayedCourses.map((c, idx) => (
+                      <div key={c.id ? `${c.id}_${idx}` : `displayed_course_${idx}`} className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between">
                         <div>
                           <img src={c.coverImage} alt={c.title} className="w-full h-44 object-cover" />
                           <div className="p-5 space-y-3">
@@ -3946,7 +4129,18 @@ export default function TeacherDashboardPage() {
                               <span className="text-[10px] font-extrabold bg-[#fff0f5] text-[#ed347d] px-2.5 py-0.5 rounded-full">
                                 {c.category}
                               </span>
-                              <span className="text-xs font-black text-slate-800">৳ {c.offerPrice}</span>
+                              <div className="flex items-center gap-1.5">
+                                {c.isDraft ? (
+                                  <span className="text-[10px] font-black bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-full">
+                                    খসড়া (Draft)
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] font-black bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full">
+                                    প্রকাশিত
+                                  </span>
+                                )}
+                                <span className="text-xs font-black text-slate-800">৳ {c.offerPrice}</span>
+                              </div>
                             </div>
                             <h3 className="text-sm font-black text-slate-900 line-clamp-1">{c.title}</h3>
                             <p className="text-xs text-slate-500 line-clamp-2">{c.description}</p>
@@ -3954,7 +4148,7 @@ export default function TeacherDashboardPage() {
                             <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600 font-bold">
                               <span>লেকচার: {c.totalLectures}</span>
                               <span>এক্সাম: {c.totalExams}</span>
-                              <span className="text-emerald-600">প্রকাশিত</span>
+                              <span className="text-slate-500 font-mono text-[11px]">{c.batch || '২০২৬ ব্যাচ'}</span>
                             </div>
                           </div>
                         </div>
@@ -3963,11 +4157,55 @@ export default function TeacherDashboardPage() {
                           <button
                             type="button"
                             onClick={() => startEditingCourse(c)}
-                            className="px-3 py-2 rounded-xl text-xs font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 flex items-center gap-1 cursor-pointer transition-colors"
+                            className="px-2.5 py-2 rounded-xl text-xs font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 flex items-center gap-1 cursor-pointer transition-colors"
+                            title="কোর্স তথ্য ও মূল্য এডিট করুন"
                           >
                             <Edit3 className="w-3.5 h-3.5 text-amber-600" />
                             <span>এডিট</span>
                           </button>
+
+                          {c.isDraft ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                updateCourse(c.id, { isDraft: false, isPublished: true });
+                                showToast(`🎉 "${c.title}" কোর্সটি সরাসরি লাইভ পাবলিশ করা হয়েছে!`);
+                              }}
+                              className="px-2.5 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 flex items-center gap-1 cursor-pointer transition-colors shadow-xs"
+                              title="সরাসরি পাবলিশ করুন"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>পাবলিশ</span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                updateCourse(c.id, { isDraft: true, isPublished: false });
+                                showToast(`📁 "${c.title}" কোর্সটি ড্রাফট (খসড়া) করা হয়েছে!`);
+                              }}
+                              className="px-2.5 py-2 rounded-xl text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200 flex items-center gap-1 cursor-pointer transition-colors"
+                              title="ড্রাফটে পাঠান"
+                            >
+                              <Bookmark className="w-3.5 h-3.5 text-amber-600" />
+                              <span>ড্রাফট</span>
+                            </button>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (confirm(`আপনি কি "${c.title}" কোর্সটি আর্কাইভ করতে চান? এটি সক্রিয় তালিকা থেকে লুকিয়ে আর্কাইভ ট্যাবে থাকবে।`)) {
+                                updateCourse(c.id, { isArchived: true });
+                                showToast(`📦 "${c.title}" কোর্সটি সফলভাবে আর্কাইভ করা হয়েছে!`);
+                              }
+                            }}
+                            className="px-2.5 py-2 rounded-xl text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 flex items-center gap-1 cursor-pointer transition-colors"
+                            title="কোর্স আর্কাইভ করুন"
+                          >
+                            <Archive className="w-3.5 h-3.5 text-purple-600" />
+                          </button>
+
                           <button
                             type="button"
                             onClick={() => {
@@ -3976,12 +4214,12 @@ export default function TeacherDashboardPage() {
                                 showToast('🗑️ কোর্সটি সফলভাবে মুছে ফেলা হয়েছে!');
                               }
                             }}
-                            className="px-2.5 py-2 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 flex items-center gap-1 cursor-pointer transition-colors"
+                            className="px-2 py-2 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 flex items-center gap-1 cursor-pointer transition-colors"
                             title="কোর্স মুছুন"
                           >
                             <Trash2 className="w-3.5 h-3.5 text-rose-600" />
-                            <span>ডিলিট</span>
                           </button>
+
                           <button
                             onClick={() => {
                               setSelectedCourseForSection(c.id);
@@ -3997,10 +4235,10 @@ export default function TeacherDashboardPage() {
                           <Link
                             href={`/courses/${c.id}`}
                             target="_blank"
-                            className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 flex items-center gap-1 cursor-pointer transition-colors"
+                            className="px-2.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 flex items-center gap-1 cursor-pointer transition-colors"
+                            title="শিক্ষার্থীদের জন্য ক্লাসরুম প্রিভিউ"
                           >
                             <ExternalLink className="w-3.5 h-3.5 text-[#ed347d]" />
-                            <span>স্টুডেন্ট ভিউ</span>
                           </Link>
                         </div>
                       </div>
@@ -4294,18 +4532,44 @@ export default function TeacherDashboardPage() {
                               onChange={(e) => {
                                 const file = e.target.files?.[0];
                                 if (file) {
-                                  if (file.size > 5 * 1024 * 1024) {
-                                    showToast('⚠️ ছবির সাইজ ৫ মেগাবাইট (MB) এর কম হতে হবে');
+                                  if (file.size > 10 * 1024 * 1024) {
+                                    showToast('⚠️ ছবির সাইজ ১০ মেগাবাইট (MB) এর কম হতে হবে');
                                     return;
                                   }
-                                  const reader = new FileReader();
-                                  reader.onload = (uploadEvent) => {
-                                    if (uploadEvent.target?.result) {
-                                      setWCoverImage(uploadEvent.target.result as string);
-                                      showToast('✅ ইমেজ সফলভাবে আপলোড হয়েছে!');
-                                    }
-                                  };
-                                  reader.readAsDataURL(file);
+                                  showToast('⏳ ইমেজ প্রসেস ও আপলোড হচ্ছে...');
+                                  const formData = new FormData();
+                                  formData.append('file', file);
+                                  formData.append('folder', 'courses');
+                                  formData.append('prefix', 'course_cover');
+
+                                  fetch('/api/upload', {
+                                    method: 'POST',
+                                    body: formData,
+                                  })
+                                    .then((res) => res.json())
+                                    .then((data) => {
+                                      if (data.success && data.url) {
+                                        setWCoverImage(data.url);
+                                        showToast('✅ ইমেজ সফলভাবে আপলোড হয়েছে!');
+                                      } else {
+                                        const reader = new FileReader();
+                                        reader.onload = (uploadEvent) => {
+                                          if (uploadEvent.target?.result) {
+                                            setWCoverImage(uploadEvent.target.result as string);
+                                          }
+                                        };
+                                        reader.readAsDataURL(file);
+                                      }
+                                    })
+                                    .catch(() => {
+                                      const reader = new FileReader();
+                                      reader.onload = (uploadEvent) => {
+                                        if (uploadEvent.target?.result) {
+                                          setWCoverImage(uploadEvent.target.result as string);
+                                        }
+                                      };
+                                      reader.readAsDataURL(file);
+                                    });
                                 }
                               }}
                             />
@@ -5324,14 +5588,22 @@ export default function TeacherDashboardPage() {
                           <span>তথ্য সংশোধন করুন</span>
                         </button>
 
-                        <div className="flex items-center gap-2.5 w-full sm:w-auto">
+                        <div className="flex items-center gap-2.5 w-full sm:w-auto flex-wrap">
                           <button
                             type="button"
-                            onClick={() => handlePublishWizardCourse()}
+                            onClick={() => handlePublishWizardCourse(true)}
+                            className="flex-1 sm:flex-initial px-5 py-3.5 rounded-2xl text-xs sm:text-sm font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 border border-amber-300 shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2"
+                          >
+                            <Bookmark className="w-4 h-4 text-amber-700" />
+                            <span>📁 খসড়া (Draft) হিসেবে সেভ করুন</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handlePublishWizardCourse(false)}
                             className="flex-1 sm:flex-initial px-8 py-3.5 rounded-2xl text-xs sm:text-sm font-black text-white ph-btn-pink shadow-lg shadow-pink-500/20 hover:scale-[1.02] transition-transform cursor-pointer flex items-center justify-center gap-2"
                           >
                             <Sparkles className="w-4 h-4" />
-                            <span>{editingCourseId ? '💾 সংশোধিত কোর্সটি সেভ ও পাবলিশ করুন' : '🚀 সম্পূর্ণ কোর্সটি এখনই পাবলিশ করুন'}</span>
+                            <span>{editingCourseId ? '💾 লাইভ পাবলিশ ও সেভ করুন' : '🚀 সম্পূর্ণ কোর্সটি লাইভ পাবলিশ করুন'}</span>
                           </button>
                         </div>
                       </div>
@@ -5341,91 +5613,167 @@ export default function TeacherDashboardPage() {
               )}
 
               {/* View: Draft Courses */}
-              {activeSubMenu === 'courses_draft' && (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-base font-black text-slate-900">ড্রাফট কোর্সসমূহ (Draft Courses)</h3>
-                      <p className="text-xs text-slate-500">যেসব কোর্স এখনো শিক্ষার্থীদের জন্য উন্মুক্ত করা হয়নি</p>
+              {activeSubMenu === 'courses_draft' && (() => {
+                const draftCourses = teacherCourses.filter(c => c.isDraft && !c.isArchived);
+                return (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-base font-black text-slate-900">ড্রাফট কোর্সসমূহ (Draft Courses)</h3>
+                        <p className="text-xs text-slate-500">যেসব কোর্স এখনো শিক্ষার্থীদের জন্য উন্মুক্ত করা হয়নি, প্রস্তুত শেষে লাইভ পাবলিশ করুন</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setActiveSubMenu('courses_create')}
+                        className="px-3.5 py-2 rounded-xl text-xs font-bold text-white ph-btn-pink cursor-pointer"
+                      >
+                        + নতুন কোর্স
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setActiveSubMenu('courses_create')}
-                      className="px-3.5 py-2 rounded-xl text-xs font-bold text-white ph-btn-pink"
-                    >
-                      + নতুন কোর্স
-                    </button>
-                  </div>
 
-                  {teacherCourses.filter(c => c.isDraft).length === 0 ? (
-                    <div className="bg-white p-12 text-center rounded-3xl border border-slate-200 space-y-2">
-                      <BookOpen className="w-10 h-10 text-slate-300 mx-auto" />
-                      <p className="text-xs font-bold text-slate-500">বর্তমানে কোনো ড্রাফট কোর্স নেই।</p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {teacherCourses.filter(c => c.isDraft).map((c) => (
-                        <div key={c.id} className="bg-white rounded-3xl border border-amber-200 overflow-hidden shadow-xs">
-                          <img src={c.coverImage} alt={c.title} className="w-full h-44 object-cover opacity-80" />
-                          <div className="p-5 space-y-3">
-                            <div className="flex items-center justify-between">
-                              <span className="text-[10px] font-extrabold bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-full">
-                                খসড়া (Draft)
-                              </span>
-                              <span className="text-xs font-black text-slate-800">৳ {c.offerPrice}</span>
-                            </div>
-                            <h3 className="text-sm font-black text-slate-900 line-clamp-1">{c.title}</h3>
-                            <p className="text-xs text-slate-500 line-clamp-2">{c.description}</p>
-                            <div className="pt-2 flex gap-2">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  updateCourse(c.id, { isDraft: false, isPublished: true });
-                                  showToast(`🎉 "${c.title}" কোর্সটি সরাসরি লাইভ পাবলিশ করা হয়েছে!`);
-                                }}
-                                className="px-3 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 flex items-center justify-center gap-1 cursor-pointer transition-colors shadow-xs"
-                                title="সরাসরি পাবলিশ করুন"
-                              >
-                                <CheckCircle2 className="w-3.5 h-3.5" />
-                                <span>পাবলিশ</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => startEditingCourse(c)}
-                                className="flex-1 py-2 rounded-xl text-xs font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 border border-amber-300 flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
-                              >
-                                <Edit3 className="w-3.5 h-3.5" />
-                                <span>এডিট</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (confirm(`আপনি কি নিশ্চিত যে "${c.title}" ড্রাফট কোর্সটি মুছে ফেলতে চান?`)) {
-                                    deleteCourse(c.id);
-                                    showToast('🗑️ ড্রাফট কোর্সটি মুছে ফেলা হয়েছে!');
-                                  }
-                                }}
-                                className="px-3 py-2 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 flex items-center justify-center gap-1 cursor-pointer transition-colors"
-                                title="কোর্স মুছুন"
-                              >
-                                <Trash2 className="w-3.5 h-3.5 text-rose-600" />
-                              </button>
+                    {draftCourses.length === 0 ? (
+                      <div className="bg-white p-12 text-center rounded-3xl border border-slate-200 space-y-2">
+                        <BookOpen className="w-10 h-10 text-slate-300 mx-auto" />
+                        <p className="text-xs font-bold text-slate-500">বর্তমানে কোনো ড্রাফট কোর্স নেই।</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {draftCourses.map((c) => (
+                          <div key={c.id} className="bg-white rounded-3xl border border-amber-200 overflow-hidden shadow-xs">
+                            <img src={c.coverImage} alt={c.title} className="w-full h-44 object-cover opacity-85" />
+                            <div className="p-5 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-extrabold bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-full">
+                                  খসড়া (Draft)
+                                </span>
+                                <span className="text-xs font-black text-slate-800">৳ {c.offerPrice}</span>
+                              </div>
+                              <h3 className="text-sm font-black text-slate-900 line-clamp-1">{c.title}</h3>
+                              <p className="text-xs text-slate-500 line-clamp-2">{c.description}</p>
+                              
+                              <div className="pt-2 flex gap-1.5 flex-wrap">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    updateCourse(c.id, { isDraft: false, isPublished: true });
+                                    showToast(`🎉 "${c.title}" কোর্সটি সরাসরি লাইভ পাবলিশ করা হয়েছে!`);
+                                  }}
+                                  className="px-3 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 flex items-center justify-center gap-1 cursor-pointer transition-colors shadow-xs"
+                                  title="সরাসরি পাবলিশ করুন"
+                                >
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  <span>পাবলিশ</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => startEditingCourse(c)}
+                                  className="flex-1 py-2 rounded-xl text-xs font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 border border-amber-300 flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                                >
+                                  <Edit3 className="w-3.5 h-3.5 text-amber-700" />
+                                  <span>এডিট</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (confirm(`আপনি কি "${c.title}" ড্রাফট কোর্সটি আর্কাইভ করতে চান?`)) {
+                                      updateCourse(c.id, { isArchived: true });
+                                      showToast(`📦 "${c.title}" কোর্সটি আর্কাইভে রাখা হয়েছে!`);
+                                    }
+                                  }}
+                                  className="px-2.5 py-2 rounded-xl text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                                  title="আর্কাইভ করুন"
+                                >
+                                  <Archive className="w-3.5 h-3.5 text-purple-600" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (confirm(`আপনি কি নিশ্চিত যে "${c.title}" ড্রাফট কোর্সটি মুছে ফেলতে চান?`)) {
+                                      deleteCourse(c.id);
+                                      showToast('🗑️ ড্রাফট কোর্সটি মুছে ফেলা হয়েছে!');
+                                    }
+                                  }}
+                                  className="px-2.5 py-2 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                                  title="কোর্স মুছুন"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                                </button>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* View: Archived Courses */}
-              {activeSubMenu === 'courses_archived' && (
-                <div className="bg-white p-12 text-center rounded-3xl border border-slate-200 space-y-2">
-                  <BookOpen className="w-10 h-10 text-slate-300 mx-auto" />
-                  <p className="text-xs font-bold text-slate-500">এই বিভাগে বর্তমানে কোনো আর্কাইভড কোর্স নেই।</p>
-                </div>
-              )}
+              {activeSubMenu === 'courses_archived' && (() => {
+                const archivedList = teacherCourses.filter(c => c.isArchived);
+                return (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-base font-black text-slate-900">আর্কাইভকৃত কোর্সসমূহ (Archived Courses)</h3>
+                        <p className="text-xs text-slate-500">বিগত শিক্ষাবর্ষের সমাপ্ত হওয়া কোর্স যা মূল তালিকা থেকে লুকানো রয়েছে</p>
+                      </div>
+                    </div>
+
+                    {archivedList.length === 0 ? (
+                      <div className="bg-white p-12 text-center rounded-3xl border border-slate-200 space-y-2">
+                        <BookOpen className="w-10 h-10 text-slate-300 mx-auto" />
+                        <p className="text-xs font-bold text-slate-500">এই বিভাগে বর্তমানে কোনো আর্কাইভড কোর্স নেই।</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {archivedList.map((c) => (
+                          <div key={c.id} className="bg-white rounded-3xl border border-purple-200 overflow-hidden shadow-xs opacity-90 hover:opacity-100 transition-opacity">
+                            <img src={c.coverImage} alt={c.title} className="w-full h-44 object-cover grayscale-[35%]" />
+                            <div className="p-5 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-extrabold bg-purple-100 text-purple-800 px-2.5 py-0.5 rounded-full">
+                                  আর্কাইভড (Archived)
+                                </span>
+                                <span className="text-xs font-black text-slate-800">৳ {c.offerPrice}</span>
+                              </div>
+                              <h3 className="text-sm font-black text-slate-900 line-clamp-1">{c.title}</h3>
+                              <p className="text-xs text-slate-500 line-clamp-2">{c.description}</p>
+                              
+                              <div className="pt-2 flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    updateCourse(c.id, { isArchived: false, isPublished: true });
+                                    showToast(`📦 "${c.title}" কোর্সটি পুনরায় সক্রিয় ও প্রকাশিত করা হয়েছে!`);
+                                  }}
+                                  className="flex-1 py-2 rounded-xl text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 flex items-center justify-center gap-1 cursor-pointer transition-colors shadow-xs"
+                                >
+                                  <RotateCcw className="w-3.5 h-3.5" />
+                                  <span>পুনরায় সক্রিয় করুন</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (confirm(`আপনি কি নিশ্চিত যে "${c.title}" আর্কাইভড কোর্সটি মুছে ফেলতে চান?`)) {
+                                      deleteCourse(c.id);
+                                      showToast('🗑️ কোর্সটি মুছে ফেলা হয়েছে!');
+                                    }
+                                  }}
+                                  className="px-3 py-2 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                                  title="কোর্স মুছুন"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           )}
 
@@ -10307,82 +10655,463 @@ export default function TeacherDashboardPage() {
           })()}
 
           {/* ========================================================================= */}
-          {/* 5. STUDENTS MODULE */}
+          {/* 5. STUDENTS MODULE (ALL 4 SUBMENUS) */}
           {/* ========================================================================= */}
-          {activeMenu === 'students' && (
-            <div className="bg-white p-6 rounded-3xl border border-slate-200 space-y-4 animate-fade-in">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-base font-black text-slate-900">এনরোলকৃত শিক্ষার্থীদের তালিকা</h3>
-                  <p className="text-xs text-slate-500">আপনার কোর্সে যুক্ত হওয়া মোট শিক্ষার্থী সংখ্যা: {teacherEnrollments.length} জন</p>
-                </div>
-                <div className="relative">
-                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3 pointer-events-none" />
-                  <input
-                    type="text"
-                    value={studentSearch}
-                    onChange={(e) => setStudentSearch(e.target.value)}
-                    placeholder="শিক্ষার্থীর নাম, মোবাইল বা কোর্স খুঁজুন..."
-                    className="pl-8 pr-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs focus:outline-none focus:border-[#ed347d]"
-                  />
-                </div>
-              </div>
+          {activeMenu === 'students' && (() => {
+            const currentStudentSub = ['students_all', 'students_coursewise', 'students_results', 'students_enrollments'].includes(activeSubMenu)
+              ? activeSubMenu
+              : 'students_all';
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 border-y border-slate-200 text-slate-600 font-bold">
-                    <tr>
-                      <th className="p-3">শিক্ষার্থী</th>
-                      <th className="p-3">মোবাইল</th>
-                      <th className="p-3">কোর্সের নাম</th>
-                      <th className="p-3">এনরোলমেন্ট তারিখ</th>
-                      <th className="p-3">অবস্থা</th>
-                      <th className="p-3 text-right">পদক্ষেপ</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {filteredTeacherEnrollments.map((enr) => (
-                      <tr key={enr.id} className="hover:bg-slate-50">
-                        <td className="p-3 font-bold text-slate-800">{enr.studentName}</td>
-                        <td className="p-3 font-mono text-slate-500">{enr.senderPhone || '017XXXXXXXX'}</td>
-                        <td className="p-3 text-slate-600">{enr.courseTitle}</td>
-                        <td className="p-3 text-slate-400">{enr.enrollmentDate || enr.createdAt}</td>
-                        <td className="p-3">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            enr.status === 'approved' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
+            // Filtered enrollments for course-wise tab
+            const coursewiseEnrollments = coursewiseFilterId === 'all'
+              ? teacherEnrollments
+              : teacherEnrollments.filter((e) => e.courseId === coursewiseFilterId);
+
+            // Filtered submissions for results tab
+            const teacherSubmissions = detailedSubmissions.filter((s) => teacherCourseIds.includes(s.courseId));
+            const filteredStudentResults = teacherSubmissions.filter((s) => {
+              if (studentResultsExamFilter !== 'all' && s.examId !== studentResultsExamFilter) return false;
+              if (studentResultsSearch.trim()) {
+                const q = studentResultsSearch.toLowerCase().trim();
+                return (
+                  s.studentName.toLowerCase().includes(q) ||
+                  s.examTitle.toLowerCase().includes(q) ||
+                  s.courseTitle.toLowerCase().includes(q)
+                );
+              }
+              return true;
+            });
+
+            return (
+              <div className="space-y-6 animate-fade-in">
+                {/* 1. Submenu Navigation Tabs */}
+                <div className="bg-white p-2 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-1.5 overflow-x-auto text-xs">
+                  {[
+                    { id: 'students_all', label: '১. All Students (সকল শিক্ষার্থী)', icon: Users, count: teacherEnrollments.length },
+                    { id: 'students_coursewise', label: '২. Course-wise (কোর্স-ভিত্তিক)', icon: BookOpen, count: teacherCourses.length },
+                    { id: 'students_results', label: '৩. Student Results (পরীক্ষার ফলাফল)', icon: Award, count: teacherSubmissions.length },
+                    { id: 'students_enrollments', label: '৪. Enrollments (ভর্তি ও পেমেন্ট)', icon: DollarSign, count: teacherEnrollments.filter(e => e.status === 'pending').length, badgeColor: 'bg-amber-500' },
+                  ].map((sub) => {
+                    const SubIcon = sub.icon;
+                    const isActive = currentStudentSub === sub.id;
+                    return (
+                      <button
+                        key={sub.id}
+                        type="button"
+                        onClick={() => setActiveSubMenu(sub.id)}
+                        className={`px-3.5 py-2 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
+                          isActive
+                            ? 'bg-gradient-to-r from-[#ed347d] to-pink-600 text-white shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                        }`}
+                      >
+                        <SubIcon className="w-3.5 h-3.5" />
+                        <span>{sub.label}</span>
+                        {sub.count !== undefined && (
+                          <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
+                            isActive ? 'bg-white/20 text-white' : sub.badgeColor ? `${sub.badgeColor} text-white` : 'bg-slate-100 text-slate-600'
                           }`}>
-                            {enr.status === 'approved' ? 'ভর্তি নিশ্চিত' : 'যাচাইাধীন'}
+                            {sub.count}
                           </span>
-                        </td>
-                        <td className="p-3 text-right">
-                          {enr.status === 'pending' ? (
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* ------------------------------------------------------------- */}
+                {/* SUBMENU 1: ALL STUDENTS */}
+                {/* ------------------------------------------------------------- */}
+                {currentStudentSub === 'students_all' && (
+                  <div className="space-y-4">
+                    <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div>
+                        <h3 className="text-base font-black text-slate-900">সকল এনরোলকৃত শিক্ষার্থী</h3>
+                        <p className="text-xs text-slate-500">আপনার কোর্সে যুক্ত হওয়া সর্বমোট শিক্ষার্থী: {teacherEnrollments.length} জন</p>
+                      </div>
+                      <div className="relative">
+                        <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3 pointer-events-none" />
+                        <input
+                          type="text"
+                          value={studentSearch}
+                          onChange={(e) => setStudentSearch(e.target.value)}
+                          placeholder="শিক্ষার্থীর নাম, মোবাইল বা কোর্স..."
+                          className="pl-8 pr-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs focus:outline-none focus:border-[#ed347d]"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
+                            <tr>
+                              <th className="p-3.5">শিক্ষার্থী</th>
+                              <th className="p-3.5">মোবাইল</th>
+                              <th className="p-3.5">কোর্সের নাম</th>
+                              <th className="p-3.5">এনরোলমেন্ট তারিখ</th>
+                              <th className="p-3.5">অবস্থা</th>
+                              <th className="p-3.5 text-right">পদক্ষেপ</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {filteredTeacherEnrollments.map((enr) => (
+                              <tr key={enr.id} className="hover:bg-slate-50/70 transition-colors">
+                                <td className="p-3.5 font-bold text-slate-800">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-7 h-7 rounded-full bg-pink-50 text-[#ed347d] font-bold flex items-center justify-center text-[10px] border border-pink-200">
+                                      {enr.studentName ? enr.studentName[0] : 'S'}
+                                    </div>
+                                    <span>{enr.studentName}</span>
+                                  </div>
+                                </td>
+                                <td className="p-3.5 font-mono text-slate-500">{enr.senderPhone || '017XXXXXXXX'}</td>
+                                <td className="p-3.5 text-slate-600 max-w-[200px] truncate">{enr.courseTitle}</td>
+                                <td className="p-3.5 text-slate-400">{enr.enrollmentDate || enr.createdAt}</td>
+                                <td className="p-3.5">
+                                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                    enr.status === 'approved' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-amber-50 text-amber-600 border border-amber-200'
+                                  }`}>
+                                    {enr.status === 'approved' ? 'ভর্তি নিশ্চিত' : 'যাচাইাধীন'}
+                                  </span>
+                                </td>
+                                <td className="p-3.5 text-right">
+                                  {enr.status === 'pending' ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => approveEnrollment(enr.id)}
+                                      className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-xs"
+                                    >
+                                      অনুমোদন করুন
+                                    </button>
+                                  ) : (
+                                    <span className="text-[11px] font-bold text-emerald-600">
+                                      ✓ অনুমোদিত
+                                    </span>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                            {filteredTeacherEnrollments.length === 0 && (
+                              <tr>
+                                <td colSpan={6} className="p-8 text-center text-slate-400">
+                                  {studentSearch ? `"${studentSearch}" সম্পর্কিত কোনো শিক্ষার্থী পাওয়া যায়নি।` : 'এখনো কোনো শিক্ষার্থী ভর্তি হয়নি।'}
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ------------------------------------------------------------- */}
+                {/* SUBMENU 2: COURSE-WISE STUDENTS */}
+                {/* ------------------------------------------------------------- */}
+                {currentStudentSub === 'students_coursewise' && (
+                  <div className="space-y-4">
+                    {/* Course Filter Pills */}
+                    <div className="bg-white p-4 rounded-3xl border border-slate-200/80 shadow-xs space-y-3">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-bold text-slate-700 flex items-center gap-1.5">
+                          <Filter className="w-3.5 h-3.5 text-[#ed347d]" />
+                          <span>কোর্স নির্বাচন করে শিক্ষার্থী দেখুন:</span>
+                        </span>
+                        <span className="text-[11px] text-slate-400">মোট {teacherCourses.length} টি কোর্স</span>
+                      </div>
+                      <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+                        <button
+                          type="button"
+                          onClick={() => setCoursewiseFilterId('all')}
+                          className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer ${
+                            coursewiseFilterId === 'all'
+                              ? 'bg-slate-900 text-white shadow-xs'
+                              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                          }`}
+                        >
+                          সকল কোর্স ({teacherEnrollments.length})
+                        </button>
+                        {teacherCourses.map((c) => {
+                          const count = teacherEnrollments.filter((e) => e.courseId === c.id).length;
+                          return (
                             <button
+                              key={c.id}
                               type="button"
-                              onClick={() => approveEnrollment(enr.id)}
-                              className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-xs"
+                              onClick={() => setCoursewiseFilterId(c.id)}
+                              className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
+                                coursewiseFilterId === c.id
+                                  ? 'bg-[#ed347d] text-white shadow-xs'
+                                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                              }`}
                             >
-                              অনুমোদন করুন
+                              <span className="truncate max-w-[150px]">{c.title}</span>
+                              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-white/20 font-mono">
+                                {count}
+                              </span>
                             </button>
-                          ) : (
-                            <span className="text-[11px] font-bold text-emerald-600">
-                              ✓ অনুমোদিত
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                    {filteredTeacherEnrollments.length === 0 && (
-                      <tr>
-                        <td colSpan={6} className="p-6 text-center text-slate-400">
-                          {studentSearch ? `"${studentSearch}" সংক্রান্ত কোনো শিক্ষার্থী মেলেনি।` : 'এখনো কোনো শিক্ষার্থী ভর্তি হয়নি। নতুন কোর্স পাবলিশ করে লিংক শেয়ার করুন।'}
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Selected Course Students Table */}
+                    <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
+                      <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+                        <h4 className="text-xs font-black text-slate-900">
+                          {coursewiseFilterId === 'all'
+                            ? 'সকল কোর্সের সম্মিলিত তালিকা'
+                            : `কোর্স: ${teacherCourses.find(c => c.id === coursewiseFilterId)?.title || ''}`}
+                        </h4>
+                        <span className="text-xs font-bold text-[#ed347d]">
+                          {coursewiseEnrollments.length} জন শিক্ষার্থী
+                        </span>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
+                            <tr>
+                              <th className="p-3.5">শিক্ষার্থী</th>
+                              <th className="p-3.5">মোবাইল</th>
+                              <th className="p-3.5">পেমেন্ট মেথড</th>
+                              <th className="p-3.5">TrxID</th>
+                              <th className="p-3.5">ভর্তির তারিখ</th>
+                              <th className="p-3.5">অবস্থা</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {coursewiseEnrollments.map((enr) => (
+                              <tr key={enr.id} className="hover:bg-slate-50/70">
+                                <td className="p-3.5 font-bold text-slate-800">{enr.studentName}</td>
+                                <td className="p-3.5 font-mono text-slate-500">{enr.senderPhone || '017XXXXXXXX'}</td>
+                                <td className="p-3.5 text-slate-600 font-semibold">{enr.paymentMethod}</td>
+                                <td className="p-3.5 font-mono text-slate-500">{enr.trxId}</td>
+                                <td className="p-3.5 text-slate-400">{enr.enrollmentDate || enr.createdAt}</td>
+                                <td className="p-3.5">
+                                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                    enr.status === 'approved' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
+                                  }`}>
+                                    {enr.status === 'approved' ? 'ভর্তি নিশ্চিত' : 'যাচাইাধীন'}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                            {coursewiseEnrollments.length === 0 && (
+                              <tr>
+                                <td colSpan={6} className="p-8 text-center text-slate-400">
+                                  এই কোর্সে এখনো কোনো শিক্ষার্থী যুক্ত হয়নি।
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ------------------------------------------------------------- */}
+                {/* SUBMENU 3: STUDENT RESULTS */}
+                {/* ------------------------------------------------------------- */}
+                {currentStudentSub === 'students_results' && (
+                  <div className="space-y-4">
+                    {/* Filter & Search Bar */}
+                    <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <label className="text-xs font-bold text-slate-600">পরীক্ষা নির্বাচন:</label>
+                        <select
+                          value={studentResultsExamFilter}
+                          onChange={(e) => setStudentResultsExamFilter(e.target.value)}
+                          className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold bg-white focus:outline-none focus:border-[#ed347d]"
+                        >
+                          <option value="all">সকল পরীক্ষা ({teacherSubmissions.length} টি সাবমিশন)</option>
+                          {teacherExams.map((ex) => (
+                            <option key={ex.id} value={ex.id}>
+                              📝 {ex.title}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="relative">
+                        <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
+                        <input
+                          type="text"
+                          value={studentResultsSearch}
+                          onChange={(e) => setStudentResultsSearch(e.target.value)}
+                          placeholder="শিক্ষার্থী বা পরীক্ষার নাম..."
+                          className="pl-8 pr-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs focus:outline-none focus:border-[#ed347d]"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Results Table */}
+                    <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
+                            <tr>
+                              <th className="p-3.5">শিক্ষার্থী</th>
+                              <th className="p-3.5">পরীক্ষার নাম</th>
+                              <th className="p-3.5">কোর্স</th>
+                              <th className="p-3.5">প্রাপ্ত নম্বর / মোট</th>
+                              <th className="p-3.5">শতকরা হার</th>
+                              <th className="p-3.5">ফলাফল</th>
+                              <th className="p-3.5">সাবমিশন সময়</th>
+                              <th className="p-3.5 text-right">মূল্যায়ন</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {filteredStudentResults.map((sub) => {
+                              const percentage = sub.totalMarks > 0 ? Math.round((sub.score / sub.totalMarks) * 100) : 0;
+                              return (
+                                <tr key={sub.id} className="hover:bg-slate-50/70">
+                                  <td className="p-3.5 font-bold text-slate-800">{sub.studentName}</td>
+                                  <td className="p-3.5 text-slate-700 font-semibold">{sub.examTitle}</td>
+                                  <td className="p-3.5 text-slate-500 truncate max-w-[140px]">{sub.courseTitle}</td>
+                                  <td className="p-3.5 font-black text-slate-900">
+                                    {sub.score} / {sub.totalMarks}
+                                  </td>
+                                  <td className="p-3.5 font-mono font-bold text-indigo-600">{percentage}%</td>
+                                  <td className="p-3.5">
+                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                      sub.isPassed ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-rose-50 text-rose-600 border border-rose-200'
+                                    }`}>
+                                      {sub.isPassed ? '✓ উত্তীর্ণ' : '✕ অনুত্তীর্ণ'}
+                                    </span>
+                                  </td>
+                                  <td className="p-3.5 text-slate-400">{sub.submittedAt}</td>
+                                  <td className="p-3.5 text-right">
+                                    {sub.status === 'pending_evaluation' ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setActiveMenu('exams');
+                                          setActiveSubMenu('exams_evaluation');
+                                          setEvaluatingSubmission(sub);
+                                        }}
+                                        className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-amber-500 hover:bg-amber-600 text-white cursor-pointer shadow-xs"
+                                      >
+                                        খাতা দেখুন ✍️
+                                      </button>
+                                    ) : (
+                                      <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                                        মূল্যায়িত ✓
+                                      </span>
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                            {filteredStudentResults.length === 0 && (
+                              <tr>
+                                <td colSpan={8} className="p-8 text-center text-slate-400">
+                                  কোনো পরীক্ষার ফলাফল পাওয়া যায়নি।
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ------------------------------------------------------------- */}
+                {/* SUBMENU 4: ENROLLMENTS & TRANSACTIONS */}
+                {/* ------------------------------------------------------------- */}
+                {currentStudentSub === 'students_enrollments' && (
+                  <div className="space-y-4">
+                    {/* Metrics Banner */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+                        <span className="text-xs font-bold text-slate-500">মোট এনরোলমেন্ট ফি আদায়</span>
+                        <div className="text-xl font-black text-emerald-600 mt-1">৳ {teacherTotalSales.toLocaleString()}</div>
+                      </div>
+                      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+                        <span className="text-xs font-bold text-slate-500">অনুমোদিত শিক্ষার্থী</span>
+                        <div className="text-xl font-black text-slate-800 mt-1">
+                          {teacherEnrollments.filter(e => e.status === 'approved').length} জন
+                        </div>
+                      </div>
+                      <div className="bg-white p-4 rounded-2xl border border-amber-200 shadow-xs bg-amber-50/30">
+                        <span className="text-xs font-bold text-amber-700">যাচাইয়ের অপেক্ষায় (Pending)</span>
+                        <div className="text-xl font-black text-amber-600 mt-1">
+                          {teacherEnrollments.filter(e => e.status === 'pending').length} জন
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Transactions Ledger */}
+                    <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
+                      <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+                        <h4 className="text-xs font-black text-slate-900">ভর্তি ট্রানজেকশন ও পেমেন্ট লেজার</h4>
+                        <span className="text-xs text-slate-500">মোট {teacherEnrollments.length} টি লেনদেন</span>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
+                            <tr>
+                              <th className="p-3.5">শিক্ষার্থী</th>
+                              <th className="p-3.5">মোবাইল</th>
+                              <th className="p-3.5">কোর্স</th>
+                              <th className="p-3.5">মেথড</th>
+                              <th className="p-3.5">TrxID</th>
+                              <th className="p-3.5">পরিমাণ</th>
+                              <th className="p-3.5">তারিখ</th>
+                              <th className="p-3.5">স্ট্যাটাস</th>
+                              <th className="p-3.5 text-right">পদক্ষেপ</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {teacherEnrollments.map((enr) => (
+                              <tr key={enr.id} className="hover:bg-slate-50/70">
+                                <td className="p-3.5 font-bold text-slate-800">{enr.studentName}</td>
+                                <td className="p-3.5 font-mono text-slate-500">{enr.senderPhone || '017XXXXXXXX'}</td>
+                                <td className="p-3.5 text-slate-600 max-w-[160px] truncate">{enr.courseTitle}</td>
+                                <td className="p-3.5 font-semibold text-slate-700">{enr.paymentMethod}</td>
+                                <td className="p-3.5 font-mono text-slate-500 text-[11px]">{enr.trxId}</td>
+                                <td className="p-3.5 font-black text-slate-900">৳ {enr.amount}</td>
+                                <td className="p-3.5 text-slate-400">{enr.enrollmentDate || enr.createdAt}</td>
+                                <td className="p-3.5">
+                                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                    enr.status === 'approved' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-amber-50 text-amber-600 border border-amber-200'
+                                  }`}>
+                                    {enr.status === 'approved' ? 'পরিশোধিত' : 'পেন্ডিং'}
+                                  </span>
+                                </td>
+                                <td className="p-3.5 text-right">
+                                  {enr.status === 'pending' ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => approveEnrollment(enr.id)}
+                                      className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-xs"
+                                    >
+                                      অনুমোদন করুন
+                                    </button>
+                                  ) : (
+                                    <span className="text-[10px] font-bold text-emerald-600">✓ অনুমোদিত</span>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                            {teacherEnrollments.length === 0 && (
+                              <tr>
+                                <td colSpan={9} className="p-8 text-center text-slate-400">
+                                  কোনো এনরোলমেন্ট ডাটা পাওয়া যায়নি।
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* ========================================================================= */}
           {/* 6. LIVE CLASS MODULE (FULL FUNCTION REALTIME STUDIO) */}
@@ -12168,10 +12897,11 @@ export default function TeacherDashboardPage() {
               ? activeSubMenu
               : 'msg_doubts';
 
-            const doubtThreads = conversations.filter((c) => c.type === 'doubt');
-            const directThreads = conversations.filter((c) => c.type === 'direct');
+            const isPlatformAdmin = (currentUser as any)?.role === 'admin' || (currentRole as any) === 'admin';
+            const doubtThreads = conversations.filter((c) => c.type === 'doubt' && (isPlatformAdmin || teacherCourseIds.includes(c.courseId || '')));
+            const directThreads = conversations.filter((c) => c.type === 'direct' && (isPlatformAdmin || c.teacherId === currentUser.id || !c.teacherId));
             const supportThreads = conversations.filter((c) => c.type === 'support');
-            const batchThreads = conversations.filter((c) => c.type === 'batch_group');
+            const batchThreads = conversations.filter((c) => c.type === 'batch_group' && (isPlatformAdmin || teacherCourseIds.includes(c.courseId || '')));
 
             const pendingDoubts = doubtThreads.filter((d) => d.status === 'pending');
             const solvedDoubts = doubtThreads.filter((d) => d.status === 'solved');
@@ -12314,7 +13044,7 @@ export default function TeacherDashboardPage() {
                           className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-white focus:outline-none"
                         >
                           <option value="all">সকল কোর্স</option>
-                          {courses.map((c) => (
+                          {(isPlatformAdmin ? courses : teacherCourses).map((c) => (
                             <option key={c.id} value={c.id}>{c.title}</option>
                           ))}
                         </select>
@@ -12593,11 +13323,8 @@ export default function TeacherDashboardPage() {
                                   type="button"
                                   onClick={() => {
                                     if (!doubtReplyText.trim()) return;
-                                    sendChatMessage(selectedDoubt.id, doubtReplyText, undefined, 'teacher');
+                                    sendChatMessage(selectedDoubt.id, doubtReplyText, undefined, 'teacher', true);
                                     setDoubtReplyText('');
-                                    if (selectedDoubt.status === 'pending') {
-                                      toggleDoubtStatus(selectedDoubt.id);
-                                    }
                                   }}
                                   className="px-5 py-2.5 rounded-xl text-xs font-black text-white bg-[#ed347d] hover:bg-[#d82a6e] shadow-md shadow-pink-500/20 transition-all flex items-center gap-1.5 cursor-pointer"
                                 >
@@ -12960,7 +13687,7 @@ export default function TeacherDashboardPage() {
                           <span>কোর্স নির্বাচন করুন (Course Selector):</span>
                         </label>
                         <div className="flex items-center gap-2 overflow-x-auto pb-2">
-                          {courses.map((c) => {
+                          {(isPlatformAdmin ? courses : teacherCourses).map((c) => {
                             const isSelected = (activeBatchCourse?.id || selectedBatchCourseId) === c.id;
                             const groupThread = conversations.find((t) => t.type === 'batch_group' && t.courseId === c.id);
                             const msgCount = groupThread?.messages.length || 1;
@@ -13086,94 +13813,1182 @@ export default function TeacherDashboardPage() {
 
 
           {/* ========================================================================= */}
-          {/* 10. PROFILE & SETTINGS MODULE */}
+          {/* 9. TEACHER EARNINGS & PAYOUT MODULE (100% REAL FROM DATABASE ENROLLMENTS) */}
           {/* ========================================================================= */}
-          {activeMenu === 'settings' && (
-            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 max-w-2xl mx-auto space-y-6 animate-fade-in">
-              <div className="flex items-center gap-4">
-                <img
-                  src={profilePhoto}
-                  alt="Profile"
-                  className="w-16 h-16 rounded-full object-cover border-2 border-pink-300 shadow-md"
-                />
-                <div>
-                  <h3 className="text-base font-black text-slate-900">{currentUser.name}</h3>
-                  <span className="text-xs text-slate-500 font-bold">{teacherSubject} • {currentUser.college}</span>
-                </div>
-              </div>
+          {activeMenu === 'earnings' && (() => {
+            const currentSub = ['earnings_overview', 'earnings_withdraw', 'earnings_history'].includes(activeSubMenu)
+              ? activeSubMenu
+              : 'earnings_overview';
 
-              <div className="space-y-4 pt-2">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 block">শিক্ষকের নাম</label>
-                  <input
-                    type="text"
-                    value={currentUser.name}
-                    readOnly
-                    className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 block">প্রোফাইল ছবি ইউআরএল (Photo URL)</label>
-                  <input
-                    type="text"
-                    value={profilePhoto}
-                    onChange={(e) => setProfilePhoto(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 block">শিক্ষক পরিচিতি ও বায়ো (Bio)</label>
-                  <textarea
-                    rows={3}
-                    value={profileBio}
-                    onChange={(e) => setProfileBio(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700 block">নতুন পাসওয়ার্ড নির্ধারণ (ঐচ্ছিক)</label>
-                    <input
-                      type="password"
-                      value={profileNewPassword}
-                      onChange={(e) => setProfileNewPassword(e.target.value)}
-                      placeholder="কমপক্ষে ৪ অক্ষর"
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-mono"
-                    />
+            return (
+              <div className="space-y-6 animate-fade-in max-w-6xl mx-auto">
+                {/* Header & Submenu Navigation Pills */}
+                <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
+                      <DollarSign className="w-5 h-5 text-emerald-600" />
+                      <span>উপার্জন ও পেআউট ড্যাশবোর্ড (Teacher Financial Studio)</span>
+                    </h2>
+                    <p className="text-xs text-slate-500">আপনার অনুমোদিত কোর্সের প্রকৃত বিক্রয়, ৮০% কমিশন ও ব্যাংক/ওয়ালেটে উত্তোলনের হিসেব</p>
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700 block">নতুন পাসওয়ার্ড নিশ্চিত করুন</label>
-                    <input
-                      type="password"
-                      value={profileConfirmPassword}
-                      onChange={(e) => setProfileConfirmPassword(e.target.value)}
-                      placeholder="পাসওয়ার্ড পুনরায় লিখুন"
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-mono"
-                    />
+                  <div className="flex items-center gap-1.5 bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/80">
+                    {[
+                      { id: 'earnings_overview', label: '১. উপার্জনের হিসাব' },
+                      { id: 'earnings_withdraw', label: '২. টাকা তোলার আবেদন' },
+                      { id: 'earnings_history', label: `৩. পেআউট রেকর্ড (${teacherPayouts.length})` },
+                    ].map(tab => (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setActiveSubMenu(tab.id)}
+                        className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                          currentSub === tab.id
+                            ? 'bg-white text-slate-900 shadow-xs border border-slate-200'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  disabled={isSavingProfile}
-                  onClick={handleSaveProfile}
-                  className="w-full py-3 rounded-xl text-xs font-bold text-white ph-btn-pink active:scale-95 transition-transform flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                >
-                  {isSavingProfile ? (
-                    <>
-                      <Clock className="w-4 h-4 animate-spin-slow" />
-                      <span>ডাটাবেজে সংরক্ষিত হচ্ছে...</span>
-                    </>
-                  ) : (
-                    <span>💾 প্রোফাইল ও পাসওয়ার্ড সেটিংস সেভ করুন</span>
-                  )}
-                </button>
+                {/* Subview 1: Earnings Overview */}
+                {currentSub === 'earnings_overview' && (
+                  <div className="space-y-6">
+                    {/* Financial Metrics Cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div className="p-5 rounded-3xl bg-slate-50 border border-slate-200 shadow-2xs space-y-1">
+                        <span className="text-[11px] font-black text-slate-400 uppercase tracking-wider">কোর্স মোট বিক্রয়</span>
+                        <div className="text-2xl sm:text-3xl font-black text-slate-900 font-mono">
+                          ৳ {teacherTotalSales.toLocaleString('en-BD')}
+                        </div>
+                        <span className="text-[11px] text-slate-500 font-medium block">
+                          অনুমোদিত {teacherEnrollments.filter(e => e.status === 'approved').length} টি ভর্তির মোট আদায়
+                        </span>
+                      </div>
+
+                      <div className="p-5 rounded-3xl bg-emerald-50/70 border border-emerald-200 shadow-2xs space-y-1">
+                        <span className="text-[11px] font-black text-emerald-700 uppercase tracking-wider">আপনার প্রাপ্য আয় ({teacherCommissionRate}%)</span>
+                        <div className="text-2xl sm:text-3xl font-black text-emerald-700 font-mono">
+                          ৳ {teacherEarnedTotal.toLocaleString('en-BD')}
+                        </div>
+                        <span className="text-[11px] text-emerald-600 font-bold block">
+                          চুক্তিভিত্তিক সর্বমোট অর্জিত পারিশ্রমিক
+                        </span>
+                      </div>
+
+                      <div className="p-5 rounded-3xl bg-cyan-50/70 border border-cyan-200 shadow-2xs space-y-1">
+                        <span className="text-[11px] font-black text-cyan-700 uppercase tracking-wider">পরিশোধিত পেআউট</span>
+                        <div className="text-2xl sm:text-3xl font-black text-cyan-700 font-mono">
+                          ৳ {teacherPaidOutSum.toLocaleString('en-BD')}
+                        </div>
+                        <span className="text-[11px] text-slate-500 font-medium block">
+                          ব্যাংক/ওয়ালেটে সফলভাবে প্রাপ্ত
+                        </span>
+                      </div>
+
+                      <div className="p-5 rounded-3xl bg-pink-50/80 border border-pink-200 shadow-2xs space-y-1">
+                        <span className="text-[11px] font-black text-[#ed347d] uppercase tracking-wider">উত্তোলনযোগ্য অবশিষ্ট ব্যালেন্স</span>
+                        <div className="text-2xl sm:text-3xl font-black text-[#ed347d] font-mono">
+                          ৳ {teacherAvailableBalance.toLocaleString('en-BD')}
+                        </div>
+                        <div className="flex items-center justify-between pt-1">
+                          <span className="text-[10px] text-pink-600 font-bold">তাৎক্ষণিক উইথড্রলযোগ্য</span>
+                          {teacherAvailableBalance > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setActiveSubMenu('earnings_withdraw')}
+                              className="px-2.5 py-1 rounded-lg bg-[#ed347d] text-white text-[10px] font-black cursor-pointer shadow-xs active:scale-95"
+                            >
+                              তুলুন →
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Teacher's Courses Revenue Table */}
+                    <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <h3 className="text-sm font-black text-slate-900">কোর্স ভিত্তিক আয়ের বিবরণী (Course Ledger)</h3>
+                        <span className="text-xs text-slate-500 font-medium">{teacherCourses.length} টি কোর্স</span>
+                      </div>
+
+                      {teacherCourses.length === 0 ? (
+                        <div className="p-8 text-center text-slate-400 text-xs">আপনার কোনো কোর্স তৈরি করা হয়নি।</div>
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left text-xs">
+                            <thead className="bg-slate-50 text-slate-500 font-black uppercase text-[11px]">
+                              <tr>
+                                <th className="p-3">কোর্সের নাম</th>
+                                <th className="p-3 text-center">অনুমোদিত ভর্তি</th>
+                                <th className="p-3 text-right">মোট বিক্রয়</th>
+                                <th className="p-3 text-right font-black text-emerald-700">আপনার আয় ({teacherCommissionRate}%)</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                              {teacherCourses.map(c => {
+                                const enrolls = enrollments.filter(e => e.courseId === c.id && e.status === 'approved');
+                                const cSales = enrolls.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+                                const cEarned = Math.round(cSales * (teacherCommissionRate / 100));
+                                return (
+                                  <tr key={c.id} className="hover:bg-slate-50">
+                                    <td className="p-3 font-bold text-slate-900">{c.title}</td>
+                                    <td className="p-3 text-center font-mono font-bold text-slate-700">{enrolls.length} জন</td>
+                                    <td className="p-3 text-right font-mono font-black text-slate-900">৳ {cSales.toLocaleString('en-BD')}</td>
+                                    <td className="p-3 text-right font-mono font-black text-emerald-600">৳ {cEarned.toLocaleString('en-BD')}</td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Subview 2: Request Payout */}
+                {currentSub === 'earnings_withdraw' && (
+                  <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs max-w-2xl mx-auto space-y-5">
+                    <div className="border-b border-slate-100 pb-3">
+                      <h3 className="text-base font-black text-slate-900">টাকা তোলার আবেদন (Withdrawal Request)</h3>
+                      <p className="text-xs text-slate-500">আপনার বকেয়া পারিশ্রমিক বিকাশ, নগদ অথবা ব্যাংক অ্যাকাউন্টে উত্তোলন করুন</p>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 flex items-center justify-between">
+                      <span className="text-xs font-black text-emerald-900">বর্তমানে উত্তোলনযোগ্য ব্যালেন্স:</span>
+                      <span className="text-xl font-black text-emerald-700 font-mono">৳ {teacherAvailableBalance.toLocaleString('en-BD')}</span>
+                    </div>
+
+                    {teacherAvailableBalance <= 0 ? (
+                      <div className="p-6 text-center text-slate-500 text-xs bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                        আপনার বর্তমান উত্তোলনযোগ্য ব্যালেন্স ৳ ০। শিক্ষার্থীরা কোর্সে ভর্তি হলে এবং পেমেন্ট সম্পন্ন হলে আপনার ব্যালেন্স স্বয়ংক্রিয়ভাবে জমা হবে।
+                      </div>
+                    ) : (
+                      <form onSubmit={handleRequestPayoutSubmit} className="space-y-4 text-xs">
+                        <div>
+                          <label className="font-black text-slate-700 block mb-1">উত্তোলনের পরিমাণ (৳) *</label>
+                          <input
+                            type="number"
+                            required
+                            min="500"
+                            max={teacherAvailableBalance}
+                            value={withdrawForm.amount}
+                            onChange={(e) => setWithdrawForm({ ...withdrawForm, amount: e.target.value })}
+                            placeholder={`সর্বোচ্চ ${teacherAvailableBalance} টাকা`}
+                            className="w-full p-3 rounded-2xl border border-slate-200 focus:outline-none focus:border-[#ed347d] font-mono font-black text-base shadow-2xs"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="font-black text-slate-700 block mb-1">পেমেন্ট মাধ্যম (Withdrawal Method) *</label>
+                          <select
+                            value={withdrawForm.method}
+                            onChange={(e) => setWithdrawForm({ ...withdrawForm, method: e.target.value as any })}
+                            className="w-full p-3 rounded-2xl border border-slate-200 focus:outline-none focus:border-[#ed347d] font-bold shadow-2xs"
+                          >
+                            <option value="bKash">bKash Personal</option>
+                            <option value="Nagad">Nagad Personal</option>
+                            <option value="Bank Transfer">Bank Transfer (BEFTN / NPSB)</option>
+                          </select>
+                        </div>
+
+                        {withdrawForm.method === 'Bank Transfer' ? (
+                          <div className="space-y-3 p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                            <div>
+                              <label className="font-black text-slate-700 block mb-1">ব্যাংকের নাম *</label>
+                              <input
+                                type="text"
+                                required
+                                value={withdrawForm.bankName}
+                                onChange={(e) => setWithdrawForm({ ...withdrawForm, bankName: e.target.value })}
+                                placeholder="উদা: City Bank Ltd. / DBBL / Brac Bank"
+                                className="w-full p-2.5 rounded-xl border border-slate-200 bg-white"
+                              />
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <div>
+                                <label className="font-black text-slate-700 block mb-1">শাখার নাম (Branch)</label>
+                                <input
+                                  type="text"
+                                  value={withdrawForm.branchName}
+                                  onChange={(e) => setWithdrawForm({ ...withdrawForm, branchName: e.target.value })}
+                                  placeholder="উদা: ধানমন্ডি শাখা"
+                                  className="w-full p-2.5 rounded-xl border border-slate-200 bg-white"
+                                />
+                              </div>
+                              <div>
+                                <label className="font-black text-slate-700 block mb-1">হিসাবের নাম (Account Name)</label>
+                                <input
+                                  type="text"
+                                  value={withdrawForm.accountName}
+                                  onChange={(e) => setWithdrawForm({ ...withdrawForm, accountName: e.target.value })}
+                                  placeholder={currentUser.name || 'আপনার নাম'}
+                                  className="w-full p-2.5 rounded-xl border border-slate-200 bg-white"
+                                />
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <div>
+                                <label className="font-black text-slate-700 block mb-1">অ্যাকাউন্ট নম্বর *</label>
+                                <input
+                                  type="text"
+                                  required
+                                  value={withdrawForm.accountNumber}
+                                  onChange={(e) => setWithdrawForm({ ...withdrawForm, accountNumber: e.target.value })}
+                                  placeholder="১৬ সংখ্যার ব্যাংক একাউন্ট নম্বর"
+                                  className="w-full p-2.5 rounded-xl border border-slate-200 bg-white font-mono"
+                                />
+                              </div>
+                              <div>
+                                <label className="font-black text-slate-700 block mb-1">রাউটিং নম্বর (Routing No)</label>
+                                <input
+                                  type="text"
+                                  value={withdrawForm.routingNumber}
+                                  onChange={(e) => setWithdrawForm({ ...withdrawForm, routingNumber: e.target.value })}
+                                  placeholder="৯ সংখ্যার রাউটিং নম্বর"
+                                  className="w-full p-2.5 rounded-xl border border-slate-200 bg-white font-mono"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <label className="font-black text-slate-700 block mb-1">{withdrawForm.method} পার্সোনাল মোবাইল নম্বর *</label>
+                            <input
+                              type="text"
+                              required
+                              value={withdrawForm.accountNumber}
+                              onChange={(e) => setWithdrawForm({ ...withdrawForm, accountNumber: e.target.value })}
+                              placeholder="০১৮১৯-XXXXXX"
+                              className="w-full p-3 rounded-2xl border border-slate-200 focus:outline-none focus:border-[#ed347d] font-mono shadow-2xs"
+                            />
+                          </div>
+                        )}
+
+                        <div>
+                          <label className="font-black text-slate-700 block mb-1">মন্তব্য বা বিশেষ নোট (ঐচ্ছিক)</label>
+                          <input
+                            type="text"
+                            value={withdrawForm.note}
+                            onChange={(e) => setWithdrawForm({ ...withdrawForm, note: e.target.value })}
+                            placeholder="উদা: ফেব্রুয়ারি মাসের রেভিনিউ শেয়ার"
+                            className="w-full p-3 rounded-2xl border border-slate-200 focus:outline-none focus:border-[#ed347d] shadow-2xs"
+                          />
+                        </div>
+
+                        <div className="pt-2">
+                          <button
+                            type="submit"
+                            disabled={isSubmittingPayout}
+                            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#fa507e] to-[#ec376d] text-white font-black shadow-md shadow-pink-500/20 active:scale-98 cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
+                          >
+                            <Send className="w-4 h-4" />
+                            <span>{isSubmittingPayout ? 'আবেদন পাঠানো হচ্ছে...' : 'উইথড্রল রিকোয়েস্ট নিশ্চিত করুন'}</span>
+                          </button>
+                        </div>
+                      </form>
+                    )}
+                  </div>
+                )}
+
+                {/* Subview 3: Payout History */}
+                {currentSub === 'earnings_history' && (
+                  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <h3 className="text-sm font-black text-slate-900">পেআউট হিস্ট্রি ও নিষ্পত্তি লগ (Payout Records)</h3>
+                      <button
+                        type="button"
+                        onClick={refreshTeacherPayouts}
+                        className="px-3 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer transition-colors"
+                      >
+                        রিফ্রেশ
+                      </button>
+                    </div>
+
+                    {teacherPayouts.length === 0 ? (
+                      <div className="p-12 text-center text-slate-400 text-xs bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                        এখনো কোনো পেআউট স্টেটমেন্ট তৈরি হয়নি।
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-slate-50 text-slate-500 font-black uppercase text-[11px]">
+                            <tr>
+                              <th className="p-3">ভাউচার আইডি</th>
+                              <th className="p-3">তারিখ</th>
+                              <th className="p-3">মাধ্যম</th>
+                              <th className="p-3 font-mono">টাকার অঙ্ক</th>
+                              <th className="p-3">TrxID / রেফারেন্স</th>
+                              <th className="p-3 text-center">স্ট্যাটাস</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {teacherPayouts.map(p => (
+                              <tr key={p.id} className="hover:bg-slate-50">
+                                <td className="p-3 font-mono font-bold text-slate-700">{p.id}</td>
+                                <td className="p-3 text-slate-500">{p.requestedAt || p.paidAt || 'আজকে'}</td>
+                                <td className="p-3 text-cyan-800 font-bold">{p.method} ({p.accountNumber})</td>
+                                <td className="p-3 font-mono font-black text-emerald-600">৳ {p.amount.toLocaleString('en-BD')}</td>
+                                <td className="p-3 font-mono text-[#ed347d] font-bold">{p.trxId || 'প্রক্রিয়াধীন'}</td>
+                                <td className="p-3 text-center">
+                                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-black ${
+                                    p.status === 'paid'
+                                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                      : p.status === 'rejected'
+                                      ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                                      : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                  }`}>
+                                    {p.status === 'paid' ? '✓ পরিশোধিত' : p.status === 'rejected' ? '✕ বাতিলকৃত' : 'অপেক্ষমাণ'}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-            </div>
-          )}
+            );
+          })()}
+
+          {/* ========================================================================= */}
+          {/* 10. PROFILE & SETTINGS MODULE (ALL 5 SUBMENUS) */}
+          {/* ========================================================================= */}
+          {activeMenu === 'settings' && (() => {
+            const currentSettingsSub = ['profile_view', 'profile_photo', 'profile_bio', 'profile_password', 'profile_notifications'].includes(activeSubMenu)
+              ? activeSubMenu
+              : 'profile_view';
+
+            const presetAvatars = [
+              'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
+              'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80',
+              'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80',
+              'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=300&q=80',
+              'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=300&q=80',
+              'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=300&q=80',
+            ];
+
+            return (
+              <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
+                {/* 1. Submenu Tabs Navigation */}
+                <div className="bg-white p-2 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-1.5 overflow-x-auto text-xs">
+                  {[
+                    { id: 'profile_view', label: '১. Teacher Profile (প্রোফাইল)', icon: User },
+                    { id: 'profile_photo', label: '২. Profile Photo (ছবি)', icon: Sparkles },
+                    { id: 'profile_bio', label: '৩. Bio & Institution (পরিচিতি)', icon: FileText },
+                    { id: 'profile_password', label: '৪. Password & Security (নিরাপত্তা)', icon: KeyRound },
+                    { id: 'profile_notifications', label: '৫. Notification Settings (নোটিফিকেশন)', icon: Bell },
+                  ].map((sub) => {
+                    const SubIcon = sub.icon;
+                    const isActive = currentSettingsSub === sub.id;
+                    return (
+                      <button
+                        key={sub.id}
+                        type="button"
+                        onClick={() => setActiveSubMenu(sub.id)}
+                        className={`px-3.5 py-2 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
+                          isActive
+                            ? 'bg-gradient-to-r from-[#ed347d] to-pink-600 text-white shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                        }`}
+                      >
+                        <SubIcon className="w-3.5 h-3.5" />
+                        <span>{sub.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* ------------------------------------------------------------- */}
+                {/* SUBMENU 1: PROFILE OVERVIEW */}
+                {/* ------------------------------------------------------------- */}
+                {currentSettingsSub === 'profile_view' && (
+                  <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs space-y-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-6">
+                      <div className="flex items-center gap-4">
+                        <div className="relative">
+                          <img
+                            src={profilePhoto}
+                            alt="Teacher"
+                            className="w-20 h-20 rounded-2xl object-cover border-2 border-pink-300 shadow-md"
+                          />
+                          <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-white" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h2 className="text-lg sm:text-xl font-black text-slate-900">{currentUser.name}</h2>
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              ভেরিফাইড শিক্ষক ✅
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-500 font-semibold mt-0.5">{profileSubjectState} • {profileInstitution}</p>
+                          <span className="text-[11px] text-slate-400 block mt-1">শিক্ষক আইডি: {currentUser.id}</span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setActiveSubMenu('profile_photo')}
+                        className="px-4 py-2 rounded-xl text-xs font-bold text-[#ed347d] bg-pink-50 hover:bg-pink-100 border border-pink-200 transition-colors self-start sm:self-auto cursor-pointer flex items-center gap-1.5"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                        <span>ছবি পরিবর্তন করুন</span>
+                      </button>
+                    </div>
+
+                    {/* Stats Overview */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 text-center">
+                        <span className="text-[10px] text-slate-400 font-bold block">পরিচালিত কোর্স</span>
+                        <span className="text-lg font-black text-slate-800">{teacherCourses.length} টি</span>
+                      </div>
+                      <div className="p-3.5 rounded-2xl bg-indigo-50/50 border border-indigo-100 text-center">
+                        <span className="text-[10px] text-indigo-500 font-bold block">মোট শিক্ষার্থী</span>
+                        <span className="text-lg font-black text-indigo-700">{teacherEnrollments.length} জন</span>
+                      </div>
+                      <div className="p-3.5 rounded-2xl bg-emerald-50/50 border border-emerald-100 text-center">
+                        <span className="text-[10px] text-emerald-500 font-bold block">মোট সেলস</span>
+                        <span className="text-lg font-black text-emerald-700">৳ {teacherTotalSales.toLocaleString()}</span>
+                      </div>
+                      <div className="p-3.5 rounded-2xl bg-rose-50/50 border border-rose-100 text-center">
+                        <span className="text-[10px] text-rose-500 font-bold block">লাইভ ক্লাস</span>
+                        <span className="text-lg font-black text-rose-700">{liveClasses.length} টি</span>
+                      </div>
+                    </div>
+
+                    {/* Info List */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs pt-2">
+                      <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-1">
+                        <span className="text-slate-400 font-bold text-[10px] block">মোবাইল নম্বর</span>
+                        <span className="font-mono font-bold text-slate-800">{currentUser.phone || 'অনবোর্ড নেই'}</span>
+                      </div>
+                      <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-1">
+                        <span className="text-slate-400 font-bold text-[10px] block">ইমেইল এড্রেস</span>
+                        <span className="font-mono font-bold text-slate-800">{currentUser.email || 'অনবোর্ড নেই'}</span>
+                      </div>
+                      <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-1 sm:col-span-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-400 font-bold text-[10px]">শিক্ষক পরিচিতি ও বায়ো</span>
+                          <button
+                            type="button"
+                            onClick={() => setActiveSubMenu('profile_bio')}
+                            className="text-[11px] font-bold text-[#ed347d] hover:underline"
+                          >
+                            এডিট করুন
+                          </button>
+                        </div>
+                        <p className="text-slate-700 leading-relaxed pt-1">{profileBio}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ------------------------------------------------------------- */}
+                {/* SUBMENU 2: PROFILE PHOTO */}
+                {/* ------------------------------------------------------------- */}
+                {currentSettingsSub === 'profile_photo' && (
+                  <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs space-y-6">
+                    <div>
+                      <h3 className="text-base font-black text-slate-900">প্রোফাইল ছবি পরিবর্তন</h3>
+                      <p className="text-xs text-slate-500">আপনার শিক্ষক প্রোফাইল ছবি আপডেট করুন বা নিচের যেকোনো প্রিসেট অবতার নির্বাচন করুন।</p>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-center gap-6 p-6 rounded-3xl bg-slate-50 border border-slate-200/80">
+                      <div className="relative shrink-0">
+                        <img
+                          src={profilePhoto}
+                          alt="Preview"
+                          className="w-28 h-28 rounded-3xl object-cover border-4 border-white shadow-lg"
+                        />
+                        <span className="absolute -bottom-1 -right-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-500 text-white shadow-xs">
+                          লাইভ প্রিভিউ
+                        </span>
+                      </div>
+                      <div className="space-y-3 flex-1 w-full">
+                        <label className="text-xs font-bold text-slate-700 block">কাস্টম ইমেজ লিংক (Image URL)</label>
+                        <input
+                          type="text"
+                          value={profilePhoto}
+                          onChange={(e) => setProfilePhoto(e.target.value)}
+                          placeholder="https://images.unsplash.com/..."
+                          className="w-full px-4 py-2.5 rounded-2xl bg-white border border-slate-200 text-xs focus:outline-none focus:border-[#ed347d]"
+                        />
+                        <p className="text-[11px] text-slate-400">অনলাইন ইমেজ লিংক পেস্ট করুন অথবা নিচের নমুনা ফটোগুলোতে ক্লিক করুন।</p>
+                      </div>
+                    </div>
+
+                    {/* Quick Preset Avatars */}
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-700 block">প্রস্তাবিত পেশাদার শিক্ষক অবতার (One-Click Select):</label>
+                      <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+                        {presetAvatars.map((url, idx) => (
+                          <div
+                            key={idx}
+                            onClick={() => setProfilePhoto(url)}
+                            className={`p-1 rounded-2xl border-2 cursor-pointer transition-all hover:scale-105 ${
+                              profilePhoto === url ? 'border-[#ed347d] shadow-md ring-2 ring-pink-100' : 'border-slate-200 hover:border-pink-200'
+                            }`}
+                          >
+                            <img src={url} alt={`Avatar ${idx + 1}`} className="w-full h-16 rounded-xl object-cover" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      disabled={isSavingProfile}
+                      onClick={handleSaveProfile}
+                      className="px-6 py-3 rounded-2xl text-xs font-bold text-white ph-btn-pink shadow-md shadow-pink-500/20 hover:scale-[1.02] transition-transform flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                    >
+                      {isSavingProfile ? <span>সংরক্ষিত হচ্ছে...</span> : <span>💾 ছবি আপডেট সেভ করুন</span>}
+                    </button>
+                  </div>
+                )}
+
+                {/* ------------------------------------------------------------- */}
+                {/* SUBMENU 3: BIO & INSTITUTION */}
+                {/* ------------------------------------------------------------- */}
+                {currentSettingsSub === 'profile_bio' && (
+                  <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs space-y-6">
+                    <div>
+                      <h3 className="text-base font-black text-slate-900">শিক্ষক পরিচিতি ও প্রাতিষ্ঠানিক তথ্য</h3>
+                      <p className="text-xs text-slate-500">আপনার কর্মস্থল, পড়ানোর বিষয় ও শিক্ষার্থীদের জন্য অনুপ্রেরণামূলক বক্তব্য আপডেট করুন।</p>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-slate-700 block">শিক্ষকের পূর্ণ নাম</label>
+                          <input
+                            type="text"
+                            value={currentUser.name}
+                            readOnly
+                            className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-600"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-bold text-slate-700 block">বর্তমান বিশ্ববিদ্যালয় / প্রতিষ্ঠান *</label>
+                          <input
+                            type="text"
+                            value={profileInstitution}
+                            onChange={(e) => setProfileInstitution(e.target.value)}
+                            placeholder="যেমন: ঢাকা বিশ্ববিদ্যালয় (DU)"
+                            className="w-full px-4 py-2.5 rounded-2xl bg-white border border-slate-200 text-xs focus:outline-none focus:border-[#ed347d]"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-700 block">পাঠদানের মূল বিষয় (Subject Expertise) *</label>
+                        <input
+                          type="text"
+                          value={profileSubjectState}
+                          onChange={(e) => setProfileSubjectState(e.target.value)}
+                          placeholder="যেমন: পদার্থবিজ্ঞান (Physics)"
+                          className="w-full px-4 py-2.5 rounded-2xl bg-white border border-slate-200 text-xs focus:outline-none focus:border-[#ed347d]"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-700 block">শিক্ষক পরিচিতি ও বায়ো (Bio & Philosophy) *</label>
+                        <textarea
+                          rows={4}
+                          value={profileBio}
+                          onChange={(e) => setProfileBio(e.target.value)}
+                          placeholder="আপনার শিক্ষাদান ক্যারিয়ার ও লক্ষ্য সম্পর্কে লিখুন..."
+                          className="w-full px-4 py-2.5 rounded-2xl bg-white border border-slate-200 text-xs focus:outline-none focus:border-[#ed347d] leading-relaxed"
+                        />
+                      </div>
+
+                      <button
+                        type="button"
+                        disabled={isSavingProfile}
+                        onClick={handleSaveProfile}
+                        className="px-6 py-3 rounded-2xl text-xs font-bold text-white ph-btn-pink shadow-md shadow-pink-500/20 hover:scale-[1.02] transition-transform flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                      >
+                        {isSavingProfile ? <span>ডাটাবেজে সেভ হচ্ছে...</span> : <span>💾 পরিচিতি তথ্য সংরক্ষণ করুন</span>}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* ------------------------------------------------------------- */}
+                {/* SUBMENU 4: PASSWORD & SECURITY */}
+                {/* ------------------------------------------------------------- */}
+                {currentSettingsSub === 'profile_password' && (
+                  <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs space-y-6">
+                    <div>
+                      <h3 className="text-base font-black text-slate-900">পাসওয়ার্ড ও অ্যাকাউন্ট নিরাপত্তা</h3>
+                      <p className="text-xs text-slate-500">আপনার শিক্ষক অ্যাকাউন্টের পাসওয়ার্ড পরিবর্তন করে সুরক্ষিত রাখুন।</p>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-800 space-y-1">
+                      <span className="font-bold flex items-center gap-1">
+                        <ShieldCheck className="w-4 h-4 text-amber-600" />
+                        <span>পাসওয়ার্ড নিরাপত্তা নির্দেশিকা:</span>
+                      </span>
+                      <p>কমপক্ষে ৪ বা তার বেশি অক্ষরের পাসওয়ার্ড ব্যবহার করুন। পাসওয়ার্ড পরিবর্তন হলে পরবর্তী লগইনে নতুন পাসওয়ার্ড প্রযোজ্য হবে।</p>
+                    </div>
+
+                    <div className="space-y-4 max-w-lg">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-700 block">নতুন পাসওয়ার্ড</label>
+                        <div className="relative">
+                          <input
+                            type={showProfilePassword ? 'text' : 'password'}
+                            value={profileNewPassword}
+                            onChange={(e) => setProfileNewPassword(e.target.value)}
+                            placeholder="কমপক্ষে ৪ অক্ষর লিখুন"
+                            className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-xs focus:outline-none focus:border-[#ed347d]"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowProfilePassword(!showProfilePassword)}
+                            className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                          >
+                            {showProfilePassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-700 block">নতুন পাসওয়ার্ড নিশ্চিত করুন</label>
+                        <input
+                          type={showProfilePassword ? 'text' : 'password'}
+                          value={profileConfirmPassword}
+                          onChange={(e) => setProfileConfirmPassword(e.target.value)}
+                          placeholder="পাসওয়ার্ড পুনরায় লিখুন"
+                          className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-xs focus:outline-none focus:border-[#ed347d]"
+                        />
+                      </div>
+
+                      <button
+                        type="button"
+                        disabled={isSavingProfile || !profileNewPassword}
+                        onClick={handleSaveProfile}
+                        className="px-6 py-3 rounded-2xl text-xs font-bold text-white ph-btn-pink shadow-md shadow-pink-500/20 hover:scale-[1.02] transition-transform flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                      >
+                        {isSavingProfile ? <span>আপডেট হচ্ছে...</span> : <span>🔐 পাসওয়ার্ড পরিবর্তন করুন</span>}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* ------------------------------------------------------------- */}
+                {/* SUBMENU 5: NOTIFICATION SETTINGS */}
+                {/* ------------------------------------------------------------- */}
+                {currentSettingsSub === 'profile_notifications' && (
+                  <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs space-y-6">
+                    <div>
+                      <h3 className="text-base font-black text-slate-900">নোটিফিকেশন ও এলার্ট সেটিংস</h3>
+                      <p className="text-xs text-slate-500">শিক্ষার্থীদের বিভিন্ন কার্যক্রমের কোন কোন নোটিফিকেশন পেতে চান তা নির্ধারণ করুন।</p>
+                    </div>
+
+                    <div className="space-y-3 divide-y divide-slate-100">
+                      {[
+                        {
+                          key: 'enrollmentAlert',
+                          title: 'নতুন শিক্ষার্থী ভর্তি নোটিফিকেশন',
+                          desc: 'কোনো শিক্ষার্থী আপনার কোর্সে এনরোল করলে তাৎক্ষণিক স্ক্রিন এলার্ট পাবেন।',
+                          icon: Users,
+                        },
+                        {
+                          key: 'doubtAlert',
+                          title: 'শিক্ষার্থীর প্রশ্ন ও ডাউট সমাধান বার্তা',
+                          desc: 'কোর্সের কোনো শিক্ষার্থী নতুন প্রশ্ন বা স্ক্রিনশট পাঠালে নোটিফিকেশন আসবে।',
+                          icon: HelpCircle,
+                        },
+                        {
+                          key: 'cqScriptAlert',
+                          title: 'লিখিত পরীক্ষার খাতা জমা এলার্ট',
+                          desc: 'শিক্ষার্থী সৃজনশীল বা লিখিত পরীক্ষার খাতা সাবমিট করলে মূল্যায়নের জন্য অবগত করা হবে।',
+                          icon: FileCheck,
+                        },
+                        {
+                          key: 'liveReminder',
+                          title: 'লাইভ ক্লাস শুরুর ১৫ মিনিট আগে রিমাইন্ডার',
+                          desc: 'শিডিউল করা লাইভ ক্লাস শুরুর পূর্বে ড্যাশবোর্ডে স্টুডিও প্রিপারেশন রিমাইন্ডার পাবেন।',
+                          icon: Radio,
+                        },
+                        {
+                          key: 'weeklySummary',
+                          title: 'সাপ্তাহিক পারফরম্যান্স ও সেলস সামারি',
+                          desc: 'প্রতি সপ্তাহের মোট বিক্রয় ও শিক্ষার্থী অগ্রগতির সাপ্তাহিক রিপোর্ট পাবেন।',
+                          icon: BarChart3,
+                        },
+                      ].map((item) => {
+                        const ItemIcon = item.icon;
+                        const isChecked = (teacherNotifPrefs as any)[item.key];
+                        return (
+                          <div key={item.key} className="pt-3 flex items-center justify-between gap-4">
+                            <div className="flex items-start gap-3">
+                              <div className="p-2 rounded-xl bg-pink-50 text-[#ed347d] mt-0.5">
+                                <ItemIcon className="w-4 h-4" />
+                              </div>
+                              <div>
+                                <h4 className="text-xs font-bold text-slate-900">{item.title}</h4>
+                                <p className="text-[11px] text-slate-500">{item.desc}</p>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setTeacherNotifPrefs((prev) => ({
+                                  ...prev,
+                                  [item.key]: !isChecked,
+                                }));
+                              }}
+                              className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer shrink-0 ${
+                                isChecked ? 'bg-[#ed347d]' : 'bg-slate-200'
+                              }`}
+                            >
+                              <span className={`w-4 h-4 rounded-full bg-white absolute top-1 transition-transform ${
+                                isChecked ? 'left-6' : 'left-1'
+                              }`} />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        try {
+                          localStorage.setItem('adommo_teacher_notif_prefs', JSON.stringify(teacherNotifPrefs));
+                          showToast('✅ নোটিফিকেশন সেটিংস সফলভাবে সংরক্ষিত হয়েছে!');
+                        } catch {
+                          showToast('⚠️ সংরক্ষণ করা সম্ভব হয়নি!');
+                        }
+                      }}
+                      className="px-6 py-3 rounded-2xl text-xs font-bold text-white ph-btn-pink shadow-md shadow-pink-500/20 hover:scale-[1.02] transition-transform cursor-pointer flex items-center gap-2"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>নোটিফিকেশন পছন্দ সংরক্ষণ করুন</span>
+                    </button>
+                  </div>
+                )}
+
+              </div>
+            );
+          })()}
+
+          {/* ========================================================================= */}
+          {/* 11. TEACHER EARNINGS & PAYOUTS MODULE */}
+          {/* ========================================================================= */}
+          {activeMenu === 'earnings' && (() => {
+            const currentEarningsSub = ['earnings_overview', 'earnings_withdraw', 'earnings_history'].includes(activeSubMenu)
+              ? activeSubMenu
+              : 'earnings_overview';
+
+            return (
+              <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
+                {/* Header & Submenu Navigation */}
+                <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                      <DollarSign className="w-5 h-5 text-emerald-600" />
+                      <span>শিক্ষক উপার্জন ও পেআউট হাব (Teacher Financials)</span>
+                    </h2>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">
+                      আপনার কোর্সের মোট বিক্রয়, কমিশন অংশ এবং ব্যাংকিং বা মোবাইল ওয়ালেটে উইথড্রল রিকোয়েস্ট
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsPayoutModalOpen(true)}
+                    disabled={teacherAvailableBalance < 500}
+                    className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-xs shadow-md shadow-emerald-500/20 active:scale-95 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed self-start sm:self-auto"
+                  >
+                    <WalletCards className="w-4 h-4" />
+                    <span>+ উত্তোলনের আবেদন করুন</span>
+                  </button>
+                </div>
+
+                {/* Submenu Tabs Bar */}
+                <div className="bg-white p-2 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-1.5 overflow-x-auto text-xs">
+                  {[
+                    { id: 'earnings_overview', label: '১. উপার্জনের হিসাব (Overview)', icon: DollarSign },
+                    { id: 'earnings_withdraw', label: '২. উত্তোলনের আবেদন (Request Payout)', icon: WalletCards },
+                    { id: 'earnings_history', label: `৩. পেআউট রেকর্ড ও স্টেটমেন্ট (${teacherPayouts.length})`, icon: Receipt },
+                  ].map((sub) => {
+                    const SubIcon = sub.icon;
+                    const isActive = currentEarningsSub === sub.id;
+                    return (
+                      <button
+                        key={sub.id}
+                        type="button"
+                        onClick={() => setActiveSubMenu(sub.id)}
+                        className={`px-4 py-2.5 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
+                          isActive
+                            ? 'bg-gradient-to-r from-[#ed347d] to-pink-600 text-white shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                        }`}
+                      >
+                        <SubIcon className="w-3.5 h-3.5" />
+                        <span>{sub.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Top 4 Financial Metric Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Card 1: Gross Sales */}
+                  <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-xs space-y-2">
+                    <span className="text-[11px] font-black text-slate-400 uppercase tracking-wider block">মোট কোর্স বিক্রয়</span>
+                    <div className="text-2xl font-black text-slate-900 font-mono">
+                      ৳ {teacherTotalSales.toLocaleString('en-BD')}
+                    </div>
+                    <span className="text-[11px] text-slate-500 block font-medium">
+                      {teacherEnrollments.filter(e => e.status === 'approved').length} টি অনুমোদিত শিক্ষার্থী ভর্তি
+                    </span>
+                  </div>
+
+                  {/* Card 2: Faculty Share */}
+                  <div className="p-5 rounded-3xl bg-emerald-50/70 border border-emerald-200 shadow-xs space-y-2">
+                    <span className="text-[11px] font-black text-emerald-800 uppercase tracking-wider block">আপনার অর্জিত মোট আয় ({teacherCommissionRate}%)</span>
+                    <div className="text-2xl font-black text-emerald-700 font-mono">
+                      ৳ {teacherEarnedTotal.toLocaleString('en-BD')}
+                    </div>
+                    <span className="text-[11px] text-emerald-600 block font-bold">
+                      রেভিনিউ শেয়ার চুক্তিমতে অর্জিত
+                    </span>
+                  </div>
+
+                  {/* Card 3: Paid Out */}
+                  <div className="p-5 rounded-3xl bg-slate-50 border border-slate-200 shadow-xs space-y-2">
+                    <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider block">পরিশোধিত পেআউট</span>
+                    <div className="text-2xl font-black text-slate-700 font-mono">
+                      ৳ {teacherPaidOutSum.toLocaleString('en-BD')}
+                    </div>
+                    <span className="text-[11px] text-slate-400 block font-medium">
+                      {teacherPayouts.filter(p => p.status === 'paid').length} টি সফল ব্যাংক/MFS ট্রানজেকশন
+                    </span>
+                  </div>
+
+                  {/* Card 4: Available Balance */}
+                  <div className="p-5 rounded-3xl bg-pink-50/80 border border-pink-200 shadow-xs space-y-2 relative overflow-hidden">
+                    <span className="text-[11px] font-black text-[#ed347d] uppercase tracking-wider block">উত্তোলনযোগ্য অবশিষ্ট ব্যালেন্স</span>
+                    <div className="text-2xl font-black text-[#ed347d] font-mono">
+                      ৳ {teacherAvailableBalance.toLocaleString('en-BD')}
+                    </div>
+                    {teacherPendingPayoutSum > 0 ? (
+                      <span className="text-[11px] text-amber-700 block font-bold">
+                        ⏳ ৳ {teacherPendingPayoutSum.toLocaleString('en-BD')} অপেক্ষমাণ
+                      </span>
+                    ) : (
+                      <span className="text-[11px] text-slate-500 block font-medium">
+                        তাৎক্ষণিক উত্তোলনের উপযোগী
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Subview 1: Overview & Course-wise breakdown */}
+                {currentEarningsSub === 'earnings_overview' && (
+                  <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs space-y-5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
+                      <div>
+                        <h3 className="text-base font-black text-slate-900">কোর্স ভিত্তিক বিক্রয় ও অর্জিত রাজস্ব রিপোর্ট</h3>
+                        <p className="text-xs text-slate-500">আপনার প্রতিটি কোর্সের এনরোলমেন্ট সংখ্যা এবং রেভিনিউ শেয়ার বণ্টন</p>
+                      </div>
+                      <span className="px-3 py-1 rounded-xl bg-pink-50 text-[#ed347d] text-xs font-black self-start sm:self-auto">
+                        কমিশন রেট: {teacherCommissionRate}%
+                      </span>
+                    </div>
+
+                    {teacherCourses.length === 0 ? (
+                      <div className="p-12 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-slate-400 text-xs">
+                        আপনার কোনো সক্রিয় কোর্স পাওয়া যায়নি। নতুন কোর্স তৈরি করুন।
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-slate-50 text-slate-500 font-black text-[11px] uppercase tracking-wider rounded-xl">
+                            <tr>
+                              <th className="p-3.5">কোর্সের নাম</th>
+                              <th className="p-3.5">ক্যাটাগরি</th>
+                              <th className="p-3.5">কোর্স ফি</th>
+                              <th className="p-3.5">মোট ভর্তি</th>
+                              <th className="p-3.5">মোট বিক্রয়</th>
+                              <th className="p-3.5">আপনার প্রাপ্য ({teacherCommissionRate}%)</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {teacherCourses.map((c, idx) => {
+                              const cEnrolls = teacherEnrollments.filter(e => e.courseId === c.id && e.status === 'approved');
+                              const cSales = cEnrolls.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+                              const cShare = Math.round(cSales * (teacherCommissionRate / 100));
+
+                              return (
+                                <tr key={`${c.id}_${idx}`} className="hover:bg-slate-50/80 transition-colors">
+                                  <td className="p-3.5">
+                                    <div className="font-bold text-slate-900">{c.title}</div>
+                                    <div className="text-[10px] text-slate-400">{c.batch || 'রেগুলার ব্যাচ'}</div>
+                                  </td>
+                                  <td className="p-3.5">
+                                    <span className="px-2.5 py-0.5 rounded-lg bg-pink-50 text-[#ed347d] font-bold text-[10px]">
+                                      {c.category}
+                                    </span>
+                                  </td>
+                                  <td className="p-3.5 font-mono font-bold text-slate-700">৳ {c.offerPrice || c.regularPrice}</td>
+                                  <td className="p-3.5 font-bold text-slate-900">{cEnrolls.length} জন</td>
+                                  <td className="p-3.5 font-black text-slate-900 font-mono">৳ {cSales.toLocaleString('en-BD')}</td>
+                                  <td className="p-3.5 font-black text-emerald-600 font-mono text-sm">৳ {cShare.toLocaleString('en-BD')}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Subview 2: Request Payout Form */}
+                {currentEarningsSub === 'earnings_withdraw' && (
+                  <form onSubmit={handleRequestPayoutSubmit} className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs space-y-6 max-w-2xl">
+                    <div className="border-b border-slate-100 pb-4">
+                      <h3 className="text-base font-black text-slate-900">টাকা উত্তোলনের নতুন আবেদন (Payout Request)</h3>
+                      <p className="text-xs text-slate-500">
+                        আপনার বর্তমান উত্তোলনযোগ্য ব্যালেন্স: <strong className="text-emerald-600">৳ {teacherAvailableBalance.toLocaleString('en-BD')}</strong>
+                      </p>
+                    </div>
+
+                    <div className="space-y-4 text-xs">
+                      <div>
+                        <label className="font-bold text-slate-700 block mb-1">উত্তোলনের টাকার অঙ্ক (৳)</label>
+                        <input
+                          type="number"
+                          value={withdrawForm.amount}
+                          onChange={(e) => setWithdrawForm({ ...withdrawForm, amount: e.target.value })}
+                          placeholder="যেমন: 5000"
+                          max={teacherAvailableBalance}
+                          className="w-full p-3.5 rounded-2xl border border-slate-200 text-sm font-mono focus:border-[#ed347d] focus:outline-none"
+                        />
+                        <span className="text-[11px] text-slate-400 mt-1 block">
+                          সর্বনিম্ন উত্তোলন সীমা ৳ ৫০০ টাকা। সর্বোচ্চ উত্তোলনযোগ্য: ৳ {teacherAvailableBalance.toLocaleString('en-BD')}
+                        </span>
+                      </div>
+
+                      <div>
+                        <label className="font-bold text-slate-700 block mb-1">উত্তোলনের মাধ্যম নির্বাচন করুন</label>
+                        <div className="grid grid-cols-3 gap-3">
+                          {(['bKash', 'Nagad', 'Bank Transfer'] as const).map((m) => (
+                            <button
+                              key={m}
+                              type="button"
+                              onClick={() => setWithdrawForm({ ...withdrawForm, method: m })}
+                              className={`p-3 rounded-2xl border text-center font-bold text-xs transition-all cursor-pointer ${
+                                withdrawForm.method === m
+                                  ? 'border-[#ed347d] bg-[#fff0f5] text-[#ed347d] shadow-2xs'
+                                  : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                              }`}
+                            >
+                              {m === 'bKash' ? 'বিকাশ (bKash)' : m === 'Nagad' ? 'নগদ (Nagad)' : 'ব্যাংক ট্রান্সফার'}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {withdrawForm.method === 'Bank Transfer' ? (
+                        <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="font-bold text-slate-700 block mb-1">ব্যাংকের নাম</label>
+                              <input
+                                type="text"
+                                value={withdrawForm.bankName}
+                                onChange={(e) => setWithdrawForm({ ...withdrawForm, bankName: e.target.value })}
+                                placeholder="যেমন: City Bank Ltd."
+                                className="w-full p-3 rounded-xl border border-slate-200 bg-white"
+                              />
+                            </div>
+                            <div>
+                              <label className="font-bold text-slate-700 block mb-1">শাখার নাম (Branch)</label>
+                              <input
+                                type="text"
+                                value={withdrawForm.branchName}
+                                onChange={(e) => setWithdrawForm({ ...withdrawForm, branchName: e.target.value })}
+                                placeholder="যেমন: ধানমন্ডি শাখা"
+                                className="w-full p-3 rounded-xl border border-slate-200 bg-white"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="font-bold text-slate-700 block mb-1">হিসাবধারীর পূর্ণ নাম (Account Name)</label>
+                              <input
+                                type="text"
+                                value={withdrawForm.accountName}
+                                onChange={(e) => setWithdrawForm({ ...withdrawForm, accountName: e.target.value })}
+                                placeholder="হিসাবের নাম"
+                                className="w-full p-3 rounded-xl border border-slate-200 bg-white"
+                              />
+                            </div>
+                            <div>
+                              <label className="font-bold text-slate-700 block mb-1">একাউন্ট নম্বর (Account Number)</label>
+                              <input
+                                type="text"
+                                value={withdrawForm.accountNumber}
+                                onChange={(e) => setWithdrawForm({ ...withdrawForm, accountNumber: e.target.value })}
+                                placeholder="1102938475"
+                                className="w-full p-3 rounded-xl border border-slate-200 bg-white font-mono"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="font-bold text-slate-700 block mb-1">রাউটিং নম্বর (Routing No - ঐচ্ছিক)</label>
+                            <input
+                              type="text"
+                              value={withdrawForm.routingNumber}
+                              onChange={(e) => setWithdrawForm({ ...withdrawForm, routingNumber: e.target.value })}
+                              placeholder="225271829"
+                              className="w-full p-3 rounded-xl border border-slate-200 bg-white font-mono"
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <label className="font-bold text-slate-700 block mb-1">
+                            {withdrawForm.method} একাউন্ট মোবাইল নম্বর
+                          </label>
+                          <input
+                            type="text"
+                            value={withdrawForm.accountNumber}
+                            onChange={(e) => setWithdrawForm({ ...withdrawForm, accountNumber: e.target.value })}
+                            placeholder="01XXXXXXXXX"
+                            className="w-full p-3.5 rounded-2xl border border-slate-200 font-mono text-sm"
+                          />
+                        </div>
+                      )}
+
+                      <div>
+                        <label className="font-bold text-slate-700 block mb-1">অ্যাডমিনের উদ্দেশ্যে নোট (ঐচ্ছিক)</label>
+                        <textarea
+                          rows={2}
+                          value={withdrawForm.note}
+                          onChange={(e) => setWithdrawForm({ ...withdrawForm, note: e.target.value })}
+                          placeholder="যেমন: চলতি মাসের রেভিনিউ শেয়ার সেটলমেন্ট"
+                          className="w-full p-3 rounded-2xl border border-slate-200 resize-none"
+                        />
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={isSubmittingPayout || teacherAvailableBalance < 500}
+                        className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black text-sm shadow-md shadow-emerald-500/20 active:scale-98 transition-all cursor-pointer disabled:opacity-50"
+                      >
+                        {isSubmittingPayout ? 'আবেদন পাঠানো হচ্ছে...' : '💸 উত্তোলনের আবেদন নিশ্চিত করুন'}
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {/* Subview 3: Payouts History & Statement */}
+                {currentEarningsSub === 'earnings_history' && (
+                  <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs space-y-5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
+                      <div>
+                        <h3 className="text-base font-black text-slate-900">পেআউট ও উইথড্রল হিস্ট্রি রেজিস্টার</h3>
+                        <p className="text-xs text-slate-500">আপনার প্রেরিত সকল উত্তোলনের আবেদন, অনুমোদিত ভাউচার ও ট্রানজেকশন হিস্ট্রি</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={refreshTeacherPayouts}
+                        className="text-xs text-[#ed347d] font-bold hover:underline cursor-pointer"
+                      >
+                        🔄 রিফ্রেশ করুন
+                      </button>
+                    </div>
+
+                    {teacherPayouts.length === 0 ? (
+                      <div className="p-12 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-slate-400 text-xs">
+                        এখনো কোনো পেআউট রিকোয়েস্ট বা লেনদেন সম্পন্ন হয়নি।
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-slate-50 text-slate-500 font-black text-[11px] uppercase tracking-wider rounded-xl">
+                            <tr>
+                              <th className="p-3.5">ভাউচার আইডি</th>
+                              <th className="p-3.5">আবেদনের তারিখ</th>
+                              <th className="p-3.5">উত্তোলনের মাধ্যম</th>
+                              <th className="p-3.5">অ্যাকাউন্ট বিবরণ</th>
+                              <th className="p-3.5">টাকার অঙ্ক</th>
+                              <th className="p-3.5">স্ট্যাটাস</th>
+                              <th className="p-3.5">অ্যাডমিন TrxID / মন্তব্য</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {teacherPayouts.map((p, idx) => (
+                              <tr key={`${p.id}_${idx}`} className="hover:bg-slate-50/80 transition-colors">
+                                <td className="p-3.5 font-mono font-bold text-slate-700">{p.id}</td>
+                                <td className="p-3.5 text-slate-500">{p.requestedAt || (p as any).createdAt || 'সম্প্রতি'}</td>
+                                <td className="p-3.5">
+                                  <span className="font-bold text-slate-800">{p.method}</span>
+                                </td>
+                                <td className="p-3.5">
+                                  {p.bankDetails ? (
+                                    <div className="text-[11px]">
+                                      <span className="font-bold text-slate-800 block">{p.bankDetails.bankName}</span>
+                                      <span className="text-slate-500 block font-mono">{p.accountNumber} ({p.bankDetails.branchName})</span>
+                                    </div>
+                                  ) : (
+                                    <span className="font-mono font-bold text-slate-700">{p.accountNumber}</span>
+                                  )}
+                                </td>
+                                <td className="p-3.5 font-black text-slate-900 font-mono text-sm">
+                                  ৳ {p.amount.toLocaleString('en-BD')}
+                                </td>
+                                <td className="p-3.5">
+                                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black ${
+                                    p.status === 'paid'
+                                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                      : p.status === 'rejected'
+                                      ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                                      : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                  }`}>
+                                    <span className={`w-1.5 h-1.5 rounded-full ${
+                                      p.status === 'paid' ? 'bg-emerald-500' : p.status === 'rejected' ? 'bg-rose-500' : 'bg-amber-500 animate-pulse'
+                                    }`} />
+                                    {p.status === 'paid' ? '✓ পরিশোধিত' : p.status === 'rejected' ? '✕ বাতিলকৃত' : '⏳ অপেক্ষমাণ'}
+                                  </span>
+                                </td>
+                                <td className="p-3.5">
+                                  {p.status === 'paid' ? (
+                                    <div>
+                                      <span className="font-mono font-black text-[#ed347d] text-[11px] block">{p.trxId}</span>
+                                      <span className="text-[10px] text-slate-400">{p.paidAt}</span>
+                                    </div>
+                                  ) : p.status === 'rejected' ? (
+                                    <span className="text-rose-600 text-[11px]">{p.rejectionReason || 'বাতিল করা হয়েছে'}</span>
+                                  ) : (
+                                    <span className="text-slate-400 text-[11px] italic">অ্যাডমিন রিভিউ প্রক্রিয়ায়</span>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
         </main>
 

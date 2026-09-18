@@ -353,7 +353,7 @@ export const SUBJECT_DEFINITIONS = [
   },
   {
     name: 'তথ্য ও যোগাযোগ প্রযুক্তি',
-    regex: /ict|তথ্য ও যোগাযোগ|সংখ্যা পদ্ধতি|html|সি প্রোগ্রামিং|নেটওয়ার্ক/gi
+    regex: /\bict\b|তথ্য\s*(?:ও|এবং)?\s*যোগাযোগ|সংখ্যা\s*পদ্ধতি|ডিজিটাল\s*ডিভাইস|সি\s*প্রোগ্রামিং|\bc\s*programming\b/gi
   }
 ];
 
@@ -367,8 +367,12 @@ export function inferSubjectTitleFromContent(contentText: string, fallbackTitle:
   let best: string | null = null;
   let maxScore = 0;
 
+  const cleanText = (contentText || '')
+    .replace(/https?:\/\/[^\s\)\"\'\[\]\>]+/gi, ' ')
+    .replace(/\[\s*(?:photo|video|picture|document|audio|file|contact|location)\s*\]/gi, ' ');
+
   for (const def of SUBJECT_DEFINITIONS) {
-    const matches = contentText.match(def.regex);
+    const matches = cleanText.match(def.regex);
     const score = matches ? matches.length : 0;
     if (score > maxScore) {
       maxScore = score;

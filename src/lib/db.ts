@@ -39,6 +39,31 @@ function writeCollection<T>(collection: string, items: T[]): void {
 }
 
 // ============================================================================
+// HIGH-SPEED IN-MEMORY CACHE WITH CLOUD INVALIDATION
+// ============================================================================
+const memoryCache: Record<string, { data: any[]; timestamp: number }> = {};
+const CACHE_TTL_MS = 20 * 1000; // 20 seconds TTL
+
+export function getCachedCollection<T>(collection: string): T[] | null {
+  const cached = memoryCache[collection];
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    return cached.data as T[];
+  }
+  return null;
+}
+
+export function setCachedCollection<T>(collection: string, items: T[]): void {
+  memoryCache[collection] = {
+    data: items,
+    timestamp: Date.now(),
+  };
+}
+
+export function invalidateCollectionCache(collection: string): void {
+  delete memoryCache[collection];
+}
+
+// ============================================================================
 // MONGODB ATLAS CLOUD CONNECTION & SINGLETON ENGINE
 // ============================================================================
 const MONGODB_URI = process.env.MONGODB_URI || '';
@@ -55,14 +80,43 @@ export function getMongoClient(): Promise<MongoClient> | null {
     const client = new MongoClient(MONGODB_URI, {
       maxPoolSize: 10,
       serverSelectionTimeoutMS: 5000,
+      connectTimeoutMS: 5000,
     });
     globalWithMongo._mongoClientPromise = client.connect().catch((err) => {
-      console.warn('MongoDB Atlas connection error:', err.message);
+      console.warn('MongoDB Atlas connection error (falling back to local JSON):', err.message);
       globalWithMongo._mongoClientPromise = undefined;
-      throw err;
+      return null as any;
     });
   }
   return globalWithMongo._mongoClientPromise;
+}
+
+let _indexesEnsured = false;
+export async function ensureDbIndexes(): Promise<void> {
+  if (_indexesEnsured) return;
+  try {
+    const atlas = await getAtlasDb();
+    if (!atlas) return;
+    _indexesEnsured = true;
+
+    // 1. Users collection indexes (for instant login & registration check)
+    const usersCol = atlas.collection('users');
+    await usersCol.createIndex({ id: 1 }, { unique: true, sparse: true });
+    await usersCol.createIndex({ phone: 1, role: 1 });
+    await usersCol.createIndex({ email: 1, role: 1 });
+
+    // 2. Courses collection indexes (for fast catalog querying & sorting)
+    const coursesCol = atlas.collection('courses');
+    await coursesCol.createIndex({ id: 1 }, { unique: true, sparse: true });
+    await coursesCol.createIndex({ isPublished: 1, category: 1 });
+
+    // 3. Enrollments collection indexes
+    const enrollmentsCol = atlas.collection('enrollments');
+    await enrollmentsCol.createIndex({ id: 1 }, { unique: true, sparse: true });
+    await enrollmentsCol.createIndex({ studentId: 1, courseId: 1 });
+  } catch (err: any) {
+    // Indexes might already exist
+  }
 }
 
 export async function getAtlasDb(): Promise<Db | null> {
@@ -70,9 +124,14 @@ export async function getAtlasDb(): Promise<Db | null> {
   if (!clientP) return null;
   try {
     const client = await clientP;
-    return client.db(MONGODB_DB);
+    if (!client) return null;
+    const db = client.db(MONGODB_DB);
+    if (!_indexesEnsured) {
+      setTimeout(() => ensureDbIndexes().catch(() => {}), 100);
+    }
+    return db;
   } catch (err: any) {
-    console.warn('MongoDB Atlas getAtlasDb error:', err.message);
+    console.warn('MongoDB Atlas getAtlasDb error (using local JSON storage):', err.message);
     return null;
   }
 }
@@ -137,6 +196,42 @@ export function verifyToken<T>(token: string): T | null {
   }
 }
 
+// Helper to match in-memory documents against functions or Mongo-like queries
+function matchDoc(doc: any, queryOrFilter: any): boolean {
+  if (!doc) return false;
+  if (typeof queryOrFilter === 'function') {
+    return !!queryOrFilter(doc);
+  }
+  if (!queryOrFilter || typeof queryOrFilter !== 'object') {
+    return true;
+  }
+  for (const [key, value] of Object.entries(queryOrFilter)) {
+    if (key === '$or' && Array.isArray(value)) {
+      const orMatched = value.some((subQuery) => matchDoc(doc, subQuery));
+      if (!orMatched) return false;
+    } else if (key === '$and' && Array.isArray(value)) {
+      const andMatched = value.every((subQuery) => matchDoc(doc, subQuery));
+      if (!andMatched) return false;
+    } else if (value && typeof value === 'object' && !Array.isArray(value)) {
+      if ('$in' in (value as any) && Array.isArray((value as any).$in)) {
+        if (!(value as any).$in.includes(doc[key])) return false;
+      } else if ('$ne' in (value as any)) {
+        if (doc[key] === (value as any).$ne) return false;
+      } else if ('$regex' in (value as any)) {
+        const regex = new RegExp((value as any).$regex, (value as any).$options || 'i');
+        if (!regex.test(String(doc[key] || ''))) return false;
+      }
+    } else {
+      if (typeof value === 'string' && typeof doc[key] === 'string') {
+        if (doc[key].toLowerCase() !== value.toLowerCase() && doc[key] !== value) return false;
+      } else if (doc[key] !== value) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 // ============================================================================
 // GENERAL CRUD REPOSITORY (LOCAL FILESYSTEM + MONGODB ATLAS CLOUD SYNC)
 // ============================================================================
@@ -195,34 +290,97 @@ export const db = {
   // ==========================================================================
   // ASYNC CLOUD-AWARE CRUD METHODS (MONGODB ATLAS PRIMARY, LOCAL FALLBACK)
   // ==========================================================================
-  findOneAsync: async <T = any>(collection: string, queryOrFilter: any): Promise<T | null> => {
+  findOneAsync: async <T = any>(collection: string, queryOrFilter: any, mongoFilter?: any): Promise<T | null> => {
+    // 1. Fast check in-memory cache (sub-millisecond)
+    let cached = getCachedCollection<T>(collection);
+    if (!cached) {
+      const localItems = readCollection<T>(collection);
+      if (localItems && localItems.length > 0) {
+        setCachedCollection(collection, localItems);
+        cached = localItems;
+      }
+    }
+
+    if (cached) {
+      const found = cached.find((item: any) => matchDoc(item, queryOrFilter));
+      if (found) return found;
+    }
+
+    // 2. Direct indexed Atlas lookup
     try {
       const atlas = await getAtlasDb();
       if (atlas) {
         const col = atlas.collection(collection);
         let item: any = null;
-        if (typeof queryOrFilter === 'function') {
-          const all = await col.find({}).toArray();
+        const directFilter = mongoFilter || (typeof queryOrFilter === 'object' && queryOrFilter !== null ? queryOrFilter : null);
+
+        if (directFilter) {
+          item = await col.findOne(directFilter);
+        } else if (typeof queryOrFilter === 'function') {
+          const all = await col.find({}).limit(500).toArray();
           item = (all as any[]).find(queryOrFilter);
-        } else if (queryOrFilter && typeof queryOrFilter === 'object') {
-          item = await col.findOne(queryOrFilter);
         }
+
         if (item) {
           const { _id, ...clean } = item;
+          // Seed to in-memory cache and local file
+          const currentCache = getCachedCollection<any>(collection) || [];
+          if (!currentCache.some(c => c.id === clean.id)) {
+            const updated = [...currentCache, clean];
+            setCachedCollection(collection, updated);
+            writeCollection(collection, updated);
+          }
           return clean as unknown as T;
         }
+        return null;
       }
     } catch (err: any) {
-      console.warn(`findOneAsync(${collection}) Atlas warning:`, err.message);
+      console.warn(`findOneAsync(${collection}) Atlas warning, falling back to local:`, err.message);
     }
-    // Local JSON fallback
-    if (typeof queryOrFilter === 'function') {
-      return db.findOne<T>(collection, queryOrFilter);
-    }
-    return null;
+
+    // 3. Offline Local JSON fallback
+    const items = readCollection<T>(collection);
+    return items.find((item: any) => matchDoc(item, queryOrFilter)) || null;
   },
 
   findManyAsync: async <T = any>(collection: string, queryOrFilter?: any): Promise<T[]> => {
+    // 1. Check in-memory cache
+    let cached = getCachedCollection<T>(collection);
+
+    // 2. If memory cache is cold, seed immediately from local disk mirror (1ms response)
+    if (!cached) {
+      const localItems = readCollection<T>(collection);
+      if (localItems && localItems.length > 0) {
+        setCachedCollection(collection, localItems);
+        cached = localItems;
+
+        // Background non-blocking sync from Atlas
+        getAtlasDb().then(async (atlas) => {
+          if (!atlas) return;
+          try {
+            const all = await atlas.collection(collection).find({}).toArray();
+            if (all && all.length > 0) {
+              const cleaned = all.map((doc: any) => {
+                const { _id, ...clean } = doc;
+                return clean;
+              });
+              setCachedCollection(collection, cleaned);
+              writeCollection(collection, cleaned);
+            }
+          } catch (e) {}
+        }).catch(() => {});
+      }
+    }
+
+    if (cached) {
+      if (queryOrFilter) {
+        return cached.filter((item: any) => matchDoc(item, queryOrFilter));
+      } else {
+        return cached;
+      }
+    }
+
+    // 3. If neither cache nor local had items, fetch from Atlas directly
     try {
       const atlas = await getAtlasDb();
       if (atlas) {
@@ -236,25 +394,37 @@ export const db = {
         } else {
           results = await col.find({}).toArray();
         }
-        if (results && results.length > 0) {
-          const cleaned = results.map((doc: any) => {
-            const { _id, ...clean } = doc;
-            return clean;
-          });
-          // Cache to local JSON if local file is empty or missing
-          try {
-            const local = readCollection(collection);
-            if (!local || local.length === 0) {
-              writeCollection(collection, cleaned);
-            }
-          } catch {}
-          return cleaned as unknown as T[];
+
+        const cleaned = (results || []).map((doc: any) => {
+          const { _id, ...clean } = doc;
+          return clean;
+        });
+
+        // Prime cache and local file
+        if (!queryOrFilter) {
+          setCachedCollection(collection, cleaned);
+          writeCollection(collection, cleaned);
         }
+
+        return cleaned as unknown as T[];
       }
     } catch (err: any) {
-      console.warn(`findManyAsync(${collection}) Atlas warning:`, err.message);
+      console.warn(`findManyAsync(${collection}) Atlas warning, falling back to local:`, err.message);
     }
-    return db.findMany<T>(collection, typeof queryOrFilter === 'function' ? queryOrFilter : undefined);
+
+    // 4. Offline Local JSON fallback
+    const items = readCollection<T>(collection);
+    if (!queryOrFilter) {
+      setCachedCollection(collection, items);
+    }
+    if (typeof queryOrFilter === 'function') {
+      return items.filter(queryOrFilter);
+    } else if (queryOrFilter && typeof queryOrFilter === 'object') {
+      return items.filter((item: any) => {
+        return Object.entries(queryOrFilter).every(([k, v]) => item[k] === v);
+      });
+    }
+    return items;
   },
 
   createAsync: async <T extends Record<string, any> = any>(collection: string, item: T): Promise<T & { id: string }> => {
@@ -265,6 +435,10 @@ export const db = {
       ...cleanItem,
     };
 
+    // Invalidate in-memory cache
+    invalidateCollectionCache(collection);
+
+    // 1. Write to Atlas
     try {
       const atlas = await getAtlasDb();
       if (atlas) {
@@ -274,6 +448,7 @@ export const db = {
       console.warn(`createAsync(${collection}) Atlas warning:`, err.message);
     }
 
+    // 2. Write to local JSON file as backup mirror
     try {
       const items = readCollection<any>(collection);
       items.unshift(newItem);
@@ -288,6 +463,10 @@ export const db = {
     const updateData = { ...cleanData, updatedAt: new Date().toISOString() };
     let updatedDoc: T | null = null;
 
+    // Invalidate in-memory cache
+    invalidateCollectionCache(collection);
+
+    // 1. Update in Atlas
     try {
       const atlas = await getAtlasDb();
       if (atlas) {
@@ -302,24 +481,49 @@ export const db = {
       console.warn(`updateAsync(${collection}) Atlas warning:`, err.message);
     }
 
-    // Also update local JSON file as durable backup
+    // 2. Update in local JSON backup without duplicate Atlas sync
     try {
-      const localUpdated = db.update(collection, id, updateData);
-      return updatedDoc || localUpdated;
-    } catch {
-      return updatedDoc;
-    }
+      const items = readCollection<any>(collection);
+      const index = items.findIndex((i) => i.id === id);
+      if (index !== -1) {
+        items[index] = { ...items[index], ...updateData };
+        writeCollection(collection, items);
+        if (!updatedDoc) {
+          updatedDoc = items[index] as T;
+        }
+      }
+    } catch {}
+
+    return updatedDoc;
   },
 
   deleteAsync: async (collection: string, id: string): Promise<boolean> => {
+    let success = false;
+
+    // Invalidate in-memory cache
+    invalidateCollectionCache(collection);
+
+    // 1. Delete from Atlas
     try {
       const atlas = await getAtlasDb();
       if (atlas) {
-        await atlas.collection(collection).deleteOne({ id });
+        const res = await atlas.collection(collection).deleteOne({ id });
+        success = (res.deletedCount || 0) > 0;
       }
     } catch (err: any) {
       console.warn(`deleteAsync(${collection}) Atlas warning:`, err.message);
     }
-    return db.delete(collection, id);
+
+    // 2. Delete from local JSON backup without duplicate Atlas sync
+    try {
+      const items = readCollection<any>(collection);
+      const filtered = items.filter((i) => i.id !== id);
+      if (filtered.length !== items.length) {
+        success = true;
+        writeCollection(collection, filtered);
+      }
+    } catch {}
+
+    return success;
   }
 };

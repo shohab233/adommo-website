@@ -379,7 +379,13 @@ export default function ProtectedVideoPlayer({ videoUrl, title }: ProtectedVideo
         maxBufferLength: 60,
         maxMaxBufferLength: 600,
         maxBufferSize: 60 * 1000 * 1000,
-        fragLoadingTimeOut: 20000,
+        manifestLoadingTimeOut: 30000,
+        manifestLoadingMaxRetry: 6,
+        manifestLoadingRetryDelay: 1000,
+        levelLoadingTimeOut: 30000,
+        levelLoadingMaxRetry: 6,
+        levelLoadingRetryDelay: 1000,
+        fragLoadingTimeOut: 30000,
         fragLoadingMaxRetry: 6,
         fragLoadingRetryDelay: 1000,
       });
@@ -390,12 +396,19 @@ export default function ProtectedVideoPlayer({ videoUrl, title }: ProtectedVideo
 
       hls.on(Hls.Events.MANIFEST_PARSED, (_, data) => {
         setIsBuffering(false);
+        setHasError(false);
         if (data.levels && data.levels.length > 0) {
           const qualities = ['Auto', ...data.levels.map((lvl) => `${lvl.height}p`)];
           // Remove duplicates
           const unique = Array.from(new Set(qualities));
           setAvailableQualities(unique);
         }
+        // Attempt autoplay if browser allows
+        video.play().then(() => {
+          setIsPlaying(true);
+        }).catch((e) => {
+          console.log('Video autoplay deferred (needs user tap):', e?.message || e);
+        });
       });
 
       hls.on(Hls.Events.ERROR, (_, errorData) => {
@@ -403,7 +416,15 @@ export default function ProtectedVideoPlayer({ videoUrl, title }: ProtectedVideo
           switch (errorData.type) {
             case Hls.ErrorTypes.NETWORK_ERROR:
               console.warn('HLS Network Error, recovering...', errorData.details);
-              hls.startLoad();
+              if (errorData.details === 'manifestLoadError' || errorData.details === 'manifestLoadTimeOut') {
+                setTimeout(() => {
+                  if (hlsRef.current) {
+                    hlsRef.current.loadSource(mediaSource.url);
+                  }
+                }, 1500);
+              } else {
+                hls.startLoad();
+              }
               break;
             case Hls.ErrorTypes.MEDIA_ERROR:
               console.warn('HLS Media Error, recovering...', errorData.details);

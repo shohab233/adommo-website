@@ -44,7 +44,7 @@ export default function HomePage() {
   ];
 
   const uniqueCourses = Array.from(new Map(courses.map((c) => [c.id, c])).values());
-  const publishedCourses = uniqueCourses.filter((c) => !c.isDraft);
+  const publishedCourses = uniqueCourses.filter((c) => !c.isDraft && !c.isArchived);
 
   // Home page strictly shows Top 3 courses with the highest enrollments
   const topEnrolledCourses = [...publishedCourses]

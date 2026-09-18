@@ -1,6 +1,35 @@
 [
   {
-    "id": "notif_1789446917764",
+    "id": "notif_1789445650025",
+    "createdAt": "এইমাত্র",
+    "title": "নতুন শিক্ষক KYC ভেরিফিকেশন আবেদন",
+    "message": "Miss Sadiya (উচ্চতর গণিত (Higher Math) • Pirganj Govment Collage) শিক্ষক হিসেবে KYC যাচাইয়ের জন্য আবেদন জমা দিয়েছেন। আবেদন আইডি: #KYC-2026-7000",
+    "category": "general",
+    "priority": "high",
+    "targetAudience": "role",
+    "targetRole": "admin",
+    "senderName": "সিস্টেম ভেরিফিকেশন",
+    "actionLabel": "KYC যাচাই করুন",
+    "actionUrl": "/admin",
+    "readBy": [],
+    "viewCount": 1
+  },
+  {
+    "id": "notif_1789445650027",
+    "createdAt": "এইমাত্র",
+    "title": "KYC আবেদন সফলভাবে জমা হয়েছে",
+    "message": "আপনার শিক্ষক KYC আবেদন #KYC-2026-7000 সুপার অ্যাডমিনের নিকট সফলভাবে জমা হয়েছে। যাচাই শেষে অনুমোদিত হলে ড্যাশবোর্ড সক্রিয় হবে।",
+    "category": "general",
+    "priority": "normal",
+    "targetAudience": "user",
+    "targetRole": "teacher",
+    "targetUserId": "id_1789445514102_3skcz",
+    "senderName": "অদম্য ভেরিফিকেশন উইং",
+    "readBy": [],
+    "viewCount": 1
+  },
+  {
+    "id": "notif_1789446861761",
     "createdAt": "এইমাত্র",
     "title": "🎉 শিক্ষক KYC ভেরিফিকেশন অনুমোদিত!",
     "message": "অভিনন্দন Miss Sadiya! আপনার শিক্ষক ভেরিফিকেশন আবেদন #KYC-2026-7182 সুপার অ্যাডমিন কর্তৃক সফলভাবে অনুমোদিত হয়েছে। এখন আপনি শিক্ষক পোর্টালে সম্পূর্ণ এক্সেস পাবেন।",
@@ -32,7 +61,7 @@
     "viewCount": 1
   },
   {
-    "id": "notif_1789446861761",
+    "id": "notif_1789446917764",
     "createdAt": "এইমাত্র",
     "title": "🎉 শিক্ষক KYC ভেরিফিকেশন অনুমোদিত!",
     "message": "অভিনন্দন Miss Sadiya! আপনার শিক্ষক ভেরিফিকেশন আবেদন #KYC-2026-7182 সুপার অ্যাডমিন কর্তৃক সফলভাবে অনুমোদিত হয়েছে। এখন আপনি শিক্ষক পোর্টালে সম্পূর্ণ এক্সেস পাবেন।",
@@ -44,35 +73,6 @@
     "senderName": "সুপার অ্যাডমিন",
     "actionLabel": "শিক্ষক স্টুডিওতে যান",
     "actionUrl": "/teacher",
-    "readBy": [],
-    "viewCount": 1
-  },
-  {
-    "id": "notif_1789445650027",
-    "createdAt": "এইমাত্র",
-    "title": "KYC আবেদন সফলভাবে জমা হয়েছে",
-    "message": "আপনার শিক্ষক KYC আবেদন #KYC-2026-7000 সুপার অ্যাডমিনের নিকট সফলভাবে জমা হয়েছে। যাচাই শেষে অনুমোদিত হলে ড্যাশবোর্ড সক্রিয় হবে।",
-    "category": "general",
-    "priority": "normal",
-    "targetAudience": "user",
-    "targetRole": "teacher",
-    "targetUserId": "id_1789445514102_3skcz",
-    "senderName": "অদম্য ভেরিফিকেশন উইং",
-    "readBy": [],
-    "viewCount": 1
-  },
-  {
-    "id": "notif_1789445650025",
-    "createdAt": "এইমাত্র",
-    "title": "নতুন শিক্ষক KYC ভেরিফিকেশন আবেদন",
-    "message": "Miss Sadiya (উচ্চতর গণিত (Higher Math) • Pirganj Govment Collage) শিক্ষক হিসেবে KYC যাচাইয়ের জন্য আবেদন জমা দিয়েছেন। আবেদন আইডি: #KYC-2026-7000",
-    "category": "general",
-    "priority": "high",
-    "targetAudience": "role",
-    "targetRole": "admin",
-    "senderName": "সিস্টেম ভেরিফিকেশন",
-    "actionLabel": "KYC যাচাই করুন",
-    "actionUrl": "/admin",
     "readBy": [],
     "viewCount": 1
   }

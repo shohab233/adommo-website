@@ -20,6 +20,7 @@ interface AppContextType {
   enrollInCourse: (courseId: string, paymentMethod: 'bKash' | 'Nagad' | 'Rocket' | 'Manual TrxID', trxId: string, senderPhone: string) => { success: boolean; message: string };
   approveEnrollment: (enrollmentId: string) => void;
   rejectEnrollment: (enrollmentId: string) => void;
+  refundEnrollment: (enrollmentId: string) => void;
   deleteEnrollment: (enrollmentId: string) => void;
   addCourse: (course: Partial<Course>) => void;
   updateCourse: (courseId: string, updatedData: Partial<Course>) => void;
@@ -73,15 +74,18 @@ interface AppContextType {
   conversations: ConversationThread[];
   unreadTeacherMsgCount: number;
   unreadStudentMsgCount: number;
-  sendChatMessage: (threadId: string, text: string, imageUrl?: string, senderRole?: 'teacher' | 'student' | 'admin') => void;
+  sendChatMessage: (threadId: string, text: string, imageUrl?: string, senderRole?: 'teacher' | 'student' | 'admin', markSolved?: boolean) => void;
   createDoubtThread: (data: { courseId: string; courseTitle: string; subject: string; chapter: string; topic?: string; question: string; imageUrl?: string }) => string;
   markThreadAsRead: (threadId: string, role: 'teacher' | 'student') => void;
   toggleDoubtStatus: (threadId: string) => void;
   getOrCreateBatchGroup: (courseId: string, courseTitle?: string) => ConversationThread;
+  getOrCreateDirectThread: (teacherId: string, teacherName: string, teacherAvatar?: string, courseId?: string, courseTitle?: string) => string;
+  createSupportTicket: (category: string, message: string, userPhone?: string) => string;
   teacherKycList: TeacherKycData[];
   submitTeacherKyc: (kycData: Omit<TeacherKycData, 'applicationId' | 'submittedAt' | 'status'>) => string;
   approveTeacherKyc: (applicationId: string, adminNotes?: string) => void;
   rejectTeacherKyc: (applicationId: string, reason: string) => void;
+  loadFullCourse: (courseId: string) => Promise<Course | null>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -117,9 +121,38 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } catch {}
   }
 
-  const [currentRole, setCurrentRole] = useState<UserRole>('student');
-  const [currentUser, setCurrentUser] = useState<User>(emptyUser);
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [currentRole, setCurrentRole] = useState<UserRole>(() => {
+    if (typeof window !== 'undefined') {
+      const savedRole = localStorage.getItem('adommo_role') as UserRole;
+      if (savedRole) return savedRole;
+    }
+    return 'student';
+  });
+  const [currentUser, setCurrentUser] = useState<User>(() => {
+    if (typeof window !== 'undefined') {
+      const savedUser = localStorage.getItem('adommo_user');
+      if (savedUser) {
+        try {
+          return JSON.parse(savedUser);
+        } catch {}
+      }
+    }
+    return emptyUser;
+  });
+  const [courses, setCourses] = useState<Course[]>(() => {
+    if (typeof window !== 'undefined') {
+      const savedCourses = localStorage.getItem('adommo_courses');
+      if (savedCourses) {
+        try {
+          const parsed = JSON.parse(savedCourses);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed.map((c: any) => healCourse(c));
+          }
+        } catch {}
+      }
+    }
+    return [];
+  });
   const [exams, setExams] = useState<Exam[]>([]);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -304,15 +337,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       })
       .catch((err) => console.log('Session check completed', err));
 
-    // Hydrate real courses from DB
-    fetch('/api/courses')
+    // Hydrate real courses from DB: First fast lightweight catalog (<90KB) for instant mobile loading
+    fetch('/api/courses?summary=true')
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data && data.success && Array.isArray(data.courses)) {
-          setCourses(data.courses.map((c: any) => healCourse(c)));
+          const healedSummaries = data.courses.map((c: any) => healCourse(c));
+          setCourses(healedSummaries);
+          try {
+            localStorage.setItem('adommo_courses', JSON.stringify(healedSummaries));
+          } catch {}
         }
       })
-      .catch((err) => console.log('Course sync completed', err));
+      .catch((err) => console.log('Course summary sync completed', err));
+
+    // Non-blocking full curriculum hydration in background
+    const fullCoursesTimer = setTimeout(() => {
+      fetch('/api/courses')
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data && data.success && Array.isArray(data.courses)) {
+            setCourses(data.courses.map((c: any) => healCourse(c)));
+          }
+        })
+        .catch(() => {});
+    }, 1500);
 
     // Hydrate real teacher KYC list from DB
     fetch('/api/teacher/kyc')
@@ -936,6 +985,35 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     showToast('⚠️ এনরোলমেন্ট রিকোয়েস্ট রিজেক্ট করা হয়েছে।');
   };
 
+  const refundEnrollment = (enrollmentId: string) => {
+    const target = enrollments.find((e) => e.id === enrollmentId);
+    const updated = enrollments.map((e) =>
+      e.id === enrollmentId ? { ...e, status: 'refunded' as const } : e
+    );
+    setEnrollments(updated);
+    try {
+      localStorage.setItem('adommo_enrollments', JSON.stringify(updated));
+    } catch {}
+
+    // If current user is enrolled in this course, revoke access
+    if (target && currentUser && Array.isArray(currentUser.enrolledCourseIds) && currentUser.enrolledCourseIds.includes(target.courseId)) {
+      const remaining = currentUser.enrolledCourseIds.filter((cid) => cid !== target.courseId);
+      const updatedUser = { ...currentUser, enrolledCourseIds: remaining };
+      setCurrentUser(updatedUser);
+      try {
+        localStorage.setItem('adommo_user', JSON.stringify(updatedUser));
+      } catch {}
+    }
+
+    fetch('/api/admin/enrollments', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enrollmentId, action: 'refund' }),
+    }).catch((err) => console.log('Admin enrollment refund completed', err));
+
+    showToast(`💸 ${target ? target.studentName : 'শিক্ষার্থী'}-কে ৳ ${target ? target.amount : ''} টাকা রিফান্ড প্রদান সম্পন্ন হয়েছে!`);
+  };
+
   const deleteEnrollment = (enrollmentId: string) => {
     const updated = enrollments.filter((e) => e.id !== enrollmentId);
     setEnrollments(updated);
@@ -948,6 +1026,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }).catch((err) => console.log('Admin enrollment delete error:', err));
 
     showToast('এনরোলমেন্ট মুছে ফেলা হয়েছে।');
+  };
+
+  const loadFullCourse = async (courseId: string): Promise<Course | null> => {
+    try {
+      const res = await fetch(`/api/courses?id=${encodeURIComponent(courseId)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.success && data?.course) {
+          const healed = healCourse(data.course);
+          setCourses((prev) => {
+            const index = prev.findIndex((c) => c.id === courseId);
+            if (index >= 0) {
+              const copy = [...prev];
+              copy[index] = healed;
+              return copy;
+            }
+            return [...prev, healed];
+          });
+          return healed;
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load full course', err);
+    }
+    return null;
   };
 
   const addCourse = (newCourseData: Partial<Course>) => {
@@ -1615,16 +1718,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const submitDetailedExam = (submissionData: Omit<DetailedExamSubmission, 'id' | 'submittedAt' | 'rank'>): DetailedExamSubmission => {
     const targetExam = exams.find((e) => e.id === submissionData.examId);
-    const isPendingLater = targetExam?.resultPublishType === 'later';
+    const isSubjective = targetExam?.examType === 'written' || targetExam?.examType === 'combined' || (targetExam?.creativeQuestions && targetExam.creativeQuestions.length > 0);
+    const isPendingLater = targetExam?.resultPublishType === 'later' || isSubjective;
     const status = isPendingLater ? 'pending_evaluation' : 'published';
 
-    const newRank = Math.floor(Math.random() * 5) + 1;
+    // Real rank calculated from published scores of this exam
+    const existingSameExam = detailedSubmissions.filter((s) => s.examId === submissionData.examId && s.status === 'published');
+    const higherScores = existingSameExam.filter((s) => s.score > submissionData.score).length;
+    const calculatedRank = higherScores + 1;
+
     const newSubmission: DetailedExamSubmission = {
       id: `sub_${Date.now()}`,
       ...submissionData,
       status,
       submittedAt: 'এইমাত্র',
-      rank: newRank,
+      rank: calculatedRank,
     };
 
     setDetailedSubmissions((prev) => {
@@ -1655,13 +1763,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         unanswered: 0,
         selectedAnswers: {},
         submittedAt: 'এইমাত্র',
-        rank: newRank,
+        rank: calculatedRank,
       },
     }));
 
     if (status === 'published') {
       const newRankEntry: LeaderboardEntry = {
-        rank: newRank,
+        rank: calculatedRank,
         studentName: newSubmission.studentName,
         college: newSubmission.studentCollege || 'শিক্ষার্থী',
         score: newSubmission.score,
@@ -2141,7 +2249,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     threadId: string,
     text: string,
     imageUrl?: string,
-    senderRole: 'teacher' | 'student' | 'admin' = 'teacher'
+    senderRole: 'teacher' | 'student' | 'admin' = 'teacher',
+    markSolved?: boolean
   ) => {
     if (!text.trim() && !imageUrl) return;
 
@@ -2163,19 +2272,50 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       isRead: false,
     };
 
+    let threadExists = false;
+    let targetThreadMeta: any = undefined;
+
     const updated = conversations.map((c) => {
       if (c.id === threadId) {
+        threadExists = true;
+        targetThreadMeta = c;
+        const nextStatus = markSolved ? 'solved' : c.status;
         return {
           ...c,
+          status: nextStatus,
           lastMessageText: text.trim() || 'ছবি সংযুক্ত করা হয়েছে',
           lastMessageTime: 'এখনই',
-          unreadCountTeacher: senderRole === 'student' ? (c.unreadCountTeacher || 0) + 1 : c.unreadCountTeacher,
-          unreadCountStudent: (senderRole === 'teacher' || senderRole === 'admin') ? (c.unreadCountStudent || 0) + 1 : c.unreadCountStudent,
-          messages: [...c.messages, newMsg],
+          unreadCountTeacher: senderRole === 'student' ? (c.unreadCountTeacher || 0) + 1 : (senderRole === 'teacher' ? 0 : c.unreadCountTeacher),
+          unreadCountStudent: (senderRole === 'teacher' || senderRole === 'admin') ? (c.unreadCountStudent || 0) + 1 : (senderRole === 'student' ? 0 : c.unreadCountStudent),
+          messages: [...(c.messages || []), newMsg],
         };
       }
       return c;
     });
+
+    if (!threadExists) {
+      if (threadId.startsWith('thread_batch_')) {
+        const courseId = threadId.replace('thread_batch_', '');
+        const courseObj = courses.find(c => c.id === courseId);
+        const title = courseObj?.title || 'অফিশিয়াল ব্যাচমেট ফোরাম';
+        const newGroup: ConversationThread = {
+          id: threadId,
+          type: 'batch_group',
+          studentName: `${title} - অফিশিয়াল ব্যাচমেট ফোরাম`,
+          courseId,
+          courseTitle: title,
+          status: 'open',
+          priority: 'normal',
+          lastMessageText: text.trim() || 'বার্তা পাঠানো হয়েছে',
+          lastMessageTime: 'এখনই',
+          unreadCountTeacher: senderRole === 'student' ? 1 : 0,
+          unreadCountStudent: senderRole === 'teacher' ? 1 : 0,
+          messages: [newMsg],
+        };
+        targetThreadMeta = newGroup;
+        updated.unshift(newGroup);
+      }
+    }
 
     saveConversations(updated);
 
@@ -2187,10 +2327,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         action: 'send_message',
         threadId,
         message: newMsg,
+        markSolved,
+        threadMeta: targetThreadMeta ? {
+          studentId: targetThreadMeta.studentId,
+          studentName: targetThreadMeta.studentName,
+          studentCollege: targetThreadMeta.studentCollege,
+          studentAvatar: targetThreadMeta.studentAvatar,
+          courseId: targetThreadMeta.courseId,
+          courseTitle: targetThreadMeta.courseTitle,
+          teacherId: targetThreadMeta.teacherId,
+          teacherName: targetThreadMeta.teacherName,
+          teacherAvatar: targetThreadMeta.teacherAvatar,
+          ticketNumber: targetThreadMeta.ticketNumber,
+        } : undefined
       }),
     }).catch((err) => console.log('Message sync completed', err));
 
-    showToast('💬 বার্তা পাঠানো হয়েছে');
+    if (markSolved) {
+      showToast('✅ সমাধান ও উত্তর সফলভাবে পাঠানো হয়েছে!');
+    } else {
+      showToast('💬 বার্তা পাঠানো হয়েছে');
+    }
   };
 
   const createDoubtThread = (data: {
@@ -2315,7 +2472,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       unreadCountStudent: 0,
       messages: [
         {
-          id: `msg_bg_auto_${Date.now()}`,
+          id: `msg_bg_auto_${courseId}`,
           senderId: 'teacher_main',
           senderName: `${courseObj?.instructor?.name || 'মেন্টর'} (ইনস্ট্রাক্টর)`,
           senderRole: 'teacher',
@@ -2326,15 +2483,109 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
       ]
     };
-    saveConversations([newGroup, ...conversations]);
+    return newGroup;
+  };
+
+  const getOrCreateDirectThread = (
+    teacherId: string,
+    teacherName: string,
+    teacherAvatar?: string,
+    courseId?: string,
+    courseTitle?: string
+  ): string => {
+    const studentId = currentUser?.id || 'usr_guest';
+    const threadId = `thread_direct_${studentId}_${teacherId}`;
+    const existing = conversations.find(c => c.id === threadId || (c.type === 'direct' && c.studentId === studentId && c.teacherId === teacherId));
+    if (existing) return existing.id;
+
+    const newThread: ConversationThread = {
+      id: threadId,
+      type: 'direct',
+      studentId,
+      studentName: currentUser?.name || 'শিক্ষার্থী',
+      studentCollege: currentUser?.college || 'অনবোর্ডেড শিক্ষার্থী',
+      studentAvatar: currentUser?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
+      studentRoll: '#STD-' + Math.floor(1000 + Math.random() * 9000),
+      teacherId,
+      teacherName,
+      teacherAvatar: teacherAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+      courseId,
+      courseTitle,
+      status: 'open',
+      priority: 'normal',
+      lastMessageText: 'চ্যাট শুরু করা হয়েছে',
+      lastMessageTime: 'এখনই',
+      unreadCountTeacher: 0,
+      unreadCountStudent: 0,
+      messages: [
+        {
+          id: `msg_dir_init_${Date.now()}`,
+          senderId: teacherId,
+          senderName: teacherName,
+          senderRole: 'teacher',
+          senderAvatar: teacherAvatar,
+          text: `আসসালামু আলাইকুম! আমি ${teacherName}। আপনার কোর্স বা অ্যাকাডেমিক পড়াশোনা সংক্রান্ত যেকোনো জিজ্ঞাসা থাকলে নির্দ্বিধায় এখানে লিখতে পারেন।`,
+          createdAt: 'এখনই',
+          isRead: true,
+        }
+      ]
+    };
+
+    const updated = [newThread, ...conversations];
+    saveConversations(updated);
 
     fetch('/api/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'create_thread', newThread: newGroup }),
+      body: JSON.stringify({ action: 'create_thread', newThread }),
     }).catch(() => {});
 
-    return newGroup;
+    return threadId;
+  };
+
+  const createSupportTicket = (category: string, message: string, userPhone?: string): string => {
+    const ticketId = `thread_support_${Date.now()}`;
+    const ticketNum = `#TKT-${Math.floor(1000 + Math.random() * 9000)}`;
+    const newSupportThread: ConversationThread = {
+      id: ticketId,
+      type: 'support',
+      studentId: currentUser?.id || 'usr_guest',
+      studentName: currentUser?.name || 'শিক্ষার্থী',
+      studentCollege: currentUser?.college || 'অনবোর্ডেড শিক্ষার্থী',
+      studentAvatar: currentUser?.avatar,
+      ticketNumber: ticketNum,
+      subject: category,
+      status: 'open',
+      priority: 'high',
+      lastMessageText: message,
+      lastMessageTime: 'এখনই',
+      unreadCountTeacher: 1,
+      unreadCountStudent: 0,
+      messages: [
+        {
+          id: `msg_sup_${Date.now()}`,
+          senderId: currentUser?.id || 'usr_guest',
+          senderName: currentUser?.name || 'শিক্ষার্থী',
+          senderRole: 'student',
+          senderAvatar: currentUser?.avatar,
+          text: `[বিষয়: ${category}] ${message}${userPhone ? `\nযোগাযোগ ফোন: ${userPhone}` : ''}`,
+          createdAt: 'এখনই',
+          isRead: false,
+        }
+      ]
+    };
+
+    const updated = [newSupportThread, ...conversations];
+    saveConversations(updated);
+
+    fetch('/api/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'create_thread', newThread: newSupportThread }),
+    }).catch(() => {});
+
+    showToast('🎫 আপনার সাপোর্ট টিকেট সফলভাবে তৈরি হয়েছে!');
+    return ticketId;
   };
 
   const submitTeacherKyc = (data: Omit<TeacherKycData, 'applicationId' | 'submittedAt' | 'status'>): string => {
@@ -2535,6 +2786,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         enrollInCourse,
         approveEnrollment,
         rejectEnrollment,
+        refundEnrollment,
         deleteEnrollment,
         addCourse,
         updateCourse,
@@ -2588,10 +2840,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         markThreadAsRead,
         toggleDoubtStatus,
         getOrCreateBatchGroup,
+        getOrCreateDirectThread,
+        createSupportTicket,
         teacherKycList,
         submitTeacherKyc,
         approveTeacherKyc,
         rejectTeacherKyc,
+        loadFullCourse,
       }}
     >
       {children}

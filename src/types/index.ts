@@ -196,29 +196,16 @@ export interface Course {
   discountEnd?: string;
   countdownDays?: number;
   countdownHours?: number;
-  discountExpires?: string;
   comboCourseIds?: string[];
   couponCode?: string;
   couponDiscount?: number;
+  discountExpires?: string;
   isDraft?: boolean;
   isPublished?: boolean;
+  isArchived?: boolean;
   instructorId?: string;
   teacherEmail?: string;
   teacherPhone?: string;
-}
-
-export interface CouponItem {
-  id: string;
-  code: string;
-  discountType: 'fixed' | 'percentage';
-  discountValue: number;
-  minPurchase?: number;
-  usageLimit: number;
-  usedCount: number;
-  expiresAt?: string;
-  isActive: boolean;
-  applicableCourse: string;
-  createdAt?: string;
 }
 
 export interface Enrollment {
@@ -232,7 +219,7 @@ export interface Enrollment {
   paymentMethod: 'bKash' | 'Nagad' | 'Rocket' | 'Manual TrxID';
   trxId: string;
   senderPhone: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'approved' | 'rejected' | 'refunded';
   createdAt: string;
   enrollmentDate?: string; // YYYY-MM-DD for accurate daily filtering
 }
@@ -387,4 +374,48 @@ export interface ConversationThread {
   messages: ChatMessage[];
   doubtImageUrl?: string;
   ticketNumber?: string;
+  teacherId?: string;
+  teacherName?: string;
+  teacherAvatar?: string;
 }
+
+export interface CouponItem {
+  id: string;
+  code: string;
+  discountType: 'percent' | 'percentage' | 'fixed';
+  discountValue: number;
+  usageCount?: number;
+  usageLimit?: number;
+  usedCount?: number;
+  expiresAt?: string;
+  isActive: boolean;
+  applicableCourse?: string;
+  createdAt?: string;
+}
+
+export interface PayoutRecord {
+  id: string;
+  teacherId: string;
+  teacherName: string;
+  teacherEmail?: string;
+  teacherPhone?: string;
+  amount: number;
+  method: string; // 'bKash' | 'Nagad' | 'Bank Transfer'
+  accountNumber: string;
+  bankDetails?: {
+    bankName?: string;
+    branchName?: string;
+    accountName?: string;
+    routingNumber?: string;
+  };
+  trxId?: string;
+  requestedAt?: string;
+  paidAt?: string;
+  rejectedAt?: string;
+  rejectionReason?: string;
+  adminNotes?: string;
+  note?: string;
+  status: 'pending' | 'paid' | 'rejected';
+  createdAt?: string;
+}
+

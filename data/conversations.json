@@ -1,1 +1,36 @@
-[]
+[
+  {
+    "id": "thread_test_audit_1",
+    "createdAt": "2026-09-17T13:06:18.278Z",
+    "type": "doubt",
+    "studentId": "usr_test",
+    "studentName": "টেস্ট শিক্ষার্থী",
+    "courseId": "course_acs_frb26",
+    "courseTitle": "ACS HSC 26 Final Revision Batch",
+    "subject": "পদার্থবিজ্ঞান ১ম পত্র",
+    "chapter": "গতিবিদ্যা",
+    "status": "solved",
+    "lastMessageText": "এখানে উলম্ব বেগ শূন্য ধরে হিসাব করলেই উত্তর চলে আসবে।",
+    "lastMessageTime": "এইমাত্র",
+    "messages": [
+      {
+        "id": "m1",
+        "text": "প্রাসের অংক বুঝতে সমস্যা",
+        "senderRole": "student",
+        "createdAt": "এখনই"
+      },
+      {
+        "id": "msg_reply_1",
+        "senderId": "teacher_1",
+        "senderName": "ড. আবির মাহমুদ",
+        "senderRole": "teacher",
+        "text": "এখানে উলম্ব বেগ শূন্য ধরে হিসাব করলেই উত্তর চলে আসবে।",
+        "createdAt": "এখনই"
+      }
+    ],
+    "lastUpdated": 1789650390738,
+    "unreadCountStudent": 1,
+    "unreadCountTeacher": 0,
+    "updatedAt": "2026-09-17T13:06:30.738Z"
+  }
+]

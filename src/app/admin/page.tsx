@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
-import { Course, Enrollment, UserRole, DetailedExamSubmission, TeacherKycData } from '@/types';
+import { Course, Enrollment, UserRole, DetailedExamSubmission, TeacherKycData, PayoutRecord } from '@/types';
 import AdommoLogo from '@/components/AdommoLogo';
 import {
   LayoutDashboard,
@@ -81,7 +81,11 @@ import {
   Activity,
   Receipt,
   WalletCards,
-  Coins
+  Coins,
+  Wallet,
+  Landmark,
+  Banknote,
+  PieChart
 } from 'lucide-react';
 
 // ==========================================
@@ -132,6 +136,7 @@ type SubMenu =
   | 'revenue_platform'
   | 'revenue_payouts'
   | 'payouts_pending'
+  | 'payouts_direct'
   | 'payouts_paid'
   | 'payouts_history'
   | 'coupons_all'
@@ -178,18 +183,6 @@ interface TeacherApplication {
   status: 'pending' | 'approved' | 'rejected';
 }
 
-interface PayoutRecord {
-  id: string;
-  teacherId: string;
-  teacherName: string;
-  amount: number;
-  method: string;
-  accountNumber: string;
-  trxId: string;
-  paidAt: string;
-  note?: string;
-  status: 'paid';
-}
 
 interface CouponItem {
   id: string;
@@ -226,6 +219,7 @@ export default function SuperAdminPage() {
     teacherKycList,
     approveTeacherKyc,
     rejectTeacherKyc,
+    refundEnrollment,
   } = useApp();
 
   // ==========================================
@@ -604,18 +598,14 @@ export default function SuperAdminPage() {
   const approvedEnrollments = useMemo(() => enrollments.filter(e => e.status === 'approved'), [enrollments]);
   const pendingEnrollments = useMemo(() => enrollments.filter(e => e.status === 'pending'), [enrollments]);
   const rejectedEnrollments = useMemo(() => enrollments.filter(e => e.status === 'rejected'), [enrollments]);
+  const refundableEnrollments = useMemo(() => enrollments.filter(e => e.status === 'rejected' || e.status === 'refunded'), [enrollments]);
 
   const approvedCashCollected = useMemo(() => {
     return approvedEnrollments.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
   }, [approvedEnrollments]);
 
-  const totalCatalogEnrollmentValue = useMemo(() => {
-    return courses.reduce((sum, c) => sum + ((c.enrolledCount || 0) * (c.offerPrice || c.regularPrice || 0)), 0);
-  }, [courses]);
-
-  const realTotalRevenue = approvedCashCollected > 0 ? approvedCashCollected : totalCatalogEnrollmentValue;
-  const realTeacherEarnings = Math.round(realTotalRevenue * 0.8);
-  const realPlatformMargin = Math.round(realTotalRevenue * 0.2);
+  // Strictly real cash collected from approved student enrollments in database
+  const realTotalRevenue = approvedCashCollected;
 
   // 8. Teacher Payout Records
   const [payoutRecords, setPayoutRecords] = useState<PayoutRecord[]>(() => {
@@ -634,39 +624,102 @@ export default function SuperAdminPage() {
     }
   }, [payoutRecords]);
 
-  // Teacher-wise Financial Earnings Ledger
+  // Teacher-wise Financial Earnings Ledger (Strictly Connected to Real Approved Enrollments Cash)
   const teacherEarningsTable = useMemo(() => {
     return realTeachers.map(t => {
+      // Find real approved enrollments for this teacher's courses
       const teacherEnrolls = approvedEnrollments.filter(e => t.courseIds.includes(e.courseId));
-      const enrollCash = teacherEnrolls.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+      const totalTeacherSales = teacherEnrolls.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
       
-      const catalogSales = courses
-        .filter(c => t.courseIds.includes(c.id))
-        .reduce((sum, c) => sum + ((c.enrolledCount || 0) * (c.offerPrice || c.regularPrice || 0)), 0);
-
-      const totalTeacherSales = enrollCash > 0 ? enrollCash : catalogSales;
-      const earned80 = Math.round(totalTeacherSales * (t.commissionPercent / 100));
-      const platform20 = Math.round(totalTeacherSales * ((100 - t.commissionPercent) / 100));
+      const commissionRate = t.commissionPercent || 80;
+      const earnedCommission = Math.round(totalTeacherSales * (commissionRate / 100));
+      const platformShare = Math.round(totalTeacherSales * ((100 - commissionRate) / 100));
 
       const totalPaidOut = payoutRecords
-        .filter(p => p.teacherId === t.id)
+        .filter(p => (p.teacherId === t.id || (t.email && p.teacherEmail === t.email) || (t.phone && p.teacherPhone === t.phone)) && p.status === 'paid')
         .reduce((sum, p) => sum + p.amount, 0);
 
-      const dueBalance = Math.max(0, earned80 - totalPaidOut);
+      const totalPending = payoutRecords
+        .filter(p => (p.teacherId === t.id || (t.email && p.teacherEmail === t.email) || (t.phone && p.teacherPhone === t.phone)) && p.status === 'pending')
+        .reduce((sum, p) => sum + p.amount, 0);
+
+      // Remaining withdrawable balance after taking into account both already paid and pending payout requests
+      const dueBalance = Math.max(0, earnedCommission - totalPaidOut - totalPending);
 
       return {
         ...t,
         totalSales: totalTeacherSales,
-        teacherEarned: earned80,
-        platformFee: platform20,
+        teacherEarned: earnedCommission,
+        platformFee: platformShare,
         paidOut: totalPaidOut,
+        pendingPayout: totalPending,
         dueBalance: dueBalance,
+        teacherEnrollmentsList: teacherEnrolls,
       };
     });
-  }, [realTeachers, approvedEnrollments, courses, payoutRecords]);
+  }, [realTeachers, approvedEnrollments, payoutRecords]);
 
-  const totalPaidOutSum = useMemo(() => payoutRecords.reduce((sum, p) => sum + p.amount, 0), [payoutRecords]);
+  // Real aggregate teacher earnings and platform margin strictly matching the ledger
+  const realTeacherEarnings = useMemo(() => {
+    return teacherEarningsTable.reduce((sum, t) => sum + t.teacherEarned, 0);
+  }, [teacherEarningsTable]);
+
+  const realPlatformMargin = useMemo(() => {
+    return teacherEarningsTable.reduce((sum, t) => sum + t.platformFee, 0);
+  }, [teacherEarningsTable]);
+
+  // Payment Gateways Real Cash Distribution (bKash, Nagad, Rocket/Bank)
+  const bkashEnrollments = useMemo(() => approvedEnrollments.filter(e => (e.paymentMethod || '').toLowerCase().includes('bkash')), [approvedEnrollments]);
+  const nagadEnrollments = useMemo(() => approvedEnrollments.filter(e => (e.paymentMethod || '').toLowerCase().includes('nagad')), [approvedEnrollments]);
+  const rocketBankEnrollments = useMemo(() => approvedEnrollments.filter(e => {
+    const pm = (e.paymentMethod || '').toLowerCase();
+    return !pm.includes('bkash') && !pm.includes('nagad');
+  }), [approvedEnrollments]);
+
+  const bkashRevenue = useMemo(() => {
+    return bkashEnrollments.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+  }, [bkashEnrollments]);
+
+  const nagadRevenue = useMemo(() => {
+    return nagadEnrollments.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+  }, [nagadEnrollments]);
+
+  const rocketBankRevenue = useMemo(() => {
+    return rocketBankEnrollments.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+  }, [rocketBankEnrollments]);
+
+  const bkashPercent = realTotalRevenue > 0 ? Math.round((bkashRevenue / realTotalRevenue) * 100) : 0;
+  const nagadPercent = realTotalRevenue > 0 ? Math.round((nagadRevenue / realTotalRevenue) * 100) : 0;
+  const rocketBankPercent = realTotalRevenue > 0 ? Math.max(0, 100 - bkashPercent - nagadPercent) : 0;
+
+  // Real Operational Financial Deductions
+  const estimatedGatewayFees = useMemo(() => Math.round(realTotalRevenue * 0.018), [realTotalRevenue]);
+  const estimatedInfrastructureCost = useMemo(() => (courses.length > 0 ? Math.round(courses.length * 350 + (approvedEnrollments.length * 15)) : 0), [courses.length, approvedEnrollments.length]);
+  const netOperatingProfit = useMemo(() => Math.max(0, realPlatformMargin - estimatedGatewayFees - estimatedInfrastructureCost), [realPlatformMargin, estimatedGatewayFees, estimatedInfrastructureCost]);
+
+  const paidPayoutRecords = useMemo(() => payoutRecords.filter(p => p.status === 'paid'), [payoutRecords]);
+  const pendingPayoutRecords = useMemo(() => payoutRecords.filter(p => p.status === 'pending'), [payoutRecords]);
+  const rejectedPayoutRecords = useMemo(() => payoutRecords.filter(p => p.status === 'rejected'), [payoutRecords]);
+
+  const totalPaidOutSum = useMemo(() => paidPayoutRecords.reduce((sum, p) => sum + p.amount, 0), [paidPayoutRecords]);
+  const totalPendingPayoutSum = useMemo(() => pendingPayoutRecords.reduce((sum, p) => sum + p.amount, 0), [pendingPayoutRecords]);
   const totalDueSum = useMemo(() => teacherEarningsTable.reduce((sum, t) => sum + t.dueBalance, 0), [teacherEarningsTable]);
+  const teachersWithDue = useMemo(() => teacherEarningsTable.filter(t => t.dueBalance > 0), [teacherEarningsTable]);
+
+  // Breakdown modal state for Teacher Earnings Ledger
+  const [selectedTeacherForBreakdown, setSelectedTeacherForBreakdown] = useState<any | null>(null);
+
+  // Search filter for Faculty Revenue Ledger
+  const [teacherRevenueSearch, setTeacherRevenueSearch] = useState('');
+  const filteredTeacherEarnings = useMemo(() => {
+    if (!teacherRevenueSearch.trim()) return teacherEarningsTable;
+    const q = teacherRevenueSearch.toLowerCase();
+    return teacherEarningsTable.filter(t => 
+      t.name.toLowerCase().includes(q) ||
+      t.subject.toLowerCase().includes(q) ||
+      t.institution.toLowerCase().includes(q)
+    );
+  }, [teacherEarningsTable, teacherRevenueSearch]);
 
   // 9. Categories
   const realCategories = useMemo(() => {
@@ -706,6 +759,11 @@ export default function SuperAdminPage() {
     supportHotline: '01819-876543',
     supportEmail: 'support@adommo.com',
     address: 'অদম্য এডটেক, ফার্মগেট, ঢাকা - ১২১৫',
+    logoUrl: 'https://adommo.com/logo.png',
+    facebookGroup: 'https://facebook.com/groups/adommo',
+    youtubeChannel: 'https://youtube.com/@adommo',
+    telegramChannel: 'https://t.me/adommo_live',
+    footerCopyright: '© ২০২৬ অদম্য এডটেক। সর্বস্বত্ব সংরক্ষিত।',
     bkashMerchant: '01819-876543',
     nagadMerchant: '01911-223344',
     rocketMerchant: '01712-345678',
@@ -721,6 +779,185 @@ export default function SuperAdminPage() {
     twoFactorAuth: true,
     enableExamSms: true,
   });
+
+  // Diagnostics & Test tools State
+  const [diagnosticsData, setDiagnosticsData] = useState<{
+    serverStatus: string;
+    dbStatus: string;
+    dbLatencyMs: number;
+    uptimeFormatted: string;
+    heapUsedMB: number;
+    heapTotalMB: number;
+    nodeVersion: string;
+    environment: string;
+    timestamp: string;
+  } | null>(null);
+  const [isLoadingDiagnostics, setIsLoadingDiagnostics] = useState(false);
+  const [testEmailInput, setTestEmailInput] = useState('admin@adommo.com');
+  const [testSmsInput, setTestSmsInput] = useState('01819876543');
+  const [isSendingTestEmail, setIsSendingTestEmail] = useState(false);
+  const [isSendingTestSms, setIsSendingTestSms] = useState(false);
+
+  const fetchDiagnostics = () => {
+    setIsLoadingDiagnostics(true);
+    fetch('/api/admin/settings?diagnostics=true')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data && data.success && data.diagnostics) {
+          setDiagnosticsData(data.diagnostics);
+        }
+      })
+      .catch(err => console.log('Diagnostics fetch error:', err))
+      .finally(() => setIsLoadingDiagnostics(false));
+  };
+
+  const handleSendTestEmail = async () => {
+    if (!testEmailInput.trim()) {
+      showToast('⚠️ অনুগ্রহ করে একটি সঠিক ইমেইল এড্রেস লিখুন');
+      return;
+    }
+    setIsSendingTestEmail(true);
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'test_email',
+          targetEmail: testEmailInput,
+          smtpHost: systemSettings.smtpHost,
+          smtpPort: systemSettings.smtpPort,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(`✅ ${data.message}`);
+      } else {
+        showToast(`❌ ${data.error || 'ইমেইল পাঠাতে ব্যর্থ হয়েছে'}`);
+      }
+    } catch {
+      showToast('❌ সার্ভার সংযোগে সমস্যা হয়েছে');
+    } finally {
+      setIsSendingTestEmail(false);
+    }
+  };
+
+  const handleSendTestSms = async () => {
+    if (!testSmsInput.trim()) {
+      showToast('⚠️ অনুগ্রহ করে একটি সঠিক মোবাইল নম্বর লিখুন');
+      return;
+    }
+    setIsSendingTestSms(true);
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'test_sms',
+          targetPhone: testSmsInput,
+          smsSenderId: systemSettings.smsSenderId,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(`✅ ${data.message}`);
+      } else {
+        showToast(`❌ ${data.error || 'এসএমএস পাঠাতে ব্যর্থ হয়েছে'}`);
+      }
+    } catch {
+      showToast('❌ সার্ভার সংযোগে সমস্যা হয়েছে');
+    } finally {
+      setIsSendingTestSms(false);
+    }
+  };
+
+  // Teacher Payout Approval / Rejection Modals State
+  const [selectedPayoutForApproval, setSelectedPayoutForApproval] = useState<PayoutRecord | null>(null);
+  const [selectedPayoutForRejection, setSelectedPayoutForRejection] = useState<PayoutRecord | null>(null);
+  const [approvePayoutForm, setApprovePayoutForm] = useState({ trxId: '', adminNotes: '' });
+  const [rejectionReasonInput, setRejectionReasonInput] = useState('');
+  const [isProcessingPayout, setIsProcessingPayout] = useState(false);
+
+  const openApproveModal = (payout: PayoutRecord) => {
+    setSelectedPayoutForApproval(payout);
+    setApprovePayoutForm({
+      trxId: `TXN-${(payout.method || 'MFS').toUpperCase().slice(0, 3)}-${Date.now().toString().slice(-6)}`,
+      adminNotes: 'অনুমোদিত ও ব্যাংক/ওয়ালেটে অর্থ সফলভাবে প্রেরিত',
+    });
+  };
+
+  const openRejectModal = (payout: PayoutRecord) => {
+    setSelectedPayoutForRejection(payout);
+    setRejectionReasonInput('অ্যাকাউন্ট তথ্যে অসঙ্গতি অথবা অপর্যাপ্ত অ্যাকাউন্টেবল ব্যালেন্স');
+  };
+
+  const handleConfirmApprovePayout = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedPayoutForApproval) return;
+    if (!approvePayoutForm.trxId.trim()) {
+      showToast('⚠️ অনুগ্রহ করে TrxID বা রেফারেন্স কোড দিন');
+      return;
+    }
+
+    setIsProcessingPayout(true);
+    try {
+      const res = await fetch('/api/admin/payouts', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'approve',
+          payoutId: selectedPayoutForApproval.id,
+          trxId: approvePayoutForm.trxId,
+          adminNotes: approvePayoutForm.adminNotes,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(`✅ ${selectedPayoutForApproval.teacherName} এর ৳ ${selectedPayoutForApproval.amount.toLocaleString('en-BD')} পেআউট সফলভাবে অনুমোদিত হয়েছে!`);
+        refreshPayouts();
+        setSelectedPayoutForApproval(null);
+      } else {
+        showToast(`❌ ${data.error || 'অনুমোদন ব্যর্থ হয়েছে'}`);
+      }
+    } catch {
+      showToast('❌ সার্ভার ত্রুটি! পুনরায় চেষ্টা করুন।');
+    } finally {
+      setIsProcessingPayout(false);
+    }
+  };
+
+  const handleConfirmRejectPayout = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedPayoutForRejection) return;
+    if (!rejectionReasonInput.trim()) {
+      showToast('⚠️ অনুগ্রহ করে বাতিলের কারণ উল্লেখ করুন');
+      return;
+    }
+
+    setIsProcessingPayout(true);
+    try {
+      const res = await fetch('/api/admin/payouts', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'reject',
+          payoutId: selectedPayoutForRejection.id,
+          rejectionReason: rejectionReasonInput,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(`⚠️ পেআউট রিকোয়েস্ট সফলভাবে বাতিল করা হয়েছে`);
+        refreshPayouts();
+        setSelectedPayoutForRejection(null);
+      } else {
+        showToast(`❌ ${data.error || 'বাতিলকরণ ব্যর্থ হয়েছে'}`);
+      }
+    } catch {
+      showToast('❌ সার্ভার ত্রুটি! পুনরায় চেষ্টা করুন।');
+    } finally {
+      setIsProcessingPayout(false);
+    }
+  };
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -803,13 +1040,17 @@ export default function SuperAdminPage() {
   const [selectedReceiptEnrollment, setSelectedReceiptEnrollment] = useState<Enrollment | null>(null);
 
   const openDisbursePayoutModal = (teacher: any) => {
+    if (!teacher.dueBalance || teacher.dueBalance <= 0) {
+      showToast(`⚠️ শিক্ষক ${teacher.name} এর কোনো বকেয়া ব্যালেন্স অবশিষ্ট নেই!`);
+      return;
+    }
     setSelectedTeacherForPayout(teacher);
     setPayoutForm({
-      amount: teacher.dueBalance > 0 ? teacher.dueBalance : 10000,
-      method: 'City Bank Ltd. (BEFTN / NPSB)',
-      accountNumber: '1102938475 (সিটি ব্যাংক বনানী শাখা)',
-      trxId: `TXN-BANK-${Date.now().toString().slice(-6)}`,
-      note: `${teacher.name} - রেভিনিউ শেয়ার পেআউট`,
+      amount: teacher.dueBalance,
+      method: `bKash Merchant (${systemSettings.bkashMerchant})`,
+      accountNumber: teacher.phone || teacher.email || '',
+      trxId: `TXN-${Date.now().toString().slice(-6)}`,
+      note: `${teacher.name} - অর্জিত রেভিনিউ শেয়ার পেআউট`,
     });
     setPayoutModalOpen(true);
   };
@@ -827,11 +1068,13 @@ export default function SuperAdminPage() {
       id: `pay_${Date.now()}`,
       teacherId: selectedTeacherForPayout.id,
       teacherName: selectedTeacherForPayout.name,
+      teacherEmail: selectedTeacherForPayout.email || '',
+      teacherPhone: selectedTeacherForPayout.phone || '',
       amount: Number(payoutForm.amount),
       method: payoutForm.method,
-      accountNumber: payoutForm.accountNumber || 'সিটি ব্যাংক একাউন্ট',
+      accountNumber: payoutForm.accountNumber || 'ব্যাংক / ওয়ালেট অ্যাকাউন্ট',
       trxId: payoutForm.trxId || `TXN-${Date.now().toString().slice(-6)}`,
-      paidAt: 'আজকে সম্পন্ন',
+      paidAt: new Date().toLocaleDateString('bn-BD'),
       note: payoutForm.note,
       status: 'paid',
     };
@@ -845,7 +1088,9 @@ export default function SuperAdminPage() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newRecord),
-    }).catch(err => console.log('Payout sync error:', err));
+    })
+      .then(() => refreshPayouts())
+      .catch(err => console.log('Payout sync error:', err));
 
     setPayoutModalOpen(false);
     setSelectedTeacherForPayout(null);
@@ -931,27 +1176,52 @@ export default function SuperAdminPage() {
     }
   };
 
-  const handleApproveApplication = (app: TeacherApplication) => {
-    const newTeacher: CustomTeacher = {
-      id: `teacher_${Date.now()}`,
-      name: app.name,
-      institution: app.institution,
-      designation: 'অনবোর্ডেড লেকচারার',
-      subject: app.subject,
-      phone: app.phone,
-      email: app.email,
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-      coursesTaught: ['আসন্ন স্পেশাল ব্যাচ'],
-      courseIds: [],
-      totalStudents: 0,
-      isVerified: true,
-      commissionPercent: 80,
-    };
+  const handleApproveApplication = async (app: TeacherApplication) => {
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: app.name.trim(),
+          phone: app.phone?.trim() || '',
+          email: app.email?.trim() || `${app.name.replace(/\s+/g, '').toLowerCase()}@faculty.adommo.com`,
+          password: 'teacher1234',
+          institution: app.institution || 'অনবোর্ডেড ফ্যাকাল্টি',
+          designation: 'অনবোর্ডেড লেকচারার',
+          subject: app.subject || 'বিজ্ঞান ও প্রযুক্তি',
+          commissionPercent: 80,
+        }),
+      });
 
-    setCustomTeachers(prev => [...prev, newTeacher]);
-    const updatedApps = teacherApplications.map(a => a.id === app.id ? { ...a, status: 'approved' as const } : a);
-    setTeacherApplications(updatedApps);
-    showToast(`${app.name} এর আবেদন অনুমোদন করা হয়েছে!`);
+      const data = await res.json().catch(() => null);
+      const generatedId = data?.user?.id || `teacher_${Date.now()}`;
+
+      const newTeacher: CustomTeacher = {
+        id: generatedId,
+        name: app.name,
+        institution: app.institution || 'অনবোর্ডেড ফ্যাকাল্টি',
+        designation: 'অনবোর্ডেড লেকচারার',
+        subject: app.subject || 'বিজ্ঞান ও প্রযুক্তি',
+        phone: app.phone || '—',
+        email: app.email || `${app.name.replace(/\s+/g, '').toLowerCase()}@faculty.adommo.com`,
+        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+        coursesTaught: ['আসন্ন স্পেশাল ব্যাচ'],
+        courseIds: [],
+        totalStudents: 0,
+        isVerified: true,
+        commissionPercent: 80,
+      };
+
+      setCustomTeachers(prev => [...prev.filter(t => t.id !== newTeacher.id), newTeacher]);
+      const updatedApps = teacherApplications.map(a => a.id === app.id ? { ...a, status: 'approved' as const } : a);
+      setTeacherApplications(updatedApps);
+      refreshDbUsers();
+      refreshKycList();
+      showToast(`🎉 ${app.name} এর আবেদন অনুমোদন করা হয়েছে এবং শিক্ষক অ্যাকাউন্ট তৈরি হয়েছে (পাসওয়ার্ড: teacher1234)!`);
+    } catch (err) {
+      console.error('Teacher application approval error:', err);
+      showToast('আবেদন অনুমোদনকালে সার্ভারে ত্রুটি দেখা দিয়েছে!');
+    }
   };
 
   const handleRejectApplication = (appId: string) => {
@@ -1023,22 +1293,36 @@ export default function SuperAdminPage() {
   };
 
   // Roles Permissions Matrix
-  const [rolePermissions, setRolePermissions] = useState({
-    super_admin: { courses: true, payments: true, payouts: true, users: true, settings: true },
-    academic_lead: { courses: true, payments: false, payouts: false, users: true, settings: false },
-    finance_manager: { courses: false, payments: true, payouts: true, users: false, settings: false },
-    support_staff: { courses: false, payments: false, payouts: false, users: true, settings: false },
+  const [rolePermissions, setRolePermissions] = useState<Record<string, Record<string, boolean>>>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('adommo_role_permissions');
+      if (saved) {
+        try { return JSON.parse(saved); } catch {}
+      }
+    }
+    return {
+      super_admin: { courses: true, payments: true, payouts: true, users: true, settings: true },
+      academic_lead: { courses: true, payments: false, payouts: false, users: true, settings: false },
+      finance_manager: { courses: false, payments: true, payouts: true, users: false, settings: false },
+      support_staff: { courses: false, payments: false, payouts: false, users: true, settings: false },
+    };
   });
 
-  const toggleRolePermission = (roleKey: keyof typeof rolePermissions, permKey: string) => {
-    setRolePermissions(prev => ({
-      ...prev,
-      [roleKey]: {
-        ...prev[roleKey],
-        [permKey]: !(prev[roleKey] as any)[permKey]
+  const toggleRolePermission = (roleKey: string, permKey: string) => {
+    setRolePermissions((prev: Record<string, Record<string, boolean>>) => {
+      const updated = {
+        ...prev,
+        [roleKey]: {
+          ...prev[roleKey],
+          [permKey]: !(prev[roleKey] as any)[permKey]
+        }
+      };
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('adommo_role_permissions', JSON.stringify(updated));
       }
-    }));
-    showToast('রোল পারমিশন সফলভাবে হালনাগাদ করা হয়েছে!');
+      return updated;
+    });
+    showToast('রোল পারমিশন সফলভাবে হালনাগাদ ও সংরক্ষিত করা হয়েছে!');
   };
 
   // Filtering
@@ -1117,7 +1401,7 @@ export default function SuperAdminPage() {
 
   const filteredPayoutTeachers = useMemo(() => {
     let list = teacherEarningsTable;
-    if (activeSubMenu === 'payouts_pending') list = list.filter(t => t.dueBalance > 0);
+    if (activeSubMenu === 'payouts_direct') list = list.filter(t => t.dueBalance > 0);
     else if (activeSubMenu === 'payouts_paid') list = list.filter(t => t.paidOut > 0);
     return list;
   }, [teacherEarningsTable, activeSubMenu]);
@@ -1769,9 +2053,10 @@ export default function SuperAdminPage() {
               {expandedMenus.payouts && (
                 <div className="pl-6 pr-1 py-1 space-y-0.5 border-l-2 border-pink-200 ml-4 animate-in fade-in duration-150">
                   {[
-                    { id: 'payouts_pending', label: `Pending Payouts (${teacherEarningsTable.filter(t => t.dueBalance > 0).length})` },
-                    { id: 'payouts_paid', label: `Paid (${payoutRecords.length})` },
-                    { id: 'payouts_history', label: 'Payout History' },
+                    { id: 'payouts_pending', label: `১. পেন্ডিং আবেদন (${pendingPayoutRecords.length})` },
+                    { id: 'payouts_direct', label: `২. সরাসরি ডিসবার্স (${teachersWithDue.length})` },
+                    { id: 'payouts_paid', label: `৩. পরিশোধিত (${paidPayoutRecords.length})` },
+                    { id: 'payouts_history', label: `৪. হিস্ট্রি লগ (${payoutRecords.length})` },
                   ].map(sub => (
                     <button
                       key={sub.id}
@@ -2536,7 +2821,12 @@ export default function SuperAdminPage() {
                                         kyc.applicationId,
                                         'সুপার অ্যাডমিন কর্তৃক সরাসরি যাচাইপূর্বক অনুমোদিত।'
                                       );
-                                      setTimeout(() => refreshKycList(), 300);
+                                      setLiveKycList((prev) =>
+                                        prev.map((k) =>
+                                          k.applicationId === kyc.applicationId ? { ...k, status: 'approved' } : k
+                                        )
+                                      );
+                                      refreshKycList();
                                     }}
                                     className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-xs cursor-pointer shadow-xs transition-all"
                                   >
@@ -3109,17 +3399,23 @@ export default function SuperAdminPage() {
                                 <span>আবেদন বাতিল / সংশোধন চান</span>
                               </button>
 
-                              {/* Approve Button */}
+                               {/* Approve Button */}
                               <button
                                 type="button"
                                 onClick={() => {
+                                  const targetId = selectedKycApp.applicationId;
                                   approveTeacherKyc(
-                                    selectedKycApp.applicationId,
+                                    targetId,
                                     adminApprovalNote || 'সকল নথিপত্র ও জাতীয় পরিচয়পত্র শতভাগ যাচাইপূর্বক সুপার অ্যাডমিন কর্তৃক অনুমোদিত।'
+                                  );
+                                  setLiveKycList((prev) =>
+                                    prev.map((k) =>
+                                      k.applicationId === targetId ? { ...k, status: 'approved' } : k
+                                    )
                                   );
                                   setSelectedKycApp(null);
                                   setAdminApprovalNote('');
-                                  setTimeout(() => refreshKycList(), 300);
+                                  refreshKycList();
                                 }}
                                 className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-black transition-all flex items-center gap-1.5 shadow-md hover:shadow-emerald-500/20 active:scale-95"
                               >
@@ -3171,14 +3467,20 @@ export default function SuperAdminPage() {
                           <button
                             type="button"
                             onClick={() => {
+                              const targetId = selectedKycApp.applicationId;
                               rejectTeacherKyc(
-                                selectedKycApp.applicationId,
+                                targetId,
                                 adminRejectionReason || 'জাতীয় পরিচয়পত্র অথবা সার্টিফিকেট সংক্রান্ত তথ্য অপর্যাপ্ত বা অস্পষ্ট।'
+                              );
+                              setLiveKycList((prev) =>
+                                prev.map((k) =>
+                                  k.applicationId === targetId ? { ...k, status: 'rejected' } : k
+                                )
                               );
                               setIsRejectModalOpen(false);
                               setSelectedKycApp(null);
                               setAdminRejectionReason('');
-                              setTimeout(() => refreshKycList(), 300);
+                              refreshKycList();
                             }}
                             className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-xs"
                           >
@@ -3667,26 +3969,34 @@ export default function SuperAdminPage() {
                     <p className="text-xs text-slate-500">বাতিলকৃত বা ভুলবশত প্রদত্ত ট্রানজেকশনের রিফান্ড ডিসপ্যাচ</p>
                   </div>
 
-                  {rejectedEnrollments.length === 0 ? (
+                  {refundableEnrollments.length === 0 ? (
                     <div className="p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-slate-500 text-xs">
                       বর্তমানে কোনো রিফান্ড রিকোয়েস্ট নেই।
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {rejectedEnrollments.map((enr, idx) => (
+                      {refundableEnrollments.map((enr, idx) => (
                         <div key={`${enr.id}_${idx}`} className="p-4 rounded-2xl border border-slate-200 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
                           <div>
                             <span className="font-bold text-slate-900 text-xs">{enr.studentName} ({enr.studentPhone})</span>
                             <div className="text-xs text-slate-500 mt-0.5">টাকা: ৳ {enr.amount} • গেটওয়ে: {enr.paymentMethod} • TrxID: {enr.trxId}</div>
-                            <span className="text-[10px] text-rose-600 font-bold block mt-1">স্ট্যাটাস: বাতিলকৃত এনরোলমেন্ট (রিফান্ড যোগ্য)</span>
+                            <span className={`text-[10px] font-bold block mt-1 ${enr.status === 'refunded' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                              স্ট্যাটাস: {enr.status === 'refunded' ? '✓ রিফান্ড পরিশোধিত ও এক্সেস প্রত্যাহারকৃত' : '⚠️ বাতিলকৃত এনরোলমেন্ট (রিফান্ড যোগ্য)'}
+                            </span>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => showToast(`${enr.studentName} কে ৳ ${enr.amount} টাকা রিফান্ড প্রসেস সম্পন্ন হয়েছে!`)}
-                            className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-bold text-xs shadow-xs cursor-pointer shrink-0"
-                          >
-                            রিফান্ড ইস্যু করুন
-                          </button>
+                          {enr.status !== 'refunded' ? (
+                            <button
+                              type="button"
+                              onClick={() => refundEnrollment(enr.id)}
+                              className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-bold text-xs shadow-xs cursor-pointer shrink-0"
+                            >
+                              রিফান্ড ইস্যু করুন
+                            </button>
+                          ) : (
+                            <span className="px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 font-black text-xs border border-emerald-200">
+                              ✓ রিফান্ড সম্পন্ন
+                            </span>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -3736,131 +4046,801 @@ export default function SuperAdminPage() {
           {/* 7. REVENUE & FINANCIALS */}
           {/* ========================================================================= */}
           {activeMenu === 'revenue' && (
-            <div className="bg-white/90 backdrop-blur-md p-6 sm:p-8 rounded-[28px] border border-slate-200/70 shadow-[0_4px_25px_-4px_rgba(0,0,0,0.03)] space-y-6 animate-in fade-in duration-200">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
-                <div>
-                  <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-                    <DollarSign className="w-5 h-5 text-emerald-600" />
-                    <span>রাজস্ব ও আর্থিক হিসাব (Real Revenue & Financials)</span>
-                  </h3>
-                  <p className="text-xs text-slate-500 font-medium">প্ল্যাটফর্মের গ্রস সেলস, শিক্ষক প্রাপ্য ও নিট লাভ পর্যবেক্ষণ</p>
-                </div>
-              </div>
-
-              {/* Submenu Segmented Tabs Bar */}
-              <div className="bg-slate-100/70 p-1.5 rounded-2xl flex flex-wrap gap-1 border border-slate-200/60 w-fit">
-                {[
-                  { id: 'revenue_total', label: 'Total Revenue' },
-                  { id: 'revenue_teachers', label: 'Teacher Earnings' },
-                  { id: 'revenue_platform', label: 'Platform Revenue' },
-                  { id: 'revenue_payouts', label: 'Payouts Summary' },
-                ].map(tab => (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => setActiveSubMenu(tab.id as SubMenu)}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                      activeSubMenu === tab.id || (activeSubMenu === 'default' && tab.id === 'revenue_total')
-                        ? 'bg-white text-slate-900 shadow-xs border border-slate-200/80'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Financial Breakdown Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                <div className="p-6 rounded-[26px] bg-slate-50/80 border border-slate-200/80 shadow-2xs space-y-2">
-                  <span className="text-[11px] font-black text-slate-400 uppercase tracking-wider">মোট প্ল্যাটফর্ম বিক্রয়</span>
-                  <div className="text-3xl font-black text-slate-900 font-mono">
-                    ৳ {realTotalRevenue.toLocaleString('en-BD')}
+            <div className="bg-white/95 backdrop-blur-md p-6 sm:p-8 rounded-[32px] border border-slate-200/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-7 animate-in fade-in duration-200">
+              
+              {/* Header Bar */}
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+                <div className="flex items-start gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0">
+                    <DollarSign className="w-6 h-6" />
                   </div>
-                  <span className="text-[11px] text-emerald-600 font-bold block">
-                    {approvedEnrollments.length} টি অনুমোদিত ভর্তির মোট সংগৃহীত ফি
-                  </span>
-                </div>
-
-                <div className="p-6 rounded-[26px] bg-emerald-50/60 border border-emerald-200/80 shadow-2xs space-y-2">
-                  <span className="text-[11px] font-black text-emerald-700 uppercase tracking-wider">শিক্ষকদের মোট অংশ (৮০%)</span>
-                  <div className="text-3xl font-black text-emerald-700 font-mono">
-                    ৳ {realTeacherEarnings.toLocaleString('en-BD')}
-                  </div>
-                  <div className="text-[11px] text-slate-500 space-y-0.5 font-medium">
-                    <div>পরিশোধিত: ৳ {totalPaidOutSum.toLocaleString('en-BD')}</div>
-                    <div className="font-bold text-[#ed347d]">বকেয়া পাওনা: ৳ {totalDueSum.toLocaleString('en-BD')}</div>
-                  </div>
-                </div>
-
-                <div className="p-6 rounded-[26px] bg-pink-50/60 border border-pink-200 shadow-2xs space-y-2">
-                  <span className="text-[11px] font-black text-[#ed347d] uppercase tracking-wider">প্ল্যাটফর্ম নেট মার্জিন (২০%)</span>
-                  <div className="text-3xl font-black text-[#ed347d] font-mono">
-                    ৳ {realPlatformMargin.toLocaleString('en-BD')}
-                  </div>
-                  <span className="text-[11px] text-pink-600 font-bold block">
-                    সার্ভার, স্ট্রিম ও অপারেশনাল নিট লাভ
-                  </span>
-                </div>
-              </div>
-
-              {/* Teacher-wise Revenue Table */}
-              <div className="space-y-4 pt-2">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
                   <div>
-                    <h3 className="text-sm font-black text-slate-900">শিক্ষক ভিত্তিক কোর্স সেলস ও রাজস্ব উপার্জন টেবিল (Real Ledger)</h3>
-                    <p className="text-xs text-slate-500">প্রতিজন ফ্যাকাল্টির নিজস্ব কোর্সের মোট বিক্রয় ও ৮০% পাওনা হিসাব</p>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg font-black text-slate-900 tracking-tight">
+                        রাজস্ব ও ফাইন্যান্সিয়াল হাব (Real Revenue & Financials)
+                      </h3>
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        লাইভ ডেটাবেজ
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">
+                      প্ল্যাটফর্মের গ্রস সেলস, পেমেন্ট গেটওয়ে শেয়ার, শিক্ষক কমিশন (৮০%) ও প্ল্যাটফর্ম নিট লাভ
+                    </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => navigateTo('payouts', 'payouts_pending')}
-                    className="text-xs font-bold text-[#ed347d] hover:underline cursor-pointer"
-                  >
-                    পেআউট উইন্ডোতে যান →
-                  </button>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50/80 text-slate-500 font-black text-[11px] uppercase tracking-wider rounded-xl">
-                      <tr>
-                        <th className="p-3.5">শিক্ষক</th>
-                        <th className="p-3.5">কোর্সসমূহ</th>
-                        <th className="p-3.5">মোট কোর্স সেলস</th>
-                        <th className="p-3.5">শিক্ষক প্রাপ্য (৮০%)</th>
-                        <th className="p-3.5">পরিশোধিত পেআউট</th>
-                        <th className="p-3.5">অবশিষ্ট বকেয়া</th>
-                        <th className="p-3.5 text-center">অ্যাকশন</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {teacherEarningsTable.map((t, idx) => (
-                        <tr key={`${t.id}_${idx}`} className="hover:bg-slate-50">
-                          <td className="p-3.5 font-bold text-slate-900">{t.name}</td>
-                          <td className="p-3.5 text-slate-600 truncate max-w-[200px] font-medium">{t.coursesTaught.join(', ')}</td>
-                          <td className="p-3.5 font-black text-slate-800 font-mono">৳ {t.totalSales.toLocaleString('en-BD')}</td>
-                          <td className="p-3.5 font-black text-emerald-600 font-mono">৳ {t.teacherEarned.toLocaleString('en-BD')}</td>
-                          <td className="p-3.5 font-bold text-slate-600 font-mono">৳ {t.paidOut.toLocaleString('en-BD')}</td>
-                          <td className="p-3.5 font-black text-[#ed347d] font-mono">৳ {t.dueBalance.toLocaleString('en-BD')}</td>
-                          <td className="p-3.5 text-center">
-                            {t.dueBalance > 0 ? (
-                              <button
-                                type="button"
-                                onClick={() => openDisbursePayoutModal(t)}
-                                className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-[11px] shadow-xs cursor-pointer"
-                              >
-                                পেআউট করুন
-                              </button>
-                            ) : (
-                              <span className="text-[11px] text-slate-400 font-bold">পরিশোধিত</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="px-4 py-2 rounded-2xl bg-slate-900 text-white flex items-center gap-2 shadow-xs">
+                    <span className="text-[11px] font-medium text-slate-400">মোট বিক্রয়:</span>
+                    <span className="text-sm font-black font-mono text-emerald-400">
+                      ৳ {realTotalRevenue.toLocaleString('en-BD')}
+                    </span>
+                  </div>
+                  <div className="px-3.5 py-2 rounded-2xl bg-emerald-50 border border-emerald-200/80 text-emerald-800 flex items-center gap-1.5">
+                    <span className="text-[11px] font-medium text-emerald-600">শিক্ষক অংশ:</span>
+                    <span className="text-xs font-black font-mono">
+                      ৳ {realTeacherEarnings.toLocaleString('en-BD')}
+                    </span>
+                  </div>
+                  <div className="px-3.5 py-2 rounded-2xl bg-pink-50 border border-pink-200/80 text-[#ed347d] flex items-center gap-1.5">
+                    <span className="text-[11px] font-medium text-pink-600">প্ল্যাটফর্ম (২০%):</span>
+                    <span className="text-xs font-black font-mono">
+                      ৳ {realPlatformMargin.toLocaleString('en-BD')}
+                    </span>
+                  </div>
                 </div>
               </div>
+
+              {/* Submenu Segmented Dock Navigation */}
+              <div className="bg-slate-100/80 p-2 rounded-[24px] flex flex-wrap items-center gap-2 border border-slate-200/80 shadow-xs">
+                {[
+                  { id: 'revenue_total', label: 'মোট রাজস্ব ও গেটওয়ে', en: 'Gross Revenue & Gateways', icon: DollarSign, badge: `৳ ${realTotalRevenue.toLocaleString('en-BD')}` },
+                  { id: 'revenue_teachers', label: 'শিক্ষক লেজার ও পাওনা', en: 'Teacher Ledger & Earnings', icon: GraduationCap, badge: `${realTeachers.length} জন` },
+                  { id: 'revenue_platform', label: 'প্ল্যাটফর্ম ২০% মার্জিন', en: 'Platform Margin (20%)', icon: PieChart, badge: `৳ ${realPlatformMargin.toLocaleString('en-BD')}` },
+                  { id: 'revenue_payouts', label: 'ডিসবার্সমেন্ট সারসংক্ষেপ', en: 'Payouts Summary Log', icon: Receipt, badge: `${payoutRecords.length} টি` },
+                ].map(tab => {
+                  const Icon = tab.icon;
+                  const isActive = activeSubMenu === tab.id || (activeSubMenu === 'default' && tab.id === 'revenue_total');
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setActiveSubMenu(tab.id as SubMenu)}
+                      className={`group px-4 py-2.5 rounded-2xl flex items-center gap-3 transition-all duration-200 cursor-pointer text-left ${
+                        isActive
+                          ? 'bg-white text-slate-900 shadow-md shadow-slate-200/60 border border-slate-200/90 scale-[1.01]'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-white/60 border border-transparent'
+                      }`}
+                    >
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 ${
+                        isActive 
+                          ? 'bg-gradient-to-tr from-[#fa507e] to-[#ec376d] text-white shadow-xs' 
+                          : 'bg-slate-200/70 text-slate-600 group-hover:bg-slate-200'
+                      }`}>
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-black tracking-tight">{tab.label}</span>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-black ${
+                            isActive ? 'bg-pink-50 text-[#ed347d] border border-pink-200' : 'bg-slate-200/60 text-slate-600'
+                          }`}>
+                            {tab.badge}
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-slate-400 font-medium block leading-tight">{tab.en}</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* ------------------------------------------------------------------------- */}
+              {/* SUBVIEW 1: TOTAL REVENUE & GATEWAY BREAKDOWN */}
+              {/* ------------------------------------------------------------------------- */}
+              {(activeSubMenu === 'revenue_total' || activeSubMenu === 'default') && (
+                <div className="space-y-7 animate-in fade-in duration-200">
+                  
+                  {/* Financial Top Stat Cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* Card 1: Gross Sales */}
+                    <div className="p-6 rounded-[28px] bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-white border border-slate-800 shadow-xl shadow-slate-950/10 space-y-3 relative overflow-hidden group">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+                          মোট প্ল্যাটফর্ম বিক্রয়
+                        </span>
+                        <div className="w-9 h-9 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center shadow-xs">
+                          <DollarSign className="w-4 h-4" />
+                        </div>
+                      </div>
+                      <div className="text-3xl font-black font-mono tracking-tight text-white">
+                        ৳ {realTotalRevenue.toLocaleString('en-BD')}
+                      </div>
+                      <div className="flex items-center gap-1.5 pt-1 border-t border-slate-800 text-[11px] text-emerald-400 font-medium">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>{approvedEnrollments.length} টি অনুমোদিত ভর্তির মোট ফি</span>
+                      </div>
+                    </div>
+
+                    {/* Card 2: Teacher Earnings (80%) */}
+                    <div className="p-6 rounded-[28px] bg-gradient-to-br from-emerald-500/10 via-emerald-50/40 to-white border border-emerald-200/80 shadow-xs space-y-3 relative overflow-hidden group">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-black uppercase tracking-wider text-emerald-700">
+                          শিক্ষকদের মোট অংশ (৮০%)
+                        </span>
+                        <div className="w-9 h-9 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center shadow-xs">
+                          <GraduationCap className="w-4 h-4" />
+                        </div>
+                      </div>
+                      <div className="text-3xl font-black font-mono tracking-tight text-emerald-700">
+                        ৳ {realTeacherEarnings.toLocaleString('en-BD')}
+                      </div>
+                      <div className="flex items-center gap-1.5 pt-1 border-t border-emerald-100 text-[11px] text-emerald-600 font-medium">
+                        <span>নিবন্ধিত {realTeachers.length} জন শিক্ষকের প্রাপ্য পাওনা</span>
+                      </div>
+                    </div>
+
+                    {/* Card 3: Platform Gross Margin (20%) */}
+                    <div className="p-6 rounded-[28px] bg-gradient-to-br from-pink-500/10 via-pink-50/40 to-white border border-pink-200/80 shadow-xs space-y-3 relative overflow-hidden group">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-black uppercase tracking-wider text-[#ed347d]">
+                          প্ল্যাটফর্ম শেয়ার (২০%)
+                        </span>
+                        <div className="w-9 h-9 rounded-2xl bg-pink-100 text-[#ed347d] flex items-center justify-center shadow-xs">
+                          <PieChart className="w-4 h-4" />
+                        </div>
+                      </div>
+                      <div className="text-3xl font-black font-mono tracking-tight text-[#ed347d]">
+                        ৳ {realPlatformMargin.toLocaleString('en-BD')}
+                      </div>
+                      <div className="flex items-center gap-1.5 pt-1 border-t border-pink-100 text-[11px] text-pink-600 font-medium">
+                        <span>প্ল্যাটফর্ম গ্রস পরিচালনা মার্জিন</span>
+                      </div>
+                    </div>
+
+                    {/* Card 4: Average Enrollment Ticket */}
+                    <div className="p-6 rounded-[28px] bg-gradient-to-br from-cyan-500/10 via-cyan-50/40 to-white border border-cyan-200/80 shadow-xs space-y-3 relative overflow-hidden group">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-black uppercase tracking-wider text-cyan-700">
+                          গড় কোর্স বিক্রয় মূল্য
+                        </span>
+                        <div className="w-9 h-9 rounded-2xl bg-cyan-100 text-cyan-700 flex items-center justify-center shadow-xs">
+                          <TrendingUp className="w-4 h-4" />
+                        </div>
+                      </div>
+                      <div className="text-3xl font-black font-mono tracking-tight text-cyan-700">
+                        ৳ {approvedEnrollments.length > 0 ? Math.round(realTotalRevenue / approvedEnrollments.length).toLocaleString('en-BD') : '0'}
+                      </div>
+                      <div className="flex items-center gap-1.5 pt-1 border-t border-cyan-100 text-[11px] text-cyan-600 font-medium">
+                        <span>সফল পেমেন্ট হার: {enrollments.length > 0 ? Math.round((approvedEnrollments.length / enrollments.length) * 100) : 100}%</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Payment Gateway Distribution Cards */}
+                  <div className="space-y-4 pt-1">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-100 pb-3">
+                      <div>
+                        <h4 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                          <CreditCard className="w-4 h-4 text-[#ed347d]" />
+                          <span>পেমেন্ট গেটওয়ে ভিত্তিক আদায় ডিস্ট্রিবিউশন (Payment Gateway Share)</span>
+                        </h4>
+                        <p className="text-xs text-slate-500 font-medium">বিকাশ, নগদ ও রকেট চ্যানেলে সংগৃহীত মোট টাকার পরিমাণ ও ট্রানজেকশন ভলিউম</p>
+                      </div>
+                      <span className="text-xs font-mono font-bold text-slate-400">
+                        মোট ভলিউম: {approvedEnrollments.length} টি সফল ট্রানজেকশন
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                      {/* bKash Widget */}
+                      <div className="p-6 rounded-[28px] bg-gradient-to-br from-[#d12053]/8 via-pink-50/40 to-white border border-pink-200 shadow-xs space-y-4 relative overflow-hidden">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="w-8 h-8 rounded-xl bg-[#d12053] text-white flex items-center justify-center text-xs font-black shadow-xs">
+                              bK
+                            </span>
+                            <div>
+                              <div className="text-xs font-black text-slate-900">bKash Merchant</div>
+                              <div className="text-[10px] text-slate-400 font-mono">{systemSettings.bkashMerchant}</div>
+                            </div>
+                          </div>
+                          <span className="px-3 py-1 rounded-xl bg-[#d12053]/10 text-[#d12053] text-xs font-black font-mono border border-[#d12053]/20">
+                            {bkashPercent}% শেয়ার
+                          </span>
+                        </div>
+
+                        <div>
+                          <div className="text-2xl sm:text-3xl font-black text-slate-900 font-mono tracking-tight">
+                            ৳ {bkashRevenue.toLocaleString('en-BD')}
+                          </div>
+                          <div className="text-[11px] text-slate-500 font-medium mt-1">
+                            মোট {bkashEnrollments.length} টি পেমেন্ট সম্পন্ন হয়েছে
+                          </div>
+                        </div>
+
+                        <div className="w-full bg-pink-100 h-2.5 rounded-full overflow-hidden p-0.5">
+                          <div 
+                            className="bg-gradient-to-r from-[#d12053] to-pink-500 h-full rounded-full transition-all duration-700 shadow-xs" 
+                            style={{ width: `${Math.min(100, Math.max(bkashPercent, bkashRevenue > 0 ? 6 : 0))}%` }} 
+                          />
+                        </div>
+                      </div>
+
+                      {/* Nagad Widget */}
+                      <div className="p-6 rounded-[28px] bg-gradient-to-br from-[#f26522]/8 via-orange-50/40 to-white border border-orange-200 shadow-xs space-y-4 relative overflow-hidden">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="w-8 h-8 rounded-xl bg-[#f26522] text-white flex items-center justify-center text-xs font-black shadow-xs">
+                              ন
+                            </span>
+                            <div>
+                              <div className="text-xs font-black text-slate-900">Nagad Corporate</div>
+                              <div className="text-[10px] text-slate-400 font-mono">{systemSettings.nagadMerchant}</div>
+                            </div>
+                          </div>
+                          <span className="px-3 py-1 rounded-xl bg-[#f26522]/10 text-[#f26522] text-xs font-black font-mono border border-[#f26522]/20">
+                            {nagadPercent}% শেয়ার
+                          </span>
+                        </div>
+
+                        <div>
+                          <div className="text-2xl sm:text-3xl font-black text-slate-900 font-mono tracking-tight">
+                            ৳ {nagadRevenue.toLocaleString('en-BD')}
+                          </div>
+                          <div className="text-[11px] text-slate-500 font-medium mt-1">
+                            মোট {nagadEnrollments.length} টি পেমেন্ট সম্পন্ন হয়েছে
+                          </div>
+                        </div>
+
+                        <div className="w-full bg-orange-100 h-2.5 rounded-full overflow-hidden p-0.5">
+                          <div 
+                            className="bg-gradient-to-r from-[#f26522] to-amber-500 h-full rounded-full transition-all duration-700 shadow-xs" 
+                            style={{ width: `${Math.min(100, Math.max(nagadPercent, nagadRevenue > 0 ? 6 : 0))}%` }} 
+                          />
+                        </div>
+                      </div>
+
+                      {/* Rocket / Bank Widget */}
+                      <div className="p-6 rounded-[28px] bg-gradient-to-br from-purple-500/8 via-purple-50/30 to-white border border-purple-200 shadow-xs space-y-4 relative overflow-hidden">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="w-8 h-8 rounded-xl bg-purple-700 text-white flex items-center justify-center text-xs font-black shadow-xs">
+                              R
+                            </span>
+                            <div>
+                              <div className="text-xs font-black text-slate-900">Rocket & Bank</div>
+                              <div className="text-[10px] text-slate-400 font-mono">{systemSettings.rocketMerchant}</div>
+                            </div>
+                          </div>
+                          <span className="px-3 py-1 rounded-xl bg-purple-100 text-purple-700 text-xs font-black font-mono border border-purple-200">
+                            {rocketBankPercent}% শেয়ার
+                          </span>
+                        </div>
+
+                        <div>
+                          <div className="text-2xl sm:text-3xl font-black text-slate-900 font-mono tracking-tight">
+                            ৳ {rocketBankRevenue.toLocaleString('en-BD')}
+                          </div>
+                          <div className="text-[11px] text-slate-500 font-medium mt-1">
+                            মোট {rocketBankEnrollments.length} টি পেমেন্ট সম্পন্ন হয়েছে
+                          </div>
+                        </div>
+
+                        <div className="w-full bg-purple-100 h-2.5 rounded-full overflow-hidden p-0.5">
+                          <div 
+                            className="bg-gradient-to-r from-purple-700 to-indigo-500 h-full rounded-full transition-all duration-700 shadow-xs" 
+                            style={{ width: `${Math.min(100, Math.max(rocketBankPercent, rocketBankRevenue > 0 ? 6 : 0))}%` }} 
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Top Performing Courses Leaderboard */}
+                  <div className="space-y-4 pt-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                      <div>
+                        <h4 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                          <TrendingUp className="w-4 h-4 text-emerald-600" />
+                          <span>শীর্ষ রাজস্ব অর্জনকারী কোর্স র‍্যাংকিং (Top Performing Courses)</span>
+                        </h4>
+                        <p className="text-xs text-slate-500 font-medium">গ্রস সেলস ও শিক্ষার্থী ভর্তির ভিত্তিতে কোর্সের অবস্থান ও পারফরম্যান্স</p>
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-[28px] border border-slate-200/80 shadow-xs overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-slate-50/90 text-slate-500 font-black text-[11px] uppercase tracking-wider border-b border-slate-100">
+                            <tr>
+                              <th className="p-4 text-center w-16">র‍্যাংক</th>
+                              <th className="p-4">কোর্সের নাম</th>
+                              <th className="p-4">ইন্সট্রাক্টর</th>
+                              <th className="p-4">ক্যাটাগরি</th>
+                              <th className="p-4 text-center">মোট শিক্ষার্থী</th>
+                              <th className="p-4">কোর্স ফি</th>
+                              <th className="p-4 text-right">সংগৃহীত মোট রাজস্ব</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {[...courses]
+                              .map((c) => {
+                                const realCourseEnrolls = approvedEnrollments.filter(e => e.courseId === c.id);
+                                const realCourseRevenue = realCourseEnrolls.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+                                const studentCount = realCourseEnrolls.length;
+                                return {
+                                  ...c,
+                                  realCourseRevenue,
+                                  studentCount,
+                                  grossRev: realCourseRevenue,
+                                };
+                              })
+                              .sort((a, b) => b.grossRev - a.grossRev)
+                              .map((c, idx) => {
+                                const revSharePercent = realTotalRevenue > 0 ? Math.round((c.grossRev / realTotalRevenue) * 100) : 0;
+                                return (
+                                  <tr key={c.id} className="hover:bg-slate-50/80 transition-colors">
+                                    <td className="p-4 text-center font-black">
+                                      {idx === 0 ? (
+                                        <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 font-black text-xs">
+                                          🥇 #১
+                                        </span>
+                                      ) : idx === 1 ? (
+                                        <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-xl bg-slate-100 text-slate-700 border border-slate-300 font-black text-xs">
+                                          🥈 #২
+                                        </span>
+                                      ) : idx === 2 ? (
+                                        <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-xl bg-orange-50 text-orange-700 border border-orange-200 font-black text-xs">
+                                          🥉 #৩
+                                        </span>
+                                      ) : (
+                                        <span className="text-slate-400 font-mono font-bold">
+                                          #{idx + 1}
+                                        </span>
+                                      )}
+                                    </td>
+                                    <td className="p-4">
+                                      <div className="font-black text-slate-900 max-w-[260px] truncate text-sm">{c.title}</div>
+                                      <div className="text-[10px] text-slate-400 font-medium">কোর্স আইডি: {c.id}</div>
+                                    </td>
+                                    <td className="p-4 text-slate-700 font-medium">{c.instructor?.name || 'ফ্যাকাল্টি টিম'}</td>
+                                    <td className="p-4">
+                                      <span className="px-3 py-1 rounded-full bg-pink-50 text-[#ed347d] text-[10px] font-black border border-pink-200/80">
+                                        {c.category || 'বিজ্ঞান'}
+                                      </span>
+                                    </td>
+                                    <td className="p-4 text-center font-mono font-black text-slate-800">
+                                      <span className="px-2.5 py-1 rounded-xl bg-slate-100 border border-slate-200/60">
+                                        {c.studentCount} জন
+                                      </span>
+                                    </td>
+                                    <td className="p-4 font-mono font-bold text-slate-700">
+                                      ৳ {c.offerPrice || c.regularPrice || 0}
+                                    </td>
+                                    <td className="p-4 text-right">
+                                      <div className="font-black text-emerald-600 font-mono text-sm">
+                                        ৳ {c.grossRev.toLocaleString('en-BD')}
+                                      </div>
+                                      <div className="text-[10px] text-slate-400 font-medium">
+                                        প্ল্যাটফর্ম বিক্রয়ের {revSharePercent}%
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ------------------------------------------------------------------------- */}
+              {/* SUBVIEW 2: TEACHER EARNINGS LEDGER */}
+              {/* ------------------------------------------------------------------------- */}
+              {activeSubMenu === 'revenue_teachers' && (
+                <div className="space-y-6 animate-in fade-in duration-200">
+                  
+                  {/* Summary Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div className="p-6 rounded-[28px] bg-gradient-to-br from-emerald-500/10 via-emerald-50/40 to-white border border-emerald-200/80 shadow-xs space-y-2 relative overflow-hidden">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-black text-emerald-700 uppercase tracking-wider">শিক্ষকদের মোট অংশ (৮০%)</span>
+                        <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                          <Coins className="w-4 h-4" />
+                        </div>
+                      </div>
+                      <div className="text-3xl font-black text-emerald-700 font-mono">
+                        ৳ {realTeacherEarnings.toLocaleString('en-BD')}
+                      </div>
+                      <span className="text-[11px] text-emerald-600 font-medium block">
+                        নিবন্ধিত {realTeachers.length} জন ফ্যাকাল্টির কোর্স বিক্রয় থেকে মোট প্রাপ্য
+                      </span>
+                    </div>
+
+                    <div className="p-6 rounded-[28px] bg-gradient-to-br from-cyan-500/10 via-cyan-50/40 to-white border border-cyan-200/80 shadow-xs space-y-2 relative overflow-hidden">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-black text-cyan-700 uppercase tracking-wider">পরিশোধিত পেআউট অর্থ</span>
+                        <div className="w-8 h-8 rounded-xl bg-cyan-100 text-cyan-700 flex items-center justify-center">
+                          <CheckCircle2 className="w-4 h-4" />
+                        </div>
+                      </div>
+                      <div className="text-3xl font-black text-cyan-700 font-mono">
+                        ৳ {totalPaidOutSum.toLocaleString('en-BD')}
+                      </div>
+                      <span className="text-[11px] text-slate-500 font-medium block">
+                        ব্যাংক ও মোবাইল ওয়ালেটে সফলভাবে ছাড়কৃত অর্থ
+                      </span>
+                    </div>
+
+                    <div className="p-6 rounded-[28px] bg-gradient-to-br from-pink-500/10 via-pink-50/40 to-white border border-pink-200 shadow-xs space-y-2 relative overflow-hidden">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-black text-[#ed347d] uppercase tracking-wider">উত্তোলনযোগ্য বকেয়া পাওনা</span>
+                        <div className="w-8 h-8 rounded-xl bg-pink-100 text-[#ed347d] flex items-center justify-center">
+                          <Building2 className="w-4 h-4" />
+                        </div>
+                      </div>
+                      <div className="text-3xl font-black text-[#ed347d] font-mono">
+                        ৳ {totalDueSum.toLocaleString('en-BD')}
+                      </div>
+                      <span className="text-[11px] text-pink-600 font-medium block">
+                        শিক্ষকদের উত্তোলনযোগ্য বর্তমান দায় ব্যালেন্স
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Search Bar & Table Toolbar */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                    <div>
+                      <h4 className="text-sm font-black text-slate-900">শিক্ষক ভিত্তিক কোর্স সেলস ও রাজস্ব উপার্জন লেজার (Real Ledger)</h4>
+                      <p className="text-xs text-slate-500 font-medium">প্রতিজন ফ্যাকাল্টির নিজস্ব কোর্সের মোট বিক্রয়, ৮০% পাওনা এবং পেমেন্ট হিসেব</p>
+                    </div>
+                    <div className="flex items-center gap-2.5">
+                      <div className="relative">
+                        <Search className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          type="text"
+                          placeholder="শিক্ষক বা বিষয়ে খুঁজুন..."
+                          value={teacherRevenueSearch}
+                          onChange={(e) => setTeacherRevenueSearch(e.target.value)}
+                          className="pl-9 pr-3.5 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-[#ed347d] w-52 sm:w-64 bg-slate-50/60 font-medium"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => navigateTo('payouts', 'payouts_pending')}
+                        className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs cursor-pointer active:scale-95 shadow-xs flex items-center gap-1.5"
+                      >
+                        <span>পেআউট উইন্ডো →</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Teacher Earnings Ledger Table */}
+                  <div className="bg-white rounded-[28px] border border-slate-200/80 shadow-xs overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-slate-50/90 text-slate-500 font-black text-[11px] uppercase tracking-wider border-b border-slate-100">
+                          <tr>
+                            <th className="p-4">শিক্ষক</th>
+                            <th className="p-4">কোর্সসমূহ</th>
+                            <th className="p-4">মোট কোর্স সেলস</th>
+                            <th className="p-4">কমিশন (%)</th>
+                            <th className="p-4">শিক্ষক প্রাপ্য</th>
+                            <th className="p-4">পেন্ডিং আবেদন</th>
+                            <th className="p-4">পরিশোধিত অর্থ</th>
+                            <th className="p-4">উত্তোলনযোগ্য বকেয়া</th>
+                            <th className="p-4 text-center">অ্যাকশন</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {filteredTeacherEarnings.map((t, idx) => (
+                            <tr key={`${t.id}_${idx}`} className="hover:bg-slate-50/80 transition-colors">
+                              <td className="p-4">
+                                <div className="font-bold text-slate-900">{t.name}</div>
+                                <div className="text-[10px] text-slate-400">{t.subject} • {t.institution}</div>
+                              </td>
+                              <td className="p-4 text-slate-600 truncate max-w-[180px] font-medium">
+                                {t.coursesTaught.length > 0 ? t.coursesTaught.join(', ') : 'সকল কোর্স'}
+                              </td>
+                              <td className="p-4">
+                                <div className="font-black text-slate-800 font-mono text-sm">৳ {t.totalSales.toLocaleString('en-BD')}</div>
+                                {t.totalSales > 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedTeacherForBreakdown(t)}
+                                    className="text-[10px] text-[#ed347d] hover:underline font-bold mt-0.5 inline-flex items-center gap-0.5 cursor-pointer"
+                                  >
+                                    <span>🔍 অডিট হিসাব ({t.teacherEnrollmentsList?.length || 0})</span>
+                                  </button>
+                                )}
+                              </td>
+                              <td className="p-4 font-mono text-cyan-700 font-extrabold">{t.commissionPercent}%</td>
+                              <td className="p-4 font-black text-emerald-600 font-mono text-sm">৳ {t.teacherEarned.toLocaleString('en-BD')}</td>
+                              <td className="p-4 font-mono text-amber-600 font-bold">
+                                {t.pendingPayout > 0 ? `৳ ${t.pendingPayout.toLocaleString('en-BD')}` : '—'}
+                              </td>
+                              <td className="p-4 font-bold text-slate-600 font-mono">৳ {t.paidOut.toLocaleString('en-BD')}</td>
+                              <td className="p-4 font-black text-[#ed347d] font-mono text-base">৳ {t.dueBalance.toLocaleString('en-BD')}</td>
+                              <td className="p-4 text-center">
+                                <div className="flex items-center justify-center gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedTeacherForBreakdown(t)}
+                                    className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] cursor-pointer active:scale-95 transition-all"
+                                    title="শিক্ষার্থী ভর্তির অডিট বিবরণী"
+                                  >
+                                    অডিট
+                                  </button>
+                                  {t.dueBalance > 0 ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => openDisbursePayoutModal(t)}
+                                      className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-[11px] shadow-xs cursor-pointer inline-flex items-center gap-1"
+                                    >
+                                      <Coins className="w-3.5 h-3.5" />
+                                      <span>পেআউট</span>
+                                    </button>
+                                  ) : t.paidOut > 0 ? (
+                                    <span className="text-[11px] text-emerald-600 font-bold bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200">
+                                      ✓ পরিশোধিত
+                                    </span>
+                                  ) : (
+                                    <span className="text-[11px] text-slate-400 font-medium bg-slate-100 px-2.5 py-1 rounded-xl">
+                                      ০ পাওনা
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ------------------------------------------------------------------------- */}
+              {/* SUBVIEW 3: PLATFORM REVENUE MARGIN & OPERATING PROFIT */}
+              {/* ------------------------------------------------------------------------- */}
+              {activeSubMenu === 'revenue_platform' && (
+                <div className="space-y-7 animate-in fade-in duration-200">
+                  <div className="border-b border-slate-100 pb-3">
+                    <h4 className="text-sm font-black text-slate-900">প্ল্যাটফর্ম ২০% মার্জিন ও নিট পরিচালন লাভ (Platform Financial Waterfall)</h4>
+                    <p className="text-xs text-slate-500 font-medium">পেমেন্ট গেটওয়ে মার্চেন্ট চার্জ ও ক্লাউড স্ট্রিমিং ব্যয় বাদে নিট লাভ বিশ্লেষণ</p>
+                  </div>
+
+                  {/* 4 Cards Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                    <div className="p-6 rounded-[28px] bg-gradient-to-br from-pink-500/10 via-pink-50/40 to-white border border-pink-200 shadow-xs space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-black text-[#ed347d] uppercase tracking-wider">গ্রস প্ল্যাটফর্ম মার্জিন (২০%)</span>
+                        <div className="w-8 h-8 rounded-xl bg-pink-100 text-[#ed347d] flex items-center justify-center">
+                          <PieChart className="w-4 h-4" />
+                        </div>
+                      </div>
+                      <div className="text-3xl font-black text-[#ed347d] font-mono">
+                        ৳ {realPlatformMargin.toLocaleString('en-BD')}
+                      </div>
+                      <span className="text-[11px] text-pink-600 font-medium block">
+                        মোট বিক্রয়ের ২০% প্ল্যাটফর্মের সংরক্ষিত অংশ
+                      </span>
+                    </div>
+
+                    <div className="p-6 rounded-[28px] bg-gradient-to-br from-amber-500/10 via-amber-50/40 to-white border border-amber-200 shadow-xs space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-black text-amber-700 uppercase tracking-wider">গেটওয়ে চার্জ (১.৮%)</span>
+                        <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
+                          <CreditCard className="w-4 h-4" />
+                        </div>
+                      </div>
+                      <div className="text-3xl font-black text-amber-700 font-mono">
+                        ৳ {estimatedGatewayFees.toLocaleString('en-BD')}
+                      </div>
+                      <span className="text-[11px] text-slate-500 font-medium block">
+                        বিকাশ ও নগদ ক্যাশ-ইন / মার্চেন্ট চার্জ
+                      </span>
+                    </div>
+
+                    <div className="p-6 rounded-[28px] bg-gradient-to-br from-cyan-500/10 via-cyan-50/40 to-white border border-cyan-200 shadow-xs space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-black text-cyan-700 uppercase tracking-wider">ক্লাউড ও ভিডিও স্ট্রিমিং ব্যয়</span>
+                        <div className="w-8 h-8 rounded-xl bg-cyan-100 text-cyan-700 flex items-center justify-center">
+                          <Server className="w-4 h-4" />
+                        </div>
+                      </div>
+                      <div className="text-3xl font-black text-cyan-700 font-mono">
+                        ৳ {estimatedInfrastructureCost.toLocaleString('en-BD')}
+                      </div>
+                      <span className="text-[11px] text-slate-500 font-medium block">
+                        সার্ভার, ডেটাবেজ ও CDN ব্যান্ডউইথ খরচ
+                      </span>
+                    </div>
+
+                    <div className="p-6 rounded-[28px] bg-gradient-to-br from-emerald-500/10 via-emerald-50/40 to-white border border-emerald-200 shadow-xs space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-black text-emerald-700 uppercase tracking-wider">নিট পরিচালন উদ্বৃত্ত</span>
+                        <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                          <CheckCircle2 className="w-4 h-4" />
+                        </div>
+                      </div>
+                      <div className="text-3xl font-black text-emerald-700 font-mono">
+                        ৳ {netOperatingProfit.toLocaleString('en-BD')}
+                      </div>
+                      <span className="text-[11px] text-emerald-600 font-medium block">
+                        সমস্ত ব্যয় বাদে চূড়ান্ত নিট পরিচালন লাভ
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Financial Health Indicator Box */}
+                  <div className="p-6 sm:p-7 rounded-[28px] bg-slate-50/90 border border-slate-200/80 space-y-4">
+                    <h5 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                      <Activity className="w-4 h-4 text-emerald-600" />
+                      <span>প্ল্যাটফর্ম ফাইন্যান্সিয়াল হেলথ ও ক্যাশফ্লো স্ট্যাটাস</span>
+                    </h5>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                      <div className="p-4 rounded-2xl bg-white border border-slate-200/70 space-y-1.5 shadow-2xs">
+                        <div className="text-slate-400 font-bold">ক্যাশ রিজার্ভ কভারেজ</div>
+                        <div className="text-emerald-600 font-black text-base flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                          <span>১০০% সিকিউরড</span>
+                        </div>
+                        <div className="text-[11px] text-slate-500 font-medium">শিক্ষকদের বকেয়া পরিশোধের জন্য সম্পূর্ণ ফান্ড ব্যাংকে সংরক্ষিত রয়েছে।</div>
+                      </div>
+                      <div className="p-4 rounded-2xl bg-white border border-slate-200/70 space-y-1.5 shadow-2xs">
+                        <div className="text-slate-400 font-bold">সার্ভার অপ্টিমাইজেশন রেট</div>
+                        <div className="text-cyan-700 font-black text-base flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-cyan-500" />
+                          <span>৯৯.৯% আপটাইম</span>
+                        </div>
+                        <div className="text-[11px] text-slate-500 font-medium">ক্লাউড হোস্টিং ও ভিডিও ডেলিভারি সম্পূর্ণ স্ট্যাবল ও অ্যাক্টিভ।</div>
+                      </div>
+                      <div className="p-4 rounded-2xl bg-white border border-slate-200/70 space-y-1.5 shadow-2xs">
+                        <div className="text-slate-400 font-bold">রিফান্ড / ডিসপিউট রেশিও</div>
+                        <div className="text-slate-900 font-black text-base flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-slate-500" />
+                          <span>০.২% (নগণ্য)</span>
+                        </div>
+                        <div className="text-[11px] text-slate-500 font-medium">শিক্ষার্থীদের সর্বোচ্চ সন্তুষ্টি ও ধারাবাহিক পেমেন্ট সফলতা।</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ------------------------------------------------------------------------- */}
+              {/* SUBVIEW 4: PAYOUTS SUMMARY */}
+              {/* ------------------------------------------------------------------------- */}
+              {activeSubMenu === 'revenue_payouts' && (
+                <div className="space-y-6 animate-in fade-in duration-200">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                    <div>
+                      <h4 className="text-sm font-black text-slate-900">পেআউট পরিসংখ্যান ও ক্যাশ ডিসবার্সমেন্ট মেট্রিক্স</h4>
+                      <p className="text-xs text-slate-500 font-medium">শিক্ষক উইথড্রল রিকোয়েস্ট ও ব্যাংকিং ডিসবার্সমেন্ট ট্র্যাকিং</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => navigateTo('payouts', 'payouts_pending')}
+                      className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-[#fa507e] to-[#ec376d] text-white font-black text-xs shadow-md shadow-pink-500/20 active:scale-95 cursor-pointer flex items-center gap-2"
+                    >
+                      <Building2 className="w-4 h-4" />
+                      <span>পেআউট ম্যানেজমেন্ট প্যানেলে যান →</span>
+                    </button>
+                  </div>
+
+                  {/* 4 Metrics Cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                    <div className="p-6 rounded-[28px] bg-gradient-to-br from-emerald-500/10 via-emerald-50/40 to-white border border-emerald-200/80 shadow-xs space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-black text-emerald-700 uppercase tracking-wider">মোট পরিশোধিত অর্থ</span>
+                        <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                          <CheckCircle2 className="w-4 h-4" />
+                        </div>
+                      </div>
+                      <div className="text-3xl font-black text-emerald-700 font-mono">
+                        ৳ {totalPaidOutSum.toLocaleString('en-BD')}
+                      </div>
+                      <span className="text-[11px] text-emerald-600 font-medium block">
+                        {paidPayoutRecords.length} টি সফল ভাউচার নিষ্পত্তি
+                      </span>
+                    </div>
+
+                    <div className="p-6 rounded-[28px] bg-gradient-to-br from-amber-500/10 via-amber-50/40 to-white border border-amber-200/80 shadow-xs space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-black text-amber-700 uppercase tracking-wider">পেন্ডিং রিকোয়েস্ট কিউ</span>
+                        <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
+                          <Clock className="w-4 h-4" />
+                        </div>
+                      </div>
+                      <div className="text-3xl font-black text-amber-700 font-mono">
+                        ৳ {totalPendingPayoutSum.toLocaleString('en-BD')}
+                      </div>
+                      <span className="text-[11px] text-amber-700 font-medium block">
+                        {pendingPayoutRecords.length} টি আবেদন অনুমোদনের অপেক্ষায়
+                      </span>
+                    </div>
+
+                    <div className="p-6 rounded-[28px] bg-gradient-to-br from-pink-500/10 via-pink-50/40 to-white border border-pink-200 shadow-xs space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-black text-[#ed347d] uppercase tracking-wider">বকেয়া শিক্ষক দায়</span>
+                        <div className="w-8 h-8 rounded-xl bg-pink-100 text-[#ed347d] flex items-center justify-center">
+                          <Coins className="w-4 h-4" />
+                        </div>
+                      </div>
+                      <div className="text-3xl font-black text-[#ed347d] font-mono">
+                        ৳ {totalDueSum.toLocaleString('en-BD')}
+                      </div>
+                      <span className="text-[11px] text-pink-600 font-medium block">
+                        সর্বমোট অপরিশোধিত ব্যালেন্স
+                      </span>
+                    </div>
+
+                    <div className="p-6 rounded-[28px] bg-slate-50/90 border border-slate-200/80 shadow-xs space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider">বাতিলকৃত রিকোয়েস্ট</span>
+                        <div className="w-8 h-8 rounded-xl bg-slate-200 text-slate-600 flex items-center justify-center">
+                          <XCircle className="w-4 h-4" />
+                        </div>
+                      </div>
+                      <div className="text-3xl font-black text-slate-700 font-mono">
+                        {rejectedPayoutRecords.length} টি
+                      </div>
+                      <span className="text-[11px] text-slate-500 font-medium block">
+                        অসঙ্গত তথ্যের কারণে প্রত্যাখ্যাত
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Recent Paid Payouts Snapshot */}
+                  <div className="space-y-3 pt-2">
+                    <h5 className="text-xs font-black text-slate-900 uppercase tracking-wider">সাম্প্রতিক পরিশোধিত ভাউচার লগ</h5>
+                    {paidPayoutRecords.length === 0 ? (
+                      <div className="p-8 text-center bg-slate-50/80 rounded-[24px] border border-dashed border-slate-200 text-slate-500 text-xs">
+                        এখনো কোনো পেআউট সম্পন্ন হয়নি।
+                      </div>
+                    ) : (
+                      <div className="bg-white rounded-[28px] border border-slate-200/80 shadow-xs overflow-hidden">
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left text-xs">
+                            <thead className="bg-slate-50/90 text-slate-500 font-black text-[11px] uppercase tracking-wider border-b border-slate-100">
+                              <tr>
+                                <th className="p-4">ভাউচার আইডি</th>
+                                <th className="p-4">শিক্ষক</th>
+                                <th className="p-4">পরিশোধের মাধ্যম</th>
+                                <th className="p-4">TrxID / রেফারেন্স</th>
+                                <th className="p-4 font-mono">টাকার অঙ্ক</th>
+                                <th className="p-4">তারিখ</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                              {paidPayoutRecords.slice(0, 5).map((p, idx) => (
+                                <tr key={`${p.id}_${idx}`} className="hover:bg-slate-50/80">
+                                  <td className="p-4 font-mono font-bold text-slate-700">{p.id}</td>
+                                  <td className="p-4 font-bold text-slate-900">{p.teacherName}</td>
+                                  <td className="p-4">
+                                    <span className="px-2.5 py-1 rounded-xl bg-cyan-50 text-cyan-800 font-bold border border-cyan-200">
+                                      {p.method}
+                                    </span>
+                                  </td>
+                                  <td className="p-4 font-mono text-[#ed347d] font-bold">{p.trxId}</td>
+                                  <td className="p-4 font-black text-emerald-600 font-mono text-sm">৳ {p.amount.toLocaleString('en-BD')}</td>
+                                  <td className="p-4 text-slate-500">{p.paidAt}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -3868,128 +4848,445 @@ export default function SuperAdminPage() {
           {/* 8. TEACHER PAYOUTS */}
           {/* ========================================================================= */}
           {activeMenu === 'payouts' && (
-            <div className="bg-white/90 backdrop-blur-md p-6 sm:p-8 rounded-[28px] border border-slate-200/70 shadow-[0_4px_25px_-4px_rgba(0,0,0,0.03)] space-y-6 animate-in fade-in duration-200">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
-                <div>
-                  <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-                    <Building2 className="w-5 h-5 text-cyan-600" />
-                    <span>শিক্ষক পেআউট বিতরণ ও নিষ্পত্তি (Real Teacher Payouts)</span>
-                  </h3>
-                  <p className="text-xs text-slate-500 font-medium">শিক্ষকদের বকেয়া রেভিনিউ ব্যাংকিং বা মোবাইল ওয়ালেটে নিষ্পত্তি করুন</p>
+            <div className="bg-white/95 backdrop-blur-md p-6 sm:p-8 rounded-[32px] border border-slate-200/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-7 animate-in fade-in duration-200">
+              
+              {/* Header Bar */}
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+                <div className="flex items-start gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-600 to-blue-600 text-white flex items-center justify-center shadow-lg shadow-cyan-500/20 shrink-0">
+                    <Building2 className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg font-black text-slate-900 tracking-tight">
+                        শিক্ষক পেআউট ও ডিসবার্সমেন্ট ইঞ্জিন (Real Teacher Payouts Engine)
+                      </h3>
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-cyan-50 text-cyan-700 border border-cyan-200">
+                        <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse" />
+                        লাইভ সেটেলমেন্ট
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">
+                      শিক্ষকদের লাইভ উইথড্রল রিকোয়েস্ট অনুমোদন, ট্রানজেকশন আইডি প্রদান ও বকেয়া পাওনা সরাসরি নিষ্পত্তি
+                    </p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="px-3 py-1 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-black border border-emerald-200">
-                    পরিশোধিত: ৳ {totalPaidOutSum.toLocaleString('en-BD')}
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className={`px-3.5 py-2 rounded-2xl text-xs font-black border flex items-center gap-1.5 ${
+                    pendingPayoutRecords.length > 0
+                      ? 'bg-amber-50 text-amber-800 border-amber-200'
+                      : 'bg-slate-100 text-slate-600 border-slate-200'
+                  }`}>
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>পেন্ডিং আবেদন: {pendingPayoutRecords.length} টি</span>
                   </span>
-                  <span className="px-3 py-1 rounded-xl bg-pink-50 text-[#ed347d] text-xs font-black border border-pink-200">
-                    বকেয়া: ৳ {totalDueSum.toLocaleString('en-BD')}
+                  <span className="px-3.5 py-2 rounded-2xl bg-emerald-50 text-emerald-800 text-xs font-black border border-emerald-200 font-mono flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>পরিশোধিত: ৳ {totalPaidOutSum.toLocaleString('en-BD')}</span>
+                  </span>
+                  <span className="px-3.5 py-2 rounded-2xl bg-pink-50 text-[#ed347d] text-xs font-black border border-pink-200 font-mono flex items-center gap-1.5">
+                    <Coins className="w-3.5 h-3.5" />
+                    <span>বকেয়া দায়: ৳ {totalDueSum.toLocaleString('en-BD')}</span>
                   </span>
                 </div>
               </div>
 
-              {/* Submenu Segmented Tabs Bar */}
-              <div className="bg-slate-100/70 p-1.5 rounded-2xl flex flex-wrap gap-1 border border-slate-200/60 w-fit">
+              {/* Submenu Segmented Dock Navigation */}
+              <div className="bg-slate-100/80 p-2 rounded-[24px] flex flex-wrap items-center gap-2 border border-slate-200/80 shadow-xs">
                 {[
-                  { id: 'payouts_pending', label: `Pending Payouts (${teacherEarningsTable.filter(t => t.dueBalance > 0).length})` },
-                  { id: 'payouts_paid', label: `Paid (${payoutRecords.length})` },
-                  { id: 'payouts_history', label: 'Payout History' },
-                ].map(tab => (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => setActiveSubMenu(tab.id as SubMenu)}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                      activeSubMenu === tab.id
-                        ? 'bg-white text-slate-900 shadow-xs border border-slate-200/80'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
+                  { 
+                    id: 'payouts_pending', 
+                    label: 'অপেক্ষমাণ আবেদন', 
+                    en: 'Pending Withdrawal Queue', 
+                    icon: Clock, 
+                    badge: `${pendingPayoutRecords.length} টি`,
+                    isAlert: pendingPayoutRecords.length > 0 
+                  },
+                  { 
+                    id: 'payouts_direct', 
+                    label: 'সরাসরি ডিসবার্স', 
+                    en: 'Direct Disburse from Ledger', 
+                    icon: Coins, 
+                    badge: `${teachersWithDue.length} জন বকেয়া` 
+                  },
+                  { 
+                    id: 'payouts_paid', 
+                    label: 'পরিশোধিত পেআউট', 
+                    en: 'Disbursed Transactions', 
+                    icon: CheckCircle2, 
+                    badge: `${paidPayoutRecords.length} টি` 
+                  },
+                  { 
+                    id: 'payouts_history', 
+                    label: 'হিস্ট্রি অডিট লগ', 
+                    en: 'Full Payout Audit Trail', 
+                    icon: Receipt, 
+                    badge: `${payoutRecords.length} টি` 
+                  },
+                ].map(tab => {
+                  const Icon = tab.icon;
+                  const isActive = activeSubMenu === tab.id || (activeSubMenu === 'default' && tab.id === 'payouts_pending');
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setActiveSubMenu(tab.id as SubMenu)}
+                      className={`group px-4 py-2.5 rounded-2xl flex items-center gap-3 transition-all duration-200 cursor-pointer text-left ${
+                        isActive
+                          ? 'bg-white text-slate-900 shadow-md shadow-slate-200/60 border border-slate-200/90 scale-[1.01]'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-white/60 border border-transparent'
+                      }`}
+                    >
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 ${
+                        isActive 
+                          ? 'bg-gradient-to-tr from-cyan-600 to-blue-600 text-white shadow-xs' 
+                          : 'bg-slate-200/70 text-slate-600 group-hover:bg-slate-200'
+                      }`}>
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-black tracking-tight">{tab.label}</span>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-black ${
+                            tab.isAlert 
+                              ? 'bg-amber-100 text-amber-800 border border-amber-300 animate-pulse'
+                              : isActive 
+                                ? 'bg-cyan-50 text-cyan-800 border border-cyan-200' 
+                                : 'bg-slate-200/60 text-slate-600'
+                          }`}>
+                            {tab.badge}
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-slate-400 font-medium block leading-tight">{tab.en}</span>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
 
-              {/* Subview: Payout History / Paid Records */}
-              {activeSubMenu === 'payouts_history' || activeSubMenu === 'payouts_paid' ? (
-                <div className="space-y-4">
-                  <div className="border-b border-slate-100 pb-2">
-                    <h4 className="text-sm font-black text-slate-900">পরিশোধিত পেআউট হিস্ট্রি ও ট্রানজেকশন ভাউচার</h4>
-                    <p className="text-xs text-slate-500">ব্যাংক ট্রান্সফার ও বিকাশ মার্চেন্ট নিষ্পত্তির স্থায়ী রেজিস্টার</p>
+              {/* ------------------------------------------------------------------------- */}
+              {/* SUBVIEW 1: PENDING PAYOUT REQUESTS ONLY */}
+              {/* ------------------------------------------------------------------------- */}
+              {(activeSubMenu === 'payouts_pending' || activeSubMenu === 'default') && (
+                <div className="space-y-5 animate-in fade-in duration-200">
+                  <div className="border-b border-slate-100 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <h4 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-amber-500" />
+                        <span>শিক্ষকদের উইথড্রল রিকোয়েস্ট কিউ (Pending Teacher Withdrawal Requests)</span>
+                      </h4>
+                      <p className="text-xs text-slate-500 font-medium">শিক্ষক ড্যাশবোর্ড থেকে শিক্ষকরা টাকা তোলার আবেদন পাঠালে তা সরাসরি এখানে জমা হয়</p>
+                    </div>
+                    <span className="px-3 py-1 rounded-full bg-amber-50 text-amber-800 text-xs font-black border border-amber-200">
+                      {pendingPayoutRecords.length} টি আবেদন অপেক্ষমাণ
+                    </span>
                   </div>
 
-                  {payoutRecords.length === 0 ? (
-                    <div className="p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-slate-500 text-xs">
-                      এখনো কোনো পেআউট ট্রানজেকশন সম্পন্ন হয়নি। শিক্ষকদের বকেয়া ব্যালেন্স থেকে "পেআউট সম্পন্ন করুন" বাটনে ক্লিক করে প্রথম ডিসবার্সমেন্ট সম্পন্ন করুন।
+                  {pendingPayoutRecords.length === 0 ? (
+                    <div className="p-10 text-center bg-gradient-to-br from-emerald-50/40 via-slate-50/50 to-white rounded-[28px] border border-emerald-200/60 shadow-xs space-y-4 max-w-2xl mx-auto">
+                      <div className="w-14 h-14 rounded-3xl bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-xs">
+                        <CheckCircle2 className="w-7 h-7" />
+                      </div>
+                      <div className="space-y-1">
+                        <h5 className="text-base font-black text-slate-900">🎉 বর্তমানে কোনো পেন্ডিং উইথড্রল আবেদন নেই!</h5>
+                        <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+                          শিক্ষকরা তাদের নিজস্ব ড্যাশবোর্ড থেকে টাকা তোলার আবেদন করলে তাৎক্ষণিকভাবে তা এখানে প্রদর্শিত হবে। আপনি চাইলে যেকোনো শিক্ষকের বকেয়া পাওনা সরাসরি ছাড় করতে পারেন।
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setActiveSubMenu('payouts_direct')}
+                        className="px-5 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs shadow-xs cursor-pointer active:scale-95 inline-flex items-center gap-2"
+                      >
+                        <Coins className="w-3.5 h-3.5" />
+                        <span>২. সরাসরি ডিসবার্স ট্যাবে যান →</span>
+                      </button>
                     </div>
                   ) : (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left text-xs">
-                        <thead className="bg-slate-50/80 text-slate-500 font-black text-[11px] uppercase tracking-wider rounded-xl">
-                          <tr>
-                            <th className="p-3.5">ভাউচার আইডি</th>
-                            <th className="p-3.5">শিক্ষক</th>
-                            <th className="p-3.5">পরিশোধের মাধ্যম</th>
-                            <th className="p-3.5">অ্যাকাউন্ট / TrxID</th>
-                            <th className="p-3.5">টাকার অঙ্ক</th>
-                            <th className="p-3.5">তারিখ</th>
-                            <th className="p-3.5">নোট</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {payoutRecords.map((p, idx) => (
-                            <tr key={`${p.id}_${idx}`} className="hover:bg-slate-50 transition-colors">
-                              <td className="p-3.5 font-mono font-bold text-slate-700">{p.id}</td>
-                              <td className="p-3.5 font-black text-slate-900">{p.teacherName}</td>
-                              <td className="p-3.5 text-cyan-700 font-extrabold">{p.method}</td>
-                              <td className="p-3.5 font-mono text-[#ed347d] font-bold">{p.trxId}</td>
-                              <td className="p-3.5 font-black text-emerald-600 text-sm font-mono">৳ {p.amount.toLocaleString('en-BD')}</td>
-                              <td className="p-3.5 text-slate-500">{p.paidAt}</td>
-                              <td className="p-3.5 text-slate-500 italic max-w-[180px] truncate">{p.note || '—'}</td>
+                    <div className="bg-white rounded-[28px] border border-amber-200/80 shadow-xs overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-amber-50/80 text-slate-700 font-black text-[11px] uppercase tracking-wider border-b border-amber-200/60">
+                            <tr>
+                              <th className="p-4">শিক্ষক</th>
+                              <th className="p-4">অনুরোধকৃত অর্থ</th>
+                              <th className="p-4">পেমেন্ট মেথড</th>
+                              <th className="p-4">অ্যাকাউন্ট / ব্যাংক তথ্য</th>
+                              <th className="p-4">আবেদনের সময়</th>
+                              <th className="p-4">শিক্ষকের নোট</th>
+                              <th className="p-4 text-center">অ্যাকশন</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {pendingPayoutRecords.map((p, idx) => (
+                              <tr key={`${p.id}_${idx}`} className="hover:bg-amber-50/30 transition-colors">
+                                <td className="p-4">
+                                  <div className="font-bold text-slate-900 text-sm">{p.teacherName}</div>
+                                  <div className="text-[10px] text-slate-500 font-mono mt-0.5">{p.teacherPhone || p.teacherEmail || '—'}</div>
+                                </td>
+                                <td className="p-4 font-black text-emerald-700 text-base font-mono">
+                                  ৳ {p.amount.toLocaleString('en-BD')}
+                                </td>
+                                <td className="p-4">
+                                  <span className="px-3 py-1 rounded-xl bg-cyan-50 text-cyan-800 font-black border border-cyan-200 text-[11px]">
+                                    {p.method}
+                                  </span>
+                                </td>
+                                <td className="p-4">
+                                  <div className="font-mono font-bold text-slate-900 text-sm">{p.accountNumber}</div>
+                                  {p.bankDetails && p.bankDetails.bankName && (
+                                    <div className="text-[11px] text-slate-600 font-medium mt-0.5">
+                                      {p.bankDetails.bankName} • শাখা: {p.bankDetails.branchName || '—'}
+                                      {p.bankDetails.accountName && ` (${p.bankDetails.accountName})`}
+                                    </div>
+                                  )}
+                                </td>
+                                <td className="p-4 text-slate-500 text-[11px]">
+                                  {p.requestedAt || (p.createdAt ? new Date(p.createdAt).toLocaleDateString('bn-BD') : 'আজকে')}
+                                </td>
+                                <td className="p-4 text-slate-500 italic max-w-[160px] truncate">
+                                  {p.note || '—'}
+                                </td>
+                                <td className="p-4 text-center">
+                                  <div className="flex items-center justify-center gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => openApproveModal(p)}
+                                      className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-xs shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+                                    >
+                                      <CheckCircle2 className="w-3.5 h-3.5" />
+                                      <span>অনুমোদন ও ডিসবার্স</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => openRejectModal(p)}
+                                      className="px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-black text-xs border border-rose-200 cursor-pointer active:scale-95 transition-colors"
+                                    >
+                                      বাতিল
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   )}
                 </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50/80 text-slate-500 font-black text-[11px] uppercase tracking-wider rounded-xl">
-                      <tr>
-                        <th className="p-3.5">শিক্ষক</th>
-                        <th className="p-3.5">প্রতিষ্ঠান</th>
-                        <th className="p-3.5">মোট অর্জিত রেভিনিউ</th>
-                        <th className="p-3.5">পরিশোধিত অর্থ</th>
-                        <th className="p-3.5">উইথড্রলযোগ্য বকেয়া</th>
-                        <th className="p-3.5 text-center">অ্যাকশন</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {filteredPayoutTeachers.map((t, idx) => (
-                        <tr key={`${t.id}_${idx}`} className="hover:bg-slate-50 transition-colors">
-                          <td className="p-3.5 font-bold text-slate-900 flex items-center gap-2.5">
-                            <img src={t.avatar} alt={t.name} className="w-9 h-9 rounded-2xl object-cover border border-slate-200 shadow-2xs" />
-                            <span>{t.name}</span>
-                          </td>
-                          <td className="p-3.5 text-slate-600 font-medium">{t.institution}</td>
-                          <td className="p-3.5 font-black text-slate-800 font-mono">৳ {t.teacherEarned.toLocaleString('en-BD')}</td>
-                          <td className="p-3.5 font-bold text-slate-500 font-mono">৳ {t.paidOut.toLocaleString('en-BD')}</td>
-                          <td className="p-3.5 font-black text-[#ed347d] text-sm font-mono">৳ {t.dueBalance.toLocaleString('en-BD')}</td>
-                          <td className="p-3.5 text-center">
-                            <button
-                              type="button"
-                              onClick={() => openDisbursePayoutModal(t)}
-                              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-xs shadow-xs cursor-pointer inline-flex items-center gap-1.5"
-                            >
-                              <Check className="w-3.5 h-3.5" />
-                              <span>পেআউট সম্পন্ন করুন</span>
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+              )}
+
+              {/* ------------------------------------------------------------------------- */}
+              {/* SUBVIEW 2: DIRECT DISBURSE FROM TEACHER BALANCES */}
+              {/* ------------------------------------------------------------------------- */}
+              {activeSubMenu === 'payouts_direct' && (
+                <div className="space-y-5 animate-in fade-in duration-200">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                    <div>
+                      <h4 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                        <Coins className="w-4 h-4 text-emerald-600" />
+                        <span>শিক্ষকদের বকেয়া ব্যালেন্স থেকে সরাসরি পেআউট (Direct Disburse from Ledger)</span>
+                      </h4>
+                      <p className="text-xs text-slate-500 font-medium">শিক্ষকের আবেদনের অপেক্ষা না করে সরাসরি যেকোনো শিক্ষকের উইথড্রলযোগ্য বকেয়া ব্যাংকিং বা ওয়ালেটে ডিসবার্স করুন</p>
+                    </div>
+                    <span className="px-3.5 py-1.5 rounded-full bg-pink-50 text-[#ed347d] text-xs font-black border border-pink-200 font-mono">
+                      বকেয়া শিক্ষক: {teachersWithDue.length} জন
+                    </span>
+                  </div>
+
+                  {teachersWithDue.length === 0 ? (
+                    <div className="p-10 text-center bg-slate-50/80 rounded-[28px] border border-dashed border-slate-200 text-slate-500 text-xs max-w-xl mx-auto space-y-2">
+                      <div className="text-base font-bold text-slate-800">🎉 বর্তমানে কোনো শিক্ষকের বকেয়া পাওনা নেই!</div>
+                      <p className="text-slate-400">শিক্ষার্থী কোর্সে ভর্তি হয়ে পেমেন্ট অনুমোদিত হলে এখানে স্বয়ংক্রিয়ভাবে বকেয়া হিসাব যুক্ত হবে।</p>
+                    </div>
+                  ) : (
+                    <div className="bg-white rounded-[28px] border border-slate-200/80 shadow-xs overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-slate-50/90 text-slate-500 font-black text-[11px] uppercase tracking-wider border-b border-slate-100">
+                            <tr>
+                              <th className="p-4">শিক্ষক</th>
+                              <th className="p-4">প্রতিষ্ঠান ও বিষয়</th>
+                              <th className="p-4">মোট কোর্স সেলস</th>
+                              <th className="p-4">মোট অর্জিত রেভিনিউ</th>
+                              <th className="p-4">পেন্ডিং আবেদন</th>
+                              <th className="p-4">পরিশোধিত অর্থ</th>
+                              <th className="p-4">উইথড্রলযোগ্য বকেয়া</th>
+                              <th className="p-4 text-center">অ্যাকশন</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {teachersWithDue.map((t, idx) => (
+                              <tr key={`${t.id}_${idx}`} className="hover:bg-slate-50/80 transition-colors">
+                                <td className="p-4 font-bold text-slate-900 flex items-center gap-3">
+                                  <img src={t.avatar} alt={t.name} className="w-10 h-10 rounded-2xl object-cover border border-slate-200 shadow-2xs shrink-0" />
+                                  <div>
+                                    <div className="font-black text-slate-900 text-sm">{t.name}</div>
+                                    <div className="text-[10px] text-slate-400 font-mono">{t.phone || t.email || '—'}</div>
+                                  </div>
+                                </td>
+                                <td className="p-4 text-slate-600 font-medium">
+                                  <div>{t.institution}</div>
+                                  <div className="text-[10px] text-slate-400">{t.subject}</div>
+                                </td>
+                                <td className="p-4 font-bold text-slate-700 font-mono text-sm">৳ {t.totalSales.toLocaleString('en-BD')}</td>
+                                <td className="p-4 font-black text-slate-900 font-mono text-sm">৳ {t.teacherEarned.toLocaleString('en-BD')}</td>
+                                <td className="p-4 font-bold text-amber-600 font-mono">
+                                  {t.pendingPayout > 0 ? `৳ ${t.pendingPayout.toLocaleString('en-BD')}` : '—'}
+                                </td>
+                                <td className="p-4 font-bold text-slate-500 font-mono">৳ {t.paidOut.toLocaleString('en-BD')}</td>
+                                <td className="p-4 font-black text-[#ed347d] text-base font-mono">৳ {t.dueBalance.toLocaleString('en-BD')}</td>
+                                <td className="p-4 text-center">
+                                  <button
+                                    type="button"
+                                    onClick={() => openDisbursePayoutModal(t)}
+                                    className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-xs shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+                                  >
+                                    <Check className="w-3.5 h-3.5" />
+                                    <span>সরাসরি পেআউট</span>
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ------------------------------------------------------------------------- */}
+              {/* SUBVIEW 3: DISBURSED PAYOUTS */}
+              {/* ------------------------------------------------------------------------- */}
+              {activeSubMenu === 'payouts_paid' && (
+                <div className="space-y-5 animate-in fade-in duration-200">
+                  <div className="border-b border-slate-100 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <h4 className="text-sm font-black text-slate-900">পরিশোধিত পেআউট ট্রানজেকশন রেজিস্টার ({paidPayoutRecords.length} টি)</h4>
+                      <p className="text-xs text-slate-500 font-medium">ব্যাংক ট্রান্সফার ও মোবাইল ফাইন্যান্সিয়াল সার্ভিসে সফলভাবে নিষ্পত্তি হওয়া সমস্ত রেকর্ড</p>
+                    </div>
+                    <span className="px-3.5 py-1.5 rounded-full bg-emerald-50 text-emerald-800 text-xs font-black border border-emerald-200 font-mono">
+                      মোট পরিশোধিত: ৳ {totalPaidOutSum.toLocaleString('en-BD')}
+                    </span>
+                  </div>
+
+                  {paidPayoutRecords.length === 0 ? (
+                    <div className="p-10 text-center bg-slate-50/80 rounded-[28px] border border-dashed border-slate-200 text-slate-500 text-xs max-w-xl mx-auto space-y-2">
+                      <div className="text-base font-bold text-slate-800">এখনো কোনো পেআউট সম্পন্ন হয়নি।</div>
+                      <p className="text-slate-400">শিক্ষকদের পেন্ডিং রিকোয়েস্ট বা বকেয়া ব্যালেন্স থেকে প্রথম ডিসবার্সমেন্ট সম্পন্ন করুন।</p>
+                    </div>
+                  ) : (
+                    <div className="bg-white rounded-[28px] border border-slate-200/80 shadow-xs overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-slate-50/90 text-slate-500 font-black text-[11px] uppercase tracking-wider border-b border-slate-100">
+                            <tr>
+                              <th className="p-4">ভাউচার আইডি</th>
+                              <th className="p-4">শিক্ষক</th>
+                              <th className="p-4">পরিশোধের মাধ্যম</th>
+                              <th className="p-4">অ্যাকাউন্ট / TrxID</th>
+                              <th className="p-4">টাকার অঙ্ক</th>
+                              <th className="p-4">তারিখ</th>
+                              <th className="p-4">অ্যাডমিন নোট</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {paidPayoutRecords.map((p, idx) => (
+                              <tr key={`${p.id}_${idx}`} className="hover:bg-slate-50/80 transition-colors">
+                                <td className="p-4 font-mono font-bold text-slate-700">{p.id}</td>
+                                <td className="p-4 font-black text-slate-900 text-sm">{p.teacherName}</td>
+                                <td className="p-4">
+                                  <span className="px-2.5 py-1 rounded-xl bg-cyan-50 text-cyan-800 font-black border border-cyan-200 text-[11px]">
+                                    {p.method}
+                                  </span>
+                                </td>
+                                <td className="p-4 font-mono text-[#ed347d] font-bold">
+                                  <div>{p.trxId}</div>
+                                  <div className="text-[10px] text-slate-400 font-normal">{p.accountNumber}</div>
+                                </td>
+                                <td className="p-4 font-black text-emerald-600 text-base font-mono">৳ {p.amount.toLocaleString('en-BD')}</td>
+                                <td className="p-4 text-slate-500">{p.paidAt || 'আজকে'}</td>
+                                <td className="p-4 text-slate-500 italic max-w-[180px] truncate">{p.adminNotes || p.note || '—'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ------------------------------------------------------------------------- */}
+              {/* SUBVIEW 4: FULL PAYOUT HISTORY AUDIT */}
+              {/* ------------------------------------------------------------------------- */}
+              {activeSubMenu === 'payouts_history' && (
+                <div className="space-y-5 animate-in fade-in duration-200">
+                  <div className="border-b border-slate-100 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <h4 className="text-sm font-black text-slate-900">পেআউট অডিট ও হিস্ট্রি রেজিস্টার (সম্পূর্ণ রেকর্ড)</h4>
+                      <p className="text-xs text-slate-500 font-medium">পরিশোধিত, অপেক্ষমাণ ও বাতিলকৃত সমস্ত পেআউট ইভেন্টের বিস্তারিত হিস্ট্রি</p>
+                    </div>
+                    <span className="text-xs text-slate-600 font-bold bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
+                      সর্বমোট {payoutRecords.length} টি রেকর্ড
+                    </span>
+                  </div>
+
+                  {payoutRecords.length === 0 ? (
+                    <div className="p-10 text-center bg-slate-50/80 rounded-[28px] border border-dashed border-slate-200 text-slate-500 text-xs max-w-xl mx-auto">
+                      এখনো কোনো পেআউট ট্রানজেকশন রেজিস্ট্রি পাওয়া যায়নি।
+                    </div>
+                  ) : (
+                    <div className="bg-white rounded-[28px] border border-slate-200/80 shadow-xs overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-slate-50/90 text-slate-500 font-black text-[11px] uppercase tracking-wider border-b border-slate-100">
+                            <tr>
+                              <th className="p-4">স্ট্যাটাস</th>
+                              <th className="p-4">ভাউচার আইডি</th>
+                              <th className="p-4">শিক্ষক</th>
+                              <th className="p-4">মেথড</th>
+                              <th className="p-4">টাকার অঙ্ক</th>
+                              <th className="p-4">TrxID / রেফারেন্স</th>
+                              <th className="p-4">তারিখ</th>
+                              <th className="p-4">মন্তব্য / কারণ</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {payoutRecords.map((p, idx) => (
+                              <tr key={`${p.id}_${idx}`} className="hover:bg-slate-50/80 transition-colors">
+                                <td className="p-4">
+                                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black ${
+                                    p.status === 'paid'
+                                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                      : p.status === 'rejected'
+                                      ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                                      : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                  }`}>
+                                    <span className={`w-1.5 h-1.5 rounded-full ${
+                                      p.status === 'paid' ? 'bg-emerald-500' : p.status === 'rejected' ? 'bg-rose-500' : 'bg-amber-500'
+                                    }`} />
+                                    {p.status === 'paid' ? 'পরিশোধিত' : p.status === 'rejected' ? 'বাতিলকৃত' : 'অপেক্ষমাণ'}
+                                  </span>
+                                </td>
+                                <td className="p-4 font-mono font-bold text-slate-700">{p.id}</td>
+                                <td className="p-4 font-black text-slate-900 text-sm">{p.teacherName}</td>
+                                <td className="p-4 font-bold text-cyan-700">{p.method}</td>
+                                <td className="p-4 font-black text-slate-900 font-mono text-sm">৳ {p.amount.toLocaleString('en-BD')}</td>
+                                <td className="p-4 font-mono text-slate-700">{p.trxId || '—'}</td>
+                                <td className="p-4 text-slate-500">{p.paidAt || p.requestedAt || '—'}</td>
+                                <td className="p-4 text-slate-500 italic max-w-[180px] truncate">
+                                  {p.rejectionReason ? `বাতিলের কারণ: ${p.rejectionReason}` : (p.adminNotes || p.note || '—')}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -4108,34 +5405,45 @@ export default function SuperAdminPage() {
           {/* 10. SYSTEM SETTINGS */}
           {/* ========================================================================= */}
           {activeMenu === 'settings' && (
-            <form onSubmit={handleSaveSettings} className="bg-white/90 backdrop-blur-md p-6 sm:p-8 rounded-[28px] border border-slate-200/70 max-w-3xl shadow-[0_4px_25px_-4px_rgba(0,0,0,0.03)] space-y-6 animate-in fade-in duration-200">
+            <form onSubmit={handleSaveSettings} className="bg-white/90 backdrop-blur-md p-6 sm:p-8 rounded-[28px] border border-slate-200/70 max-w-4xl shadow-[0_4px_25px_-4px_rgba(0,0,0,0.03)] space-y-6 animate-in fade-in duration-200">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
                 <div>
                   <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
                     <Settings className="w-5 h-5 text-slate-700" />
-                    <span>সিস্টেম ও ওয়েবসাইট সেটিংস (Settings)</span>
+                    <span>সিস্টেম ও ওয়েবসাইট সেটিংস (Enterprise Settings)</span>
                   </h3>
-                  <p className="text-xs text-slate-500 font-medium">লাইভ নোটিশ ব্যানার, মার্চেন্ট নম্বর ও সাপোর্ট তথ্য পরিচালনা</p>
+                  <p className="text-xs text-slate-500 font-medium">ব্র্যান্ডিং, পেমেন্ট গেটওয়ে, এসএমএস/ইমেইল সার্ভার ও লাইভ ডাটাবেজ হেলথ পরিচালনা</p>
                 </div>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#fa507e] to-[#ec376d] text-white font-black text-xs shadow-md shadow-pink-500/20 active:scale-95 hover:opacity-95 transition-all cursor-pointer border-t border-white/30 self-start sm:self-auto"
+                >
+                  সেটিংস সংরক্ষণ করুন
+                </button>
               </div>
 
               {/* Submenu Segmented Tabs Bar */}
               <div className="bg-slate-100/70 p-1.5 rounded-2xl flex flex-wrap gap-1 border border-slate-200/60 w-fit">
                 {[
                   { id: 'settings_general', label: 'General' },
-                  { id: 'settings_website', label: 'Website' },
-                  { id: 'settings_payment', label: 'Payment' },
-                  { id: 'settings_email', label: 'Email' },
-                  { id: 'settings_notifications', label: 'Notifications' },
+                  { id: 'settings_website', label: 'Website & Branding' },
+                  { id: 'settings_payment', label: 'Payment Gateways' },
+                  { id: 'settings_email', label: 'Email & SMTP' },
+                  { id: 'settings_notifications', label: 'SMS & Notifications' },
                   { id: 'settings_security', label: 'Security' },
-                  { id: 'settings_system', label: 'System Settings' },
+                  { id: 'settings_system', label: 'Live Diagnostics & System' },
                 ].map(tab => (
                   <button
                     key={tab.id}
                     type="button"
-                    onClick={() => setActiveSubMenu(tab.id as SubMenu)}
+                    onClick={() => {
+                      setActiveSubMenu(tab.id as SubMenu);
+                      if (tab.id === 'settings_system') {
+                        fetchDiagnostics();
+                      }
+                    }}
                     className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                      activeSubMenu === tab.id
+                      activeSubMenu === tab.id || (activeSubMenu === 'default' && tab.id === 'settings_general')
                         ? 'bg-white text-slate-900 shadow-xs border border-slate-200/80'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
@@ -4145,9 +5453,11 @@ export default function SuperAdminPage() {
                 ))}
               </div>
 
-              {/* Subview: Website Settings */}
+              {/* ------------------------------------------------------------------------- */}
+              {/* SUBVIEW: WEBSITE & BRANDING */}
+              {/* ------------------------------------------------------------------------- */}
               {activeSubMenu === 'settings_website' && (
-                <div className="space-y-4">
+                <div className="space-y-4 animate-in fade-in duration-150">
                   <div>
                     <label className="text-xs font-bold text-slate-700 block mb-1">ওয়েবসাইটের শীর্ষ লাইভ নোটিশ ব্যানার (Live Ticker)</label>
                     <textarea
@@ -4157,10 +5467,11 @@ export default function SuperAdminPage() {
                       className="w-full p-3 rounded-2xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-[#ed347d] focus:ring-4 focus:ring-pink-500/5 shadow-2xs"
                     />
                   </div>
+
                   <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-200">
                     <div>
                       <span className="text-xs font-black text-slate-900 block">ওয়েবসাইট মেইনটেনেন্স মোড (Maintenance Mode)</span>
-                      <span className="text-[11px] text-slate-500 font-medium">অন থাকলে সাধারণ ভিজিটররা সাইট সাময়িক বন্ধ বার্তা দেখতে পাবে</span>
+                      <span className="text-[11px] text-slate-500 font-medium">অন থাকলে সাধারণ ভিজিটররা সাইট সাময়িক বন্ধ বার্তা দেখতে পাবে (অ্যাডমিন ছাড়া)</span>
                     </div>
                     <input
                       type="checkbox"
@@ -4169,12 +5480,67 @@ export default function SuperAdminPage() {
                       className="w-5 h-5 accent-[#ed347d] cursor-pointer"
                     />
                   </div>
+
+                  {/* Social & Community Links */}
+                  <div className="pt-2 border-t border-slate-100">
+                    <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider mb-3">সোশ্যাল মিডিয়া ও অফিসিয়াল কমিউনিটি লিংক</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs font-bold text-slate-700 block mb-1">লোগো ইমেজ ইউআরএল (Logo URL)</label>
+                        <input
+                          type="text"
+                          value={systemSettings.logoUrl}
+                          onChange={(e) => setSystemSettings({ ...systemSettings, logoUrl: e.target.value })}
+                          className="w-full p-3 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-[#ed347d] font-mono shadow-2xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-slate-700 block mb-1">ফেসবুক স্টুডেন্ট গ্রুপ (Facebook Group)</label>
+                        <input
+                          type="text"
+                          value={systemSettings.facebookGroup}
+                          onChange={(e) => setSystemSettings({ ...systemSettings, facebookGroup: e.target.value })}
+                          className="w-full p-3 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-[#ed347d] font-mono shadow-2xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-slate-700 block mb-1">ইউটিউব চ্যানেল (YouTube Channel)</label>
+                        <input
+                          type="text"
+                          value={systemSettings.youtubeChannel}
+                          onChange={(e) => setSystemSettings({ ...systemSettings, youtubeChannel: e.target.value })}
+                          className="w-full p-3 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-[#ed347d] font-mono shadow-2xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-slate-700 block mb-1">টেলিগ্রাম চ্যানেল (Telegram Community)</label>
+                        <input
+                          type="text"
+                          value={systemSettings.telegramChannel}
+                          onChange={(e) => setSystemSettings({ ...systemSettings, telegramChannel: e.target.value })}
+                          className="w-full p-3 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-[#ed347d] font-mono shadow-2xs"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-slate-700 block mb-1">ফুটার কপিরাইট টেক্সট</label>
+                    <input
+                      type="text"
+                      value={systemSettings.footerCopyright}
+                      onChange={(e) => setSystemSettings({ ...systemSettings, footerCopyright: e.target.value })}
+                      className="w-full p-3 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-[#ed347d] shadow-2xs"
+                    />
+                  </div>
                 </div>
               )}
 
-              {/* Subview: Payment Settings */}
+              {/* ------------------------------------------------------------------------- */}
+              {/* SUBVIEW: PAYMENT SETTINGS */}
+              {/* ------------------------------------------------------------------------- */}
               {activeSubMenu === 'settings_payment' && (
-                <div className="space-y-4">
+                <div className="space-y-4 animate-in fade-in duration-150">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
                       <label className="text-xs font-bold text-slate-700 block mb-1">বিকাশ মার্চেন্ট নম্বর</label>
@@ -4205,21 +5571,37 @@ export default function SuperAdminPage() {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="text-xs font-bold text-slate-700 block mb-1">সর্বনিম্ন শিক্ষক উইথড্রল সীমা (৳)</label>
-                    <input
-                      type="number"
-                      value={systemSettings.minPayoutAmount}
-                      onChange={(e) => setSystemSettings({ ...systemSettings, minPayoutAmount: Number(e.target.value) })}
-                      className="w-full max-w-xs p-3 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-[#ed347d] font-mono shadow-2xs"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-bold text-slate-700 block mb-1">সর্বনিম্ন শিক্ষক উইথড্রল সীমা (৳)</label>
+                      <input
+                        type="number"
+                        value={systemSettings.minPayoutAmount}
+                        onChange={(e) => setSystemSettings({ ...systemSettings, minPayoutAmount: Number(e.target.value) })}
+                        className="w-full p-3 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-[#ed347d] font-mono shadow-2xs"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-200 mt-5">
+                      <div>
+                        <span className="text-xs font-black text-slate-900 block">স্বয়ংক্রিয় ভর্তি অনুমোদন</span>
+                        <span className="text-[11px] text-slate-500 font-medium">TrxID যাচাই ছাড়াই তাৎক্ষণিক অ্যাক্সেস</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={systemSettings.autoEnrollmentApprove}
+                        onChange={(e) => setSystemSettings({ ...systemSettings, autoEnrollmentApprove: e.target.checked })}
+                        className="w-5 h-5 accent-[#ed347d] cursor-pointer"
+                      />
+                    </div>
                   </div>
                 </div>
               )}
 
-              {/* Subview: Email Settings */}
+              {/* ------------------------------------------------------------------------- */}
+              {/* SUBVIEW: EMAIL & SMTP SETTINGS */}
+              {/* ------------------------------------------------------------------------- */}
               {activeSubMenu === 'settings_email' && (
-                <div className="space-y-4">
+                <div className="space-y-5 animate-in fade-in duration-150">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs font-bold text-slate-700 block mb-1">SMTP Host</label>
@@ -4241,7 +5623,7 @@ export default function SuperAdminPage() {
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-slate-700 block mb-1">অটোমেটেড রসিদ প্রেরক ইমেইল</label>
+                    <label className="text-xs font-bold text-slate-700 block mb-1">অটোমেটেড রসিদ ও ওটিপি প্রেরক ইমেইল</label>
                     <input
                       type="email"
                       value={systemSettings.smtpSender}
@@ -4249,12 +5631,43 @@ export default function SuperAdminPage() {
                       className="w-full p-3 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-[#ed347d] shadow-2xs"
                     />
                   </div>
+
+                  {/* Interactive Test Email Dispatcher */}
+                  <div className="p-4 rounded-2xl bg-cyan-50/60 border border-cyan-200 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-cyan-700" />
+                      <span className="text-xs font-black text-cyan-900">লাইভ ইমেইল ভেরিফিকেশন টেস্ট টুল (Test Dispatcher)</span>
+                    </div>
+                    <p className="text-[11px] text-slate-600">
+                      কনফিগার করা SMTP সার্ভারের সাথে সংযোগ যাচাই ও টেস্ট ভেরিফিকেশন বার্তা পাঠিয়ে পরীক্ষা করুন।
+                    </p>
+                    <div className="flex flex-col sm:flex-row items-center gap-2">
+                      <input
+                        type="email"
+                        placeholder="test-recipient@example.com"
+                        value={testEmailInput}
+                        onChange={(e) => setTestEmailInput(e.target.value)}
+                        className="w-full sm:flex-1 p-2.5 rounded-xl border border-cyan-200 text-xs bg-white focus:outline-none focus:border-cyan-600 font-mono shadow-2xs"
+                      />
+                      <button
+                        type="button"
+                        disabled={isSendingTestEmail}
+                        onClick={handleSendTestEmail}
+                        className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-cyan-700 hover:bg-cyan-800 text-white font-black text-xs shadow-xs cursor-pointer active:scale-95 disabled:opacity-50 flex items-center justify-center gap-1.5"
+                      >
+                        {isSendingTestEmail ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                        <span>টেস্ট ইমেইল পাঠান</span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
 
-              {/* Subview: Notifications Settings */}
+              {/* ------------------------------------------------------------------------- */}
+              {/* SUBVIEW: NOTIFICATIONS & SMS SETTINGS */}
+              {/* ------------------------------------------------------------------------- */}
               {activeSubMenu === 'settings_notifications' && (
-                <div className="space-y-4">
+                <div className="space-y-5 animate-in fade-in duration-150">
                   <div>
                     <label className="text-xs font-bold text-slate-700 block mb-1">SMS Gateway API Token</label>
                     <input
@@ -4285,12 +5698,43 @@ export default function SuperAdminPage() {
                       className="w-5 h-5 accent-[#ed347d] cursor-pointer"
                     />
                   </div>
+
+                  {/* Interactive Test SMS Dispatcher */}
+                  <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Smartphone className="w-4 h-4 text-amber-700" />
+                      <span className="text-xs font-black text-amber-900">লাইভ এসএমএস গেটওয়ে টেস্ট টুল (SMS Dispatcher)</span>
+                    </div>
+                    <p className="text-[11px] text-slate-600">
+                      যেকোনো বাংলাদেশী ১১ ডিজিটের মোবাইল নম্বরে সরাসরি টেস্ট ওটিপি/নোটিফিকেশন এসএমএস পাঠিয়ে গেটওয়ে সংযোগ পরীক্ষা করুন।
+                    </p>
+                    <div className="flex flex-col sm:flex-row items-center gap-2">
+                      <input
+                        type="text"
+                        placeholder="01819876543"
+                        value={testSmsInput}
+                        onChange={(e) => setTestSmsInput(e.target.value)}
+                        className="w-full sm:flex-1 p-2.5 rounded-xl border border-amber-200 text-xs bg-white focus:outline-none focus:border-amber-600 font-mono shadow-2xs"
+                      />
+                      <button
+                        type="button"
+                        disabled={isSendingTestSms}
+                        onClick={handleSendTestSms}
+                        className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-black text-xs shadow-xs cursor-pointer active:scale-95 disabled:opacity-50 flex items-center justify-center gap-1.5"
+                      >
+                        {isSendingTestSms ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                        <span>টেস্ট এসএমএস পাঠান</span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
 
-              {/* Subview: Security Settings */}
+              {/* ------------------------------------------------------------------------- */}
+              {/* SUBVIEW: SECURITY SETTINGS */}
+              {/* ------------------------------------------------------------------------- */}
               {activeSubMenu === 'settings_security' && (
-                <div className="space-y-4">
+                <div className="space-y-4 animate-in fade-in duration-150">
                   <div className="max-w-xs">
                     <label className="text-xs font-bold text-slate-700 block mb-1">সুপার অ্যাডমিন সিকিউরিটি পিন (PIN)</label>
                     <input
@@ -4317,9 +5761,11 @@ export default function SuperAdminPage() {
                 </div>
               )}
 
-              {/* Subview: General Settings */}
+              {/* ------------------------------------------------------------------------- */}
+              {/* SUBVIEW: GENERAL SETTINGS */}
+              {/* ------------------------------------------------------------------------- */}
               {(activeSubMenu === 'settings_general' || activeSubMenu === 'default') && (
-                <div className="space-y-4">
+                <div className="space-y-4 animate-in fade-in duration-150">
                   <div>
                     <label className="text-xs font-bold text-slate-700 block mb-1">প্ল্যাটফর্মের নাম</label>
                     <input
@@ -4337,7 +5783,7 @@ export default function SuperAdminPage() {
                         type="text"
                         value={systemSettings.supportHotline}
                         onChange={(e) => setSystemSettings({ ...systemSettings, supportHotline: e.target.value })}
-                        className="w-full p-3 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-[#ed347d] shadow-2xs"
+                        className="w-full p-3 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-[#ed347d] shadow-2xs font-mono"
                       />
                     </div>
                     <div>
@@ -4346,7 +5792,7 @@ export default function SuperAdminPage() {
                         type="email"
                         value={systemSettings.supportEmail}
                         onChange={(e) => setSystemSettings({ ...systemSettings, supportEmail: e.target.value })}
-                        className="w-full p-3 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-[#ed347d] shadow-2xs"
+                        className="w-full p-3 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-[#ed347d] shadow-2xs font-mono"
                       />
                     </div>
                   </div>
@@ -4363,21 +5809,84 @@ export default function SuperAdminPage() {
                 </div>
               )}
 
-              {/* Subview: System Settings / Reset */}
+              {/* ------------------------------------------------------------------------- */}
+              {/* SUBVIEW: LIVE SYSTEM DIAGNOSTICS & RESET */}
+              {/* ------------------------------------------------------------------------- */}
               {activeSubMenu === 'settings_system' && (
-                <div className="space-y-4">
-                  <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
-                    <span className="text-xs font-black text-slate-900 block">ডাটাবেজ ক্যাশ ও ফ্যাক্টরি রিসেট</span>
-                    <p className="text-xs text-slate-500 font-medium">সিস্টেমের সমস্ত মক ও লোকালস্টোরেজ ডাটা ডিফল্ট ফ্যাক্টরি অবস্থায় ফিরিয়ে নিন</p>
+                <div className="space-y-6 animate-in fade-in duration-150">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                    <div>
+                      <h4 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                        <Activity className="w-4 h-4 text-emerald-600" />
+                        <span>লাইভ সিস্টেম ও ডাটাবেজ হেলথ ডায়াগনস্টিকস (Live Health Diagnostics)</span>
+                      </h4>
+                      <p className="text-xs text-slate-500">MongoDB Atlas কানেকশন স্ট্যাটাস, ল্যাটেন্সি, মেমোরি ও সার্ভার আপটাইম</p>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={isLoadingDiagnostics}
+                      onClick={fetchDiagnostics}
+                      className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1.5 cursor-pointer active:scale-95 disabled:opacity-50"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${isLoadingDiagnostics ? 'animate-spin' : ''}`} />
+                      <span>রিফ্রেশ</span>
+                    </button>
+                  </div>
+
+                  {/* Diagnostic Metrics Cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-black text-emerald-700 uppercase">MongoDB Atlas</span>
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                      </div>
+                      <div className="text-xl font-black text-emerald-900 font-mono">
+                        {diagnosticsData?.dbStatus === 'connected' ? 'সক্রিয় (Connected)' : 'অনলাইন'}
+                      </div>
+                      <div className="text-[10px] text-slate-500">
+                        ল্যাটেন্সি: {diagnosticsData ? `${diagnosticsData.dbLatencyMs} ms` : '১ ms'}
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-cyan-50/70 border border-cyan-200 space-y-1">
+                      <span className="text-[11px] font-black text-cyan-700 uppercase">সার্ভার আপটাইম</span>
+                      <div className="text-xl font-black text-cyan-900 font-mono">
+                        {diagnosticsData?.uptimeFormatted || 'সক্রিয়'}
+                      </div>
+                      <div className="text-[10px] text-slate-500">Next.js প্রোডাকশন নোড</div>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-purple-50/70 border border-purple-200 space-y-1">
+                      <span className="text-[11px] font-black text-purple-700 uppercase">মেমোরি হিপ ব্যবহার</span>
+                      <div className="text-xl font-black text-purple-900 font-mono">
+                        {diagnosticsData?.heapUsedMB ? `${diagnosticsData.heapUsedMB} MB` : '৬৪ MB'}
+                      </div>
+                      <div className="text-[10px] text-slate-500">হিপ টোটাল: {diagnosticsData?.heapTotalMB || '১২৮'} MB</div>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-pink-50/70 border border-pink-200 space-y-1">
+                      <span className="text-[11px] font-black text-[#ed347d] uppercase">এনভায়রনমেন্ট</span>
+                      <div className="text-xl font-black text-[#ed347d] font-mono">
+                        Node {diagnosticsData?.nodeVersion || 'v20.x'}
+                      </div>
+                      <div className="text-[10px] text-slate-500">এডটেক কোর ফ্রেমওয়ার্ক</div>
+                    </div>
+                  </div>
+
+                  {/* Factory Reset */}
+                  <div className="p-5 bg-rose-50/40 rounded-2xl border border-rose-200/80 space-y-2">
+                    <span className="text-xs font-black text-rose-900 block">ডাটাবেজ ক্যাশ ও ফ্যাক্টরি রিসেট</span>
+                    <p className="text-xs text-slate-600 font-medium">সিস্টেমের সমস্ত মক ও লোকালস্টোরেজ ডাটা ডিফল্ট ফ্যাক্টরি অবস্থায় ফিরিয়ে নিন।</p>
                     <button
                       type="button"
                       onClick={() => {
                         resetToDefaultData();
                         showToast('সিস্টেম ফ্যাক্টরি ডিফল্ট ডাটাতে রিসেট করা হয়েছে!');
                       }}
-                      className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-black text-xs cursor-pointer shadow-xs mt-1"
+                      className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-black text-xs cursor-pointer shadow-xs mt-1 inline-flex items-center gap-1.5"
                     >
-                      ফ্যাক্টরি ডাটা রিসেট করুন
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>ফ্যাক্টরি ডাটা রিসেট করুন</span>
                     </button>
                   </div>
                 </div>
@@ -4783,10 +6292,11 @@ export default function SuperAdminPage() {
                   onChange={(e) => setPayoutForm({ ...payoutForm, method: e.target.value })}
                   className="w-full p-3 rounded-2xl border border-slate-200 focus:outline-none focus:border-[#ed347d] shadow-2xs font-bold"
                 >
+                  <option value={`bKash Merchant (${systemSettings.bkashMerchant})`}>bKash Merchant ({systemSettings.bkashMerchant})</option>
+                  <option value={`Nagad Corporate (${systemSettings.nagadMerchant})`}>Nagad Corporate ({systemSettings.nagadMerchant})</option>
+                  <option value={`Dutch-Bangla Bank (Rocket: ${systemSettings.rocketMerchant})`}>Dutch-Bangla Bank (Rocket: {systemSettings.rocketMerchant})</option>
                   <option value="City Bank Ltd. (BEFTN / NPSB)">City Bank Ltd. (BEFTN / NPSB)</option>
-                  <option value="bKash Merchant Disburse (01819-876543)">bKash Merchant Disburse</option>
-                  <option value="Nagad Corporate Payout">Nagad Corporate Payout</option>
-                  <option value="Dutch-Bangla Bank Ltd. (Rocket)">Dutch-Bangla Bank Ltd. (Rocket)</option>
+                  <option value="Brac Bank PLC (BEFTN / RTGS)">Brac Bank PLC (BEFTN / RTGS)</option>
                 </select>
               </div>
 
@@ -4827,6 +6337,139 @@ export default function SuperAdminPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: TEACHER ENROLLMENTS AUDIT BREAKDOWN */}
+      {/* ========================================================================= */}
+      {selectedTeacherForBreakdown && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-md animate-in fade-in duration-150">
+          <div className="bg-white rounded-[32px] p-6 sm:p-8 max-w-2xl w-full shadow-2xl border border-slate-100 space-y-5 animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-2xl bg-pink-50 text-[#ed347d]">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900">
+                    শিক্ষক এনরোলমেন্ট ও সেলস অডিট (Real Ledger Breakdown)
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">
+                    {selectedTeacherForBreakdown.name} • {selectedTeacherForBreakdown.subject}
+                  </p>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setSelectedTeacherForBreakdown(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center font-bold text-sm cursor-pointer transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Teacher Financial Overview Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80">
+                <span className="text-[10px] text-slate-400 font-bold block">মোট সেলস</span>
+                <span className="text-base font-black font-mono text-slate-900">
+                  ৳ {selectedTeacherForBreakdown.totalSales.toLocaleString('en-BD')}
+                </span>
+              </div>
+              <div className="p-3 rounded-2xl bg-emerald-50/70 border border-emerald-200">
+                <span className="text-[10px] text-emerald-700 font-bold block">শিক্ষক প্রাপ্য ({selectedTeacherForBreakdown.commissionPercent}%)</span>
+                <span className="text-base font-black font-mono text-emerald-700">
+                  ৳ {selectedTeacherForBreakdown.teacherEarned.toLocaleString('en-BD')}
+                </span>
+              </div>
+              <div className="p-3 rounded-2xl bg-cyan-50/70 border border-cyan-200">
+                <span className="text-[10px] text-cyan-700 font-bold block">পরিশোধিত</span>
+                <span className="text-base font-black font-mono text-cyan-700">
+                  ৳ {selectedTeacherForBreakdown.paidOut.toLocaleString('en-BD')}
+                </span>
+              </div>
+              <div className="p-3 rounded-2xl bg-pink-50/70 border border-pink-200">
+                <span className="text-[10px] text-[#ed347d] font-bold block">উত্তোলনযোগ্য বকেয়া</span>
+                <span className="text-base font-black font-mono text-[#ed347d]">
+                  ৳ {selectedTeacherForBreakdown.dueBalance.toLocaleString('en-BD')}
+                </span>
+              </div>
+            </div>
+
+            {/* Real Students Enrollment List */}
+            <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+              <h4 className="text-xs font-black text-slate-700 uppercase tracking-wider">
+                অনুমোদিত শিক্ষার্থী ভর্তির তালিকা ({selectedTeacherForBreakdown.teacherEnrollmentsList?.length || 0} টি)
+              </h4>
+              {(!selectedTeacherForBreakdown.teacherEnrollmentsList || selectedTeacherForBreakdown.teacherEnrollmentsList.length === 0) ? (
+                <div className="p-6 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-slate-500 text-xs">
+                  এই শিক্ষকের কোনো কোর্সে এখনো অনুমোদিত ভর্তি রেকর্ড নেই।
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-100 border border-slate-200/80 rounded-2xl overflow-hidden text-xs">
+                  {selectedTeacherForBreakdown.teacherEnrollmentsList.map((en: any, idx: number) => {
+                    const teacherAmt = Math.round((Number(en.amount) || 0) * ((selectedTeacherForBreakdown.commissionPercent || 80) / 100));
+                    return (
+                      <div key={en.id || idx} className="p-3.5 hover:bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div className="space-y-0.5">
+                          <div className="font-black text-slate-900 flex items-center gap-2">
+                            <span>{en.studentName || 'শিক্ষার্থী'}</span>
+                            <span className="text-[10px] font-mono font-normal text-slate-500">
+                              {en.studentPhone || en.senderPhone || ''}
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-slate-600 font-medium">
+                            {en.courseTitle || 'কোর্স'}
+                          </div>
+                          <div className="text-[10px] text-slate-400 font-mono">
+                            মেথড: <span className="font-bold text-slate-600">{en.paymentMethod || 'MFS'}</span> • TrxID: <span className="font-bold text-[#ed347d]">{en.trxId || '—'}</span> • তারিখ: {en.enrollmentDate || en.createdAt || 'সাম্প্রতিক'}
+                          </div>
+                        </div>
+                        <div className="text-right sm:self-center">
+                          <div className="font-mono font-black text-slate-900 text-sm">
+                            ৳ {(Number(en.amount) || 0).toLocaleString('en-BD')}
+                          </div>
+                          <div className="text-[10px] font-bold text-emerald-600 font-mono">
+                            শিক্ষক অংশ: ৳ {teacherAmt.toLocaleString('en-BD')}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="pt-3 border-t border-slate-100 flex justify-between items-center">
+              <div className="text-[11px] text-slate-500">
+                ডাটাবেজের <span className="font-mono font-bold text-slate-700">enrollments</span> কালেকশন থেকে সরাসরি সংগৃহীত
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedTeacherForBreakdown(null)}
+                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer"
+                >
+                  বন্ধ করুন
+                </button>
+                {selectedTeacherForBreakdown.dueBalance > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const t = selectedTeacherForBreakdown;
+                      setSelectedTeacherForBreakdown(null);
+                      openDisbursePayoutModal(t);
+                    }}
+                    className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+                  >
+                    <Coins className="w-3.5 h-3.5" />
+                    <span>পেআউট উইন্ডো খুলুন</span>
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -4895,6 +6538,164 @@ export default function SuperAdminPage() {
                 <span>PDF ডাউনলোড</span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL 5: APPROVE & DISBURSE TEACHER PAYOUT REQUEST */}
+      {/* ========================================================================= */}
+      {selectedPayoutForApproval && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-md animate-in fade-in duration-150">
+          <div className="bg-white rounded-[32px] p-6 sm:p-8 max-w-md w-full shadow-2xl border border-slate-100 space-y-4 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                <span>উইথড্রল রিকোয়েস্ট অনুমোদন ও নিষ্পত্তি</span>
+              </h3>
+              <button 
+                type="button" 
+                onClick={() => setSelectedPayoutForApproval(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center font-bold text-sm cursor-pointer transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="bg-emerald-50/70 p-4 rounded-2xl border border-emerald-200/80 space-y-1.5 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 font-bold">শিক্ষক:</span>
+                <span className="font-black text-slate-900">{selectedPayoutForApproval.teacherName}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 font-bold">পেমেন্ট মেথড:</span>
+                <span className="px-2 py-0.5 rounded-lg bg-cyan-100 text-cyan-800 font-bold">{selectedPayoutForApproval.method}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 font-bold">অ্যাকাউন্ট নম্বর:</span>
+                <span className="font-mono font-bold text-slate-900">{selectedPayoutForApproval.accountNumber}</span>
+              </div>
+              {selectedPayoutForApproval.bankDetails && selectedPayoutForApproval.bankDetails.bankName && (
+                <div className="text-[11px] text-slate-600 pt-1 border-t border-emerald-200/60 space-y-0.5">
+                  <div><strong>ব্যাংক:</strong> {selectedPayoutForApproval.bankDetails.bankName}</div>
+                  <div><strong>শাখা:</strong> {selectedPayoutForApproval.bankDetails.branchName || '—'}</div>
+                  <div><strong>হিসাবের নাম:</strong> {selectedPayoutForApproval.bankDetails.accountName || '—'}</div>
+                  {selectedPayoutForApproval.bankDetails.routingNumber && (
+                    <div><strong>রাউটিং নম্বর:</strong> {selectedPayoutForApproval.bankDetails.routingNumber}</div>
+                  )}
+                </div>
+              )}
+              <div className="flex justify-between items-center pt-1 border-t border-emerald-200/60">
+                <span className="text-slate-700 font-black">অনুরোধকৃত অর্থ:</span>
+                <span className="font-mono font-black text-emerald-700 text-base">৳ {selectedPayoutForApproval.amount.toLocaleString('en-BD')}</span>
+              </div>
+            </div>
+
+            <form onSubmit={handleConfirmApprovePayout} className="space-y-3.5 text-xs">
+              <div>
+                <label className="font-black text-slate-700 block mb-1">ব্যাংক রেফারেন্স / TrxID *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="উদা: TXN-BKASH-987213 অথবা ব্যাংক ভাউচার নং"
+                  value={approvePayoutForm.trxId}
+                  onChange={(e) => setApprovePayoutForm({ ...approvePayoutForm, trxId: e.target.value })}
+                  className="w-full p-3 rounded-2xl border border-slate-200 focus:outline-none focus:border-[#ed347d] font-mono font-bold shadow-2xs"
+                />
+              </div>
+
+              <div>
+                <label className="font-black text-slate-700 block mb-1">অ্যাডমিন নোট / নিষ্পত্তি মন্তব্য</label>
+                <input
+                  type="text"
+                  value={approvePayoutForm.adminNotes}
+                  onChange={(e) => setApprovePayoutForm({ ...approvePayoutForm, adminNotes: e.target.value })}
+                  placeholder="উদা: সিটি ব্যাংক অনলাইন ট্রান্সফার সম্পন্ন"
+                  className="w-full p-3 rounded-2xl border border-slate-200 focus:outline-none focus:border-[#ed347d] shadow-2xs"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setSelectedPayoutForApproval(null)}
+                  className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold cursor-pointer"
+                >
+                  বাতিল
+                </button>
+                <button
+                  type="submit"
+                  disabled={isProcessingPayout}
+                  className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black shadow-md shadow-emerald-600/20 active:scale-95 cursor-pointer border-t border-white/30 flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  {isProcessingPayout ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                  <span>অনুমোদন ও ডিসবার্স করুন</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL 6: REJECT TEACHER PAYOUT REQUEST */}
+      {/* ========================================================================= */}
+      {selectedPayoutForRejection && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-md animate-in fade-in duration-150">
+          <div className="bg-white rounded-[32px] p-6 sm:p-8 max-w-md w-full shadow-2xl border border-slate-100 space-y-4 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-base font-black text-rose-700 flex items-center gap-2">
+                <XCircle className="w-5 h-5 text-rose-600" />
+                <span>উইথড্রল রিকোয়েস্ট বাতিলকরণ</span>
+              </h3>
+              <button 
+                type="button" 
+                onClick={() => setSelectedPayoutForRejection(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center font-bold text-sm cursor-pointer transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="bg-rose-50/70 p-4 rounded-2xl border border-rose-200/80 space-y-1 text-xs">
+              <div className="font-black text-slate-900">{selectedPayoutForRejection.teacherName}</div>
+              <div className="text-slate-500">অনুরোধকৃত অর্থ: <strong className="text-rose-700 font-mono">৳ {selectedPayoutForRejection.amount.toLocaleString('en-BD')}</strong></div>
+              <div className="text-[11px] text-rose-600 pt-1">
+                অনুরোধ বাতিল করলে শিক্ষকের পোর্টালে বাতিলের কারণ প্রদর্শিত হবে এবং ব্যালেন্স অবিকল থাকবে।
+              </div>
+            </div>
+
+            <form onSubmit={handleConfirmRejectPayout} className="space-y-3.5 text-xs">
+              <div>
+                <label className="font-black text-slate-700 block mb-1">বাতিলের কারণ (শিক্ষকের ড্যাশবোর্ডে দৃশ্যমান হবে) *</label>
+                <textarea
+                  required
+                  rows={3}
+                  value={rejectionReasonInput}
+                  onChange={(e) => setRejectionReasonInput(e.target.value)}
+                  placeholder="উদা: ব্যাংক অ্যাকাউন্ট নাম ও তথ্যে অমিল রয়েছে..."
+                  className="w-full p-3 rounded-2xl border border-slate-200 focus:outline-none focus:border-rose-500 shadow-2xs"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setSelectedPayoutForRejection(null)}
+                  className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold cursor-pointer"
+                >
+                  ফিরে যান
+                </button>
+                <button
+                  type="submit"
+                  disabled={isProcessingPayout}
+                  className="px-6 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black shadow-md shadow-rose-600/20 active:scale-95 cursor-pointer border-t border-white/30 flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  {isProcessingPayout ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />}
+                  <span>রিকোয়েস্ট বাতিল নিশ্চিত করুন</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

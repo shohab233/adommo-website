@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
 import { 
@@ -16,7 +16,8 @@ import {
   ArrowLeft, 
   Filter, 
   ChevronRight,
-  BookOpen
+  BookOpen,
+  Headphones
 } from 'lucide-react';
 
 export default function StudentMessagesPage() {
@@ -28,7 +29,9 @@ export default function StudentMessagesPage() {
     createDoubtThread, 
     markThreadAsRead,
     isEnrolled,
-    getOrCreateBatchGroup
+    getOrCreateBatchGroup,
+    getOrCreateDirectThread,
+    createSupportTicket
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<'doubts' | 'direct' | 'support' | 'batch'>('doubts');
@@ -39,6 +42,106 @@ export default function StudentMessagesPage() {
   const enrolledCourses = courses.filter((c) => isEnrolled(c.id));
 
   const [studentBatchCourseId, setStudentBatchCourseId] = useState<string>('');
+
+  // Ask Doubt Modal State
+  const [isDoubtModalOpen, setIsDoubtModalOpen] = useState(false);
+  const [selectedCourseId, setSelectedCourseId] = useState<string>('');
+  const [doubtSubject, setDoubtSubject] = useState('পদার্থবিজ্ঞান ১ম পত্র');
+  const [doubtChapter, setDoubtChapter] = useState('অধ্যায় ৩: গতিবিদ্যা (প্রাস)');
+  const [doubtTopic, setDoubtTopic] = useState('সর্বোচ্চ উচ্চতায় বেগ ও ত্বরণ');
+  const [doubtQuestion, setDoubtQuestion] = useState('');
+  const [doubtImageUrl, setDoubtImageUrl] = useState('');
+
+  // Support Ticket Modal State
+  const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
+  const [supportCategory, setSupportCategory] = useState('পেমেন্ট ও কোর্স এক্সেস সমস্যা');
+  const [supportMessage, setSupportMessage] = useState('');
+  const [supportPhone, setSupportPhone] = useState('');
+  const [selectedSupportId, setSelectedSupportId] = useState<string>('');
+
+  // Active selected thread states
+  const [selectedDoubtId, setSelectedDoubtId] = useState<string>('');
+  const [selectedDirectId, setSelectedDirectId] = useState<string>('');
+  const [studentReplyText, setStudentReplyText] = useState('');
+  const [directReplyText, setDirectReplyText] = useState('');
+  const [supportReplyText, setSupportReplyText] = useState('');
+  const [batchPostText, setBatchPostText] = useState('');
+  const [selectedZoomImage, setSelectedZoomImage] = useState<string | null>(null);
+
+  // Filter threads for student (strictly own doubts & direct messages)
+  const isPlatformAdmin = currentUser?.role === 'admin';
+  const doubtThreads = conversations.filter(
+    (c) => c.type === 'doubt' && (isPlatformAdmin || !c.studentId || c.studentId === currentUser?.id)
+  );
+  const directThreads = conversations.filter(
+    (c) => c.type === 'direct' && (isPlatformAdmin || !c.studentId || c.studentId === currentUser?.id)
+  );
+  const supportThreads = conversations.filter(
+    (c) => c.type === 'support' && (isPlatformAdmin || !c.studentId || c.studentId === currentUser?.id)
+  );
+  const batchThreads = conversations.filter((c) => c.type === 'batch_group');
+
+  // Enrolled course mentors for direct chat
+  const availableMentors = useMemo(() => {
+    const list: { id: string; name: string; avatar: string; role: string; courseTitle: string; courseId: string }[] = [];
+    const sourceCourses = enrolledCourses.length > 0 ? enrolledCourses : courses;
+    sourceCourses.forEach((c) => {
+      if (c.instructor && c.instructor.name) {
+        if (!list.some((m) => m.name === c.instructor.name)) {
+          list.push({
+            id: `inst_${c.instructor.name.replace(/\s+/g, '_').toLowerCase()}`,
+            name: c.instructor.name,
+            avatar: c.instructor.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+            role: (c.instructor as any).role || c.instructor.designation || 'কোর্স মেন্টর',
+            courseTitle: c.title,
+            courseId: c.id,
+          });
+        }
+      }
+    });
+    return list;
+  }, [enrolledCourses, courses]);
+
+  const activeStudentBatchCourse = enrolledCourses.find((c) => c.id === studentBatchCourseId) || enrolledCourses[0];
+  const currentStudentBatch = activeStudentBatchCourse
+    ? (conversations.find((c) => c.type === 'batch_group' && c.courseId === activeStudentBatchCourse.id) || getOrCreateBatchGroup(activeStudentBatchCourse.id, activeStudentBatchCourse.title))
+    : undefined;
+
+  const activeDoubt = doubtThreads.find((d) => d.id === selectedDoubtId) || doubtThreads[0];
+  const activeDirect = directThreads.find((d) => d.id === selectedDirectId) || directThreads[0];
+  const activeSupport = supportThreads.find((s) => s.id === selectedSupportId) || supportThreads[0];
+
+  const handleCreateSupport = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!supportMessage.trim()) return;
+    const newId = createSupportTicket(supportCategory, supportMessage.trim(), supportPhone.trim() || undefined);
+    setSelectedSupportId(newId);
+    setSupportMessage('');
+    setSupportPhone('');
+    setIsSupportModalOpen(false);
+  };
+
+  const handleCreateDoubt = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!doubtQuestion.trim()) return;
+
+    const courseIdToUse = selectedCourseId || enrolledCourses[0]?.id || courses[0]?.id || 'course_campus6';
+    const courseObj = courses.find((c) => c.id === courseIdToUse);
+    const newThreadId = createDoubtThread({
+      courseId: courseIdToUse,
+      courseTitle: courseObj ? courseObj.title : 'Campus 6.0',
+      subject: doubtSubject,
+      chapter: doubtChapter,
+      topic: doubtTopic,
+      question: doubtQuestion.trim(),
+      imageUrl: doubtImageUrl.trim() || undefined,
+    });
+
+    setSelectedDoubtId(newThreadId);
+    setDoubtQuestion('');
+    setDoubtImageUrl('');
+    setIsDoubtModalOpen(false);
+  };
 
   if (isGuest) {
     return (
@@ -72,61 +175,6 @@ export default function StudentMessagesPage() {
       </div>
     );
   }
-  
-  // Ask Doubt Modal State
-  const [isDoubtModalOpen, setIsDoubtModalOpen] = useState(false);
-  const [selectedCourseId, setSelectedCourseId] = useState<string>('');
-  const [doubtSubject, setDoubtSubject] = useState('পদার্থবিজ্ঞান ১ম পত্র');
-  const [doubtChapter, setDoubtChapter] = useState('অধ্যায় ৩: গতিবিদ্যা (প্রাস)');
-  const [doubtTopic, setDoubtTopic] = useState('সর্বোচ্চ উচ্চতায় বেগ ও ত্বরণ');
-  const [doubtQuestion, setDoubtQuestion] = useState('');
-  const [doubtImageUrl, setDoubtImageUrl] = useState('');
-
-  // Active selected thread states
-  const [selectedDoubtId, setSelectedDoubtId] = useState<string>('');
-  const [selectedDirectId, setSelectedDirectId] = useState<string>('');
-  const [studentReplyText, setStudentReplyText] = useState('');
-  const [directReplyText, setDirectReplyText] = useState('');
-  const [supportReplyText, setSupportReplyText] = useState('');
-  const [batchPostText, setBatchPostText] = useState('');
-  const [selectedZoomImage, setSelectedZoomImage] = useState<string | null>(null);
-
-  // Filter threads for student
-  const doubtThreads = conversations.filter((c) => c.type === 'doubt');
-  const directThreads = conversations.filter((c) => c.type === 'direct');
-  const supportThreads = conversations.filter((c) => c.type === 'support');
-  const batchThreads = conversations.filter((c) => c.type === 'batch_group');
-
-  const activeStudentBatchCourse = enrolledCourses.find((c) => c.id === studentBatchCourseId) || enrolledCourses[0];
-  const currentStudentBatch = activeStudentBatchCourse
-    ? (conversations.find((c) => c.type === 'batch_group' && c.courseId === activeStudentBatchCourse.id) || getOrCreateBatchGroup(activeStudentBatchCourse.id, activeStudentBatchCourse.title))
-    : undefined;
-
-  const activeDoubt = doubtThreads.find((d) => d.id === selectedDoubtId) || doubtThreads[0];
-  const activeDirect = directThreads.find((d) => d.id === selectedDirectId) || directThreads[0];
-  const activeSupport = supportThreads[0];
-
-  const handleCreateDoubt = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!doubtQuestion.trim()) return;
-
-    const courseIdToUse = selectedCourseId || enrolledCourses[0]?.id || courses[0]?.id || 'course_campus6';
-    const courseObj = courses.find((c) => c.id === courseIdToUse);
-    const newThreadId = createDoubtThread({
-      courseId: courseIdToUse,
-      courseTitle: courseObj ? courseObj.title : 'Campus 6.0',
-      subject: doubtSubject,
-      chapter: doubtChapter,
-      topic: doubtTopic,
-      question: doubtQuestion.trim(),
-      imageUrl: doubtImageUrl.trim() || undefined,
-    });
-
-    setSelectedDoubtId(newThreadId);
-    setDoubtQuestion('');
-    setDoubtImageUrl('');
-    setIsDoubtModalOpen(false);
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-pink-50/20 py-8 px-4 sm:px-6 lg:px-8">
@@ -338,10 +386,10 @@ export default function StudentMessagesPage() {
                   {/* Discussion and Teacher Answers */}
                   <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
                     <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider">
-                      শিক্ষকের সমাধান ও রিপ্লাই ({activeDoubt.messages.length})
+                      শিক্ষকের সমাধান ও রিপ্লাই ({(activeDoubt.messages || []).length})
                     </h4>
 
-                    {activeDoubt.messages.map((m) => {
+                    {(activeDoubt.messages || []).map((m) => {
                       const isTeacher = m.senderRole === 'teacher';
                       return (
                         <div
@@ -401,61 +449,93 @@ export default function StudentMessagesPage() {
 
         {/* TAB 2: DIRECT CHAT 1-ON-1 WITH TEACHER */}
         {activeTab === 'direct' && (
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden grid grid-cols-1 md:grid-cols-12 min-h-[500px] animate-fade-in">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden grid grid-cols-1 md:grid-cols-12 min-h-[520px] animate-fade-in">
             {/* Left: Mentors List */}
             <div className="md:col-span-4 border-r border-slate-200 p-4 space-y-3 bg-slate-50/50">
-              <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">
-                আপনার কোর্স শিক্ষকগণ
-              </h4>
-              <div className="space-y-2">
-                {directThreads.map((m) => (
-                  <div
-                    key={m.id}
-                    onClick={() => setSelectedDirectId(m.id)}
-                    className={`p-3 rounded-2xl cursor-pointer transition-all ${
-                      activeDirect?.id === m.id
-                        ? 'bg-white shadow-xs border border-pink-300'
-                        : 'hover:bg-white border border-transparent'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <img
-                        src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80"
-                        alt="Teacher"
-                        className="w-10 h-10 rounded-full object-cover border border-slate-200"
-                      />
-                      <div>
-                        <h5 className="text-xs font-bold text-slate-900">আবির মাহমুদ (মাস্টার ট্রেইনার)</h5>
-                        <p className="text-[10px] text-slate-500">ক্যাম্পাস ৬.০ ফিজিক্স মেন্টর</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">
+                  আপনার কোর্স শিক্ষকগণ ({availableMentors.length})
+                </h4>
+                <span className="text-[10px] text-slate-400 font-medium">১-অন-১ চ্যাট</span>
               </div>
+
+              {availableMentors.length === 0 ? (
+                <div className="p-6 text-center text-slate-400 text-xs">
+                  কোনো শিক্ষক পাওয়া যায়নি
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {availableMentors.map((m) => {
+                    const thread = directThreads.find(d => d.teacherId === m.id || d.teacherName === m.name || d.id === `thread_direct_${currentUser?.id}_${m.id}`);
+                    const isSelected = activeDirect && (activeDirect.id === thread?.id || activeDirect.teacherName === m.name);
+                    const unreadCount = thread?.unreadCountStudent || 0;
+
+                    return (
+                      <div
+                        key={m.id}
+                        onClick={() => {
+                          const threadId = thread ? thread.id : getOrCreateDirectThread(m.id, m.name, m.avatar, m.courseId, m.courseTitle);
+                          setSelectedDirectId(threadId);
+                          markThreadAsRead(threadId, 'student');
+                        }}
+                        className={`p-3 rounded-2xl cursor-pointer transition-all ${
+                          isSelected
+                            ? 'bg-white shadow-xs border border-pink-300 ring-2 ring-pink-500/10'
+                            : 'hover:bg-white border border-transparent'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <img
+                            src={m.avatar}
+                            alt={m.name}
+                            className="w-10 h-10 rounded-full object-cover border border-slate-200 shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-1">
+                              <h5 className="text-xs font-bold text-slate-900 truncate">{m.name}</h5>
+                              {unreadCount > 0 && (
+                                <span className="w-2 h-2 rounded-full bg-[#ed347d] shrink-0" />
+                              )}
+                            </div>
+                            <p className="text-[10px] text-slate-500 truncate">{m.courseTitle || m.role}</p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Right: Chat Thread */}
             <div className="md:col-span-8 p-6 flex flex-col justify-between">
-              {activeDirect && (
+              {activeDirect ? (
                 <>
                   <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <img
-                        src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80"
-                        alt="Teacher"
+                        src={activeDirect.teacherAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'}
+                        alt={activeDirect.teacherName || 'Teacher'}
                         className="w-9 h-9 rounded-full object-cover border"
                       />
                       <div>
-                        <h4 className="text-xs font-black text-slate-900">আবির মাহমুদ (মাস্টার ট্রেইনার)</h4>
+                        <h4 className="text-xs font-black text-slate-900">
+                          {activeDirect.teacherName || 'কোর্স মেন্টর'}
+                        </h4>
                         <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> অনলাইনে আছেন
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> সক্রিয় মেন্টর সাপোর্ট
                         </span>
                       </div>
                     </div>
+                    {activeDirect.courseTitle && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 truncate max-w-[200px]">
+                        {activeDirect.courseTitle}
+                      </span>
+                    )}
                   </div>
 
                   <div className="flex-1 overflow-y-auto py-4 space-y-3 max-h-[360px]">
-                    {activeDirect.messages.map((m) => {
+                    {(activeDirect.messages || []).map((m) => {
                       const isMe = m.senderRole === 'student';
                       return (
                         <div
@@ -506,6 +586,14 @@ export default function StudentMessagesPage() {
                     </button>
                   </form>
                 </>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-24 text-center space-y-2 text-slate-400">
+                  <MessageSquare className="w-10 h-10 text-slate-300" />
+                  <p className="text-xs font-bold text-slate-600">শিক্ষক নির্বাচন করে সরাসরি বার্তা পাঠান</p>
+                  <p className="text-[11px] text-slate-400 max-w-xs">
+                    বামপাশের তালিকা থেকে যেকোনো শিক্ষকের প্রোফাইলে ক্লিক করে সরাসরি ইনবক্স শুরু করুন।
+                  </p>
+                </div>
               )}
             </div>
           </div>
@@ -514,61 +602,116 @@ export default function StudentMessagesPage() {
         {/* TAB 3: SUPPORT DESK */}
         {activeTab === 'support' && (
           <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 space-y-6 animate-fade-in">
-            <div className="flex items-center gap-2 pb-4 border-b border-slate-100">
-              <ShieldCheck className="w-5 h-5 text-indigo-600" />
-              <div>
-                <h3 className="text-base font-black text-slate-900">অদম্য হেল্প ও টেকনিক্যাল সাপোর্ট ডেস্ক</h3>
-                <p className="text-xs text-slate-500">পেমেন্ট, ভিডিও সমস্যা বা এক্সেস সংক্রান্ত সহায়তার জন্য টিকেট হিস্টোরি</p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-indigo-600" />
+                <div>
+                  <h3 className="text-base font-black text-slate-900">অদম্য হেল্প ও টেকনিক্যাল সাপোর্ট ডেস্ক</h3>
+                  <p className="text-xs text-slate-500">পেমেন্ট, ভিডিও সমস্যা বা এক্সেস সংক্রান্ত সহায়তার জন্য টিকেট হিস্টোরি</p>
+                </div>
               </div>
+
+              <button
+                type="button"
+                onClick={() => setIsSupportModalOpen(true)}
+                className="px-4 py-2 rounded-xl text-xs font-black text-white bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-500/20 transition-all flex items-center gap-1.5 cursor-pointer self-start sm:self-auto"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>নতুন সহায়তা টিকেট খুলুন</span>
+              </button>
             </div>
 
-            {activeSupport && (
-              <div className="space-y-3 bg-slate-50 p-5 rounded-2xl border border-slate-100">
-                <div className="flex items-center justify-between text-xs font-bold">
-                  <span className="text-indigo-700">টিকেট আইডি: {activeSupport.ticketNumber || '#TKT-4892'}</span>
-                  <span className="text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 text-[10px]">
-                    ওপেন
-                  </span>
+            {supportThreads.length === 0 ? (
+              <div className="text-center py-16 space-y-4 max-w-md mx-auto">
+                <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto border border-indigo-100">
+                  <Headphones className="w-7 h-7" />
                 </div>
-
-                <div className="space-y-2 pt-2">
-                  {activeSupport.messages.map((m) => (
-                    <div key={m.id} className="p-3 bg-white rounded-xl border border-slate-200 text-xs space-y-1">
-                      <div className="flex items-center justify-between text-[10px] font-bold text-slate-500">
-                        <span className={m.senderRole === 'admin' ? 'text-indigo-700 font-black' : 'text-slate-800'}>
-                          {m.senderName}
-                        </span>
-                        <span>{m.createdAt}</span>
-                      </div>
-                      <p className="text-slate-700">{m.text}</p>
-                    </div>
-                  ))}
+                <div>
+                  <h4 className="text-sm font-black text-slate-900">বর্তমানে কোনো ওপেন সাপোর্ট টিকেট নেই</h4>
+                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                    কোর্সে এনরোলমেন্ট, বিকাশ/নগদ পেমেন্ট, ক্লাস লোডিং বা যেকোনো জরুরি সমস্যায় আমাদের সাপোর্ট টিম সবসময় আপনার পাশে আছে।
+                  </p>
                 </div>
-
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    if (!supportReplyText.trim()) return;
-                    sendChatMessage(activeSupport.id, supportReplyText, undefined, 'student');
-                    setSupportReplyText('');
-                  }}
-                  className="pt-2 flex gap-2"
+                <button
+                  type="button"
+                  onClick={() => setIsSupportModalOpen(true)}
+                  className="px-5 py-2.5 rounded-xl text-xs font-black text-white bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-500/20 transition-all cursor-pointer inline-flex items-center gap-1.5"
                 >
-                  <input
-                    type="text"
-                    value={supportReplyText}
-                    onChange={(e) => setSupportReplyText(e.target.value)}
-                    placeholder="সাপোর্ট ডেস্কের সাথে যোগাযোগ করুন..."
-                    className="flex-1 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-xs focus:outline-none"
-                  />
-                  <button
-                    type="submit"
-                    className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Send className="w-3.5 h-3.5" />
-                    <span>পাঠান</span>
-                  </button>
-                </form>
+                  <PlusCircle className="w-4 h-4" />
+                  <span>এখনই টিকেট তৈরি করুন</span>
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Ticket selector pills if multiple tickets */}
+                {supportThreads.length > 1 && (
+                  <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                    {supportThreads.map((st) => (
+                      <button
+                        key={st.id}
+                        type="button"
+                        onClick={() => setSelectedSupportId(st.id)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all cursor-pointer ${
+                          activeSupport?.id === st.id
+                            ? 'bg-indigo-600 text-white shadow-xs'
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}
+                      >
+                        {st.ticketNumber || '#TKT-XXXX'} ({st.subject || 'সহায়তা'})
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {activeSupport && (
+                  <div className="space-y-3 bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                    <div className="flex items-center justify-between text-xs font-bold">
+                      <span className="text-indigo-700">টিকেট আইডি: {activeSupport.ticketNumber || '#TKT-4892'}</span>
+                      <span className="text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 text-[10px]">
+                        {activeSupport.status === 'solved' ? '✓ সমাধান হয়েছে' : 'ওপেন টিকেট'}
+                      </span>
+                    </div>
+
+                    <div className="space-y-2 pt-2 max-h-72 overflow-y-auto pr-1">
+                      {(activeSupport.messages || []).map((m) => (
+                        <div key={m.id} className="p-3 bg-white rounded-xl border border-slate-200 text-xs space-y-1">
+                          <div className="flex items-center justify-between text-[10px] font-bold text-slate-500">
+                            <span className={m.senderRole === 'admin' ? 'text-indigo-700 font-black' : 'text-slate-800'}>
+                              {m.senderName} {m.senderRole === 'admin' && '★ (অদম্য সাপোর্ট)'}
+                            </span>
+                            <span>{m.createdAt}</span>
+                          </div>
+                          <p className="text-slate-700 leading-relaxed whitespace-pre-line">{m.text}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        if (!supportReplyText.trim()) return;
+                        sendChatMessage(activeSupport.id, supportReplyText, undefined, 'student');
+                        setSupportReplyText('');
+                      }}
+                      className="pt-2 flex gap-2"
+                    >
+                      <input
+                        type="text"
+                        value={supportReplyText}
+                        onChange={(e) => setSupportReplyText(e.target.value)}
+                        placeholder="সাপোর্ট ডেস্কের সাথে যোগাযোগ করুন..."
+                        className="flex-1 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-xs focus:outline-none"
+                      />
+                      <button
+                        type="submit"
+                        className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Send className="w-3.5 h-3.5" />
+                        <span>পাঠান</span>
+                      </button>
+                    </form>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -814,6 +957,84 @@ export default function StudentMessagesPage() {
                   >
                     <Send className="w-3.5 h-3.5" />
                     <span>প্রশ্ন জমা দিন</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* SUPPORT TICKET MODAL */}
+        {isSupportModalOpen && (
+          <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+            <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full border border-slate-200 shadow-2xl space-y-5">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-indigo-600" />
+                  <h3 className="text-base font-black text-slate-900">নতুন সহায়তা টিকেট খুলুন</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsSupportModalOpen(false)}
+                  className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center font-bold cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateSupport} className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700">সমস্যার ধরন নির্বাচন করুন</label>
+                  <select
+                    value={supportCategory}
+                    onChange={(e) => setSupportCategory(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 focus:outline-none"
+                  >
+                    <option value="পেমেন্ট ও কোর্স এক্সেস সমস্যা">পেমেন্ট ও কোর্স এক্সেস সমস্যা</option>
+                    <option value="ভিডিও লোড বা ক্লাস প্লেয়ার সমস্যা">ভিডিও লোড বা ক্লাস প্লেয়ার সমস্যা</option>
+                    <option value="লেকচার শিট বা পিডিএফ ডাউনলোড সমস্যা">লেকচার শিট বা পিডিএফ ডাউনলোড সমস্যা</option>
+                    <option value="লাইভ ক্লাস বা এক্সাম সমস্যা">লাইভ ক্লাস বা এক্সাম সমস্যা</option>
+                    <option value="অন্যান্য প্রযুক্তিগত সহায়তা">অন্যান্য প্রযুক্তিগত সহায়তা</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700">আপনার মোবাইল নম্বর (জরুরি যোগাযোগের জন্য)</label>
+                  <input
+                    type="tel"
+                    value={supportPhone}
+                    onChange={(e) => setSupportPhone(e.target.value)}
+                    placeholder="017XXXXXXXX"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700">সমস্যার বিস্তারিত বিবরণ দিন</label>
+                  <textarea
+                    value={supportMessage}
+                    onChange={(e) => setSupportMessage(e.target.value)}
+                    rows={4}
+                    required
+                    placeholder="আপনার ট্রানজেকশন আইডি, ব্যাচ বা যে সমস্যা হচ্ছে তা সুস্পষ্টভাবে লিখুন..."
+                    className="w-full px-4 py-3 rounded-2xl border border-slate-200 text-xs focus:outline-none focus:border-indigo-600 resize-none"
+                  />
+                </div>
+
+                <div className="pt-2 flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsSupportModalOpen(false)}
+                    className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
+                  >
+                    বাতিল
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-2.5 rounded-xl text-xs font-black text-white bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-500/20 flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    <span>টিকেট সাবমিট করুন</span>
                   </button>
                 </div>
               </form>
