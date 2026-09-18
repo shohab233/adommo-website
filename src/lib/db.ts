@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
-import { MongoClient, Db } from 'mongodb';
+import { MongoClient, Db, ObjectId } from 'mongodb';
 
 // Data storage directory in project root
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -44,17 +44,35 @@ function writeCollection<T>(collection: string, items: T[]): void {
 const memoryCache: Record<string, { data: any[]; timestamp: number }> = {};
 const CACHE_TTL_MS = 20 * 1000; // 20 seconds TTL
 
+// ============================================================================
+// DELETED RECORDS TRACKER (PREVENTS RESURRECTION ON READ-ONLY SERVERLESS)
+// ============================================================================
+const deletedRecordIds: Set<string> = new Set();
+let _deletedRecordsLoaded = false;
+
+export function markRecordAsDeleted(collection: string, id: string): void {
+  if (!id) return;
+  const cleanId = String(id).trim();
+  deletedRecordIds.add(`${collection}:${cleanId}`);
+}
+
+export function isRecordDeleted(collection: string, id: any): boolean {
+  if (!id) return false;
+  const cleanId = String(id).trim();
+  return deletedRecordIds.has(`${collection}:${cleanId}`);
+}
+
 export function getCachedCollection<T>(collection: string): T[] | null {
   const cached = memoryCache[collection];
   if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-    return cached.data as T[];
+    return (cached.data as T[]).filter((item: any) => !isRecordDeleted(collection, item?.id));
   }
   return null;
 }
 
 export function setCachedCollection<T>(collection: string, items: T[]): void {
   memoryCache[collection] = {
-    data: items,
+    data: (items || []).filter((item: any) => !isRecordDeleted(collection, item?.id)),
     timestamp: Date.now(),
   };
 }
@@ -147,7 +165,26 @@ async function syncToAtlas(action: 'upsert' | 'delete', collection: string, item
       const query = { id: cleanItem.id };
       await col.replaceOne(query, cleanItem, { upsert: true });
     } else if (action === 'delete') {
-      await col.deleteOne({ id: itemOrId });
+      const cleanId = String(itemOrId || '').trim();
+      if (!cleanId) return;
+      markRecordAsDeleted(collection, cleanId);
+      try {
+        await atlas.collection('deleted_records').updateOne(
+          { collection, id: cleanId },
+          { $set: { collection, id: cleanId, deletedAt: new Date().toISOString() } },
+          { upsert: true }
+        );
+      } catch {}
+      const deleteQuery: any = {
+        $or: [
+          { id: cleanId },
+          { _id: cleanId }
+        ]
+      };
+      if (ObjectId.isValid(cleanId) && cleanId.length === 24) {
+        deleteQuery.$or.push({ _id: new ObjectId(cleanId) });
+      }
+      await col.deleteMany(deleteQuery);
     }
   } catch (err: any) {
     console.warn(`Atlas sync (${collection}) warning:`, err.message);
@@ -276,13 +313,16 @@ export const db = {
   },
 
   delete: <T extends { id: string }>(collection: string, id: string): boolean => {
+    const cleanId = (id || '').trim();
+    if (!cleanId) return false;
+    markRecordAsDeleted(collection, cleanId);
     const items = readCollection<T>(collection);
-    const filtered = items.filter((i) => i.id !== id);
+    const filtered = items.filter((i) => (i.id || '').trim() !== cleanId);
     if (filtered.length === items.length) return false;
     writeCollection(collection, filtered);
 
     // Sync to Cloud
-    syncToAtlas('delete', collection, id);
+    syncToAtlas('delete', collection, cleanId);
 
     return true;
   },
@@ -291,10 +331,15 @@ export const db = {
   // ASYNC CLOUD-AWARE CRUD METHODS (MONGODB ATLAS PRIMARY, LOCAL FALLBACK)
   // ==========================================================================
   findOneAsync: async <T = any>(collection: string, queryOrFilter: any, mongoFilter?: any): Promise<T | null> => {
+    const directId = typeof queryOrFilter === 'object' && queryOrFilter?.id ? String(queryOrFilter.id).trim() : null;
+    if (directId && isRecordDeleted(collection, directId)) {
+      return null;
+    }
+
     // 1. Fast check in-memory cache (sub-millisecond)
     let cached = getCachedCollection<T>(collection);
     if (!cached) {
-      const localItems = readCollection<T>(collection);
+      const localItems = readCollection<T>(collection).filter((item: any) => !isRecordDeleted(collection, item?.id));
       if (localItems && localItems.length > 0) {
         setCachedCollection(collection, localItems);
         cached = localItems;
@@ -303,7 +348,7 @@ export const db = {
 
     if (cached) {
       const found = cached.find((item: any) => matchDoc(item, queryOrFilter));
-      if (found) return found;
+      if (found && !isRecordDeleted(collection, (found as any).id)) return found;
     }
 
     // 2. Direct indexed Atlas lookup
@@ -323,6 +368,9 @@ export const db = {
 
         if (item) {
           const { _id, ...clean } = item;
+          if (isRecordDeleted(collection, clean.id)) {
+            return null;
+          }
           // Seed to in-memory cache and local file
           const currentCache = getCachedCollection<any>(collection) || [];
           if (!currentCache.some(c => c.id === clean.id)) {
@@ -339,7 +387,7 @@ export const db = {
     }
 
     // 3. Offline Local JSON fallback
-    const items = readCollection<T>(collection);
+    const items = readCollection<T>(collection).filter((item: any) => !isRecordDeleted(collection, item?.id));
     return items.find((item: any) => matchDoc(item, queryOrFilter)) || null;
   },
 
@@ -349,7 +397,7 @@ export const db = {
 
     // 2. If memory cache is cold, seed immediately from local disk mirror (1ms response)
     if (!cached) {
-      const localItems = readCollection<T>(collection);
+      const localItems = readCollection<T>(collection).filter((item: any) => !isRecordDeleted(collection, item?.id));
       if (localItems && localItems.length > 0) {
         setCachedCollection(collection, localItems);
         cached = localItems;
@@ -360,10 +408,12 @@ export const db = {
           try {
             const all = await atlas.collection(collection).find({}).toArray();
             if (all && all.length > 0) {
-              const cleaned = all.map((doc: any) => {
-                const { _id, ...clean } = doc;
-                return clean;
-              });
+              const cleaned = all
+                .map((doc: any) => {
+                  const { _id, ...clean } = doc;
+                  return clean;
+                })
+                .filter((item: any) => !isRecordDeleted(collection, item?.id));
               setCachedCollection(collection, cleaned);
               writeCollection(collection, cleaned);
             }
@@ -373,10 +423,11 @@ export const db = {
     }
 
     if (cached) {
+      const activeCached = cached.filter((item: any) => !isRecordDeleted(collection, item?.id));
       if (queryOrFilter) {
-        return cached.filter((item: any) => matchDoc(item, queryOrFilter));
+        return activeCached.filter((item: any) => matchDoc(item, queryOrFilter));
       } else {
-        return cached;
+        return activeCached;
       }
     }
 
@@ -395,10 +446,12 @@ export const db = {
           results = await col.find({}).toArray();
         }
 
-        const cleaned = (results || []).map((doc: any) => {
-          const { _id, ...clean } = doc;
-          return clean;
-        });
+        const cleaned = (results || [])
+          .map((doc: any) => {
+            const { _id, ...clean } = doc;
+            return clean;
+          })
+          .filter((item: any) => !isRecordDeleted(collection, item?.id));
 
         // Prime cache and local file
         if (!queryOrFilter) {
@@ -413,7 +466,7 @@ export const db = {
     }
 
     // 4. Offline Local JSON fallback
-    const items = readCollection<T>(collection);
+    const items = readCollection<T>(collection).filter((item: any) => !isRecordDeleted(collection, item?.id));
     if (!queryOrFilter) {
       setCachedCollection(collection, items);
     }
@@ -500,6 +553,10 @@ export const db = {
   deleteAsync: async (collection: string, id: string): Promise<boolean> => {
     let success = false;
     const cleanId = (id || '').trim();
+    if (!cleanId) return false;
+
+    // Immediately record tombstone so no subsequent read in memory resurfaces this item
+    markRecordAsDeleted(collection, cleanId);
 
     // 1. Delete from local JSON backup and update in-memory cache immediately
     let filtered: any[] = [];
@@ -512,14 +569,32 @@ export const db = {
       }
     } catch {}
 
-    // Immediately prime cache with filtered items so subsequent read never resurfaces deleted item
+    // Immediately prime cache with filtered items
     setCachedCollection(collection, filtered);
 
-    // 2. Delete from MongoDB Atlas
+    // 2. Delete from MongoDB Atlas and save permanent tombstone
     try {
       const atlas = await getAtlasDb();
       if (atlas) {
-        const res = await atlas.collection(collection).deleteOne({ id: cleanId });
+        // Save tombstone in Atlas so any new serverless instance respects this deletion
+        try {
+          await atlas.collection('deleted_records').updateOne(
+            { collection, id: cleanId },
+            { $set: { collection, id: cleanId, deletedAt: new Date().toISOString() } },
+            { upsert: true }
+          );
+        } catch {}
+
+        const deleteQuery: any = {
+          $or: [
+            { id: cleanId },
+            { _id: cleanId }
+          ]
+        };
+        if (ObjectId.isValid(cleanId) && cleanId.length === 24) {
+          deleteQuery.$or.push({ _id: new ObjectId(cleanId) });
+        }
+        const res = await atlas.collection(collection).deleteMany(deleteQuery);
         if ((res.deletedCount || 0) > 0) {
           success = true;
         }

@@ -101,6 +101,27 @@ export const emptyUser: User = {
   enrolledCourseIds: [],
 };
 
+function getDeletedCourseIds(): Set<string> {
+  if (typeof window === 'undefined') return new Set();
+  try {
+    const raw = localStorage.getItem('adommo_deleted_course_ids');
+    if (raw) {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) return new Set(arr.map(String));
+    }
+  } catch {}
+  return new Set();
+}
+
+function markCourseAsDeleted(courseId: string) {
+  if (typeof window === 'undefined' || !courseId) return;
+  try {
+    const set = getDeletedCourseIds();
+    set.add(String(courseId));
+    localStorage.setItem('adommo_deleted_course_ids', JSON.stringify(Array.from(set)));
+  } catch {}
+}
+
 export function AppProvider({ children }: { children: React.ReactNode }) {
   // One-time synchronous purge to guarantee 100% clean slate across all browsers
   if (typeof window !== 'undefined' && !localStorage.getItem('adommo_fresh_clean_slate_v1')) {
@@ -179,7 +200,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         try {
           const parsed: Course[] = JSON.parse(savedCourses);
           if (Array.isArray(parsed)) {
-            setCourses(parsed.map((c: any) => healCourse(c)));
+            const delSet = getDeletedCourseIds();
+            const filtered = parsed.filter((c: any) => c && !delSet.has(c.id));
+            setCourses(filtered.map((c: any) => healCourse(c)));
           }
         } catch (e) {
           console.error('Failed to parse courses from storage', e);
@@ -302,14 +325,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       .catch((err) => console.log('Session check completed', err));
 
     // Hydrate real courses from DB: First fast lightweight catalog (<90KB) for instant mobile loading
-    fetch('/api/courses?summary=true')
+    fetch(`/api/courses?summary=true&t=${Date.now()}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data && data.success && Array.isArray(data.courses)) {
-          const healedSummaries = data.courses.map((c: any) => healCourse(c));
+          const delSet = getDeletedCourseIds();
+          const validCourses = data.courses.filter((c: any) => c && !delSet.has(c.id));
+          const healedSummaries = validCourses.map((c: any) => healCourse(c));
           setCourses((prevCourses) => {
+            const activePrev = prevCourses.filter((p) => !delSet.has(p.id));
             return healedSummaries.map((newC: any) => {
-              const existing = prevCourses.find((p) => p.id === newC.id);
+              const existing = activePrev.find((p) => p.id === newC.id);
               if (existing && existing.modules && existing.modules.length > 0 && (!newC.modules || newC.modules.length === 0)) {
                 return {
                   ...newC,
@@ -329,11 +355,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     // Non-blocking full curriculum hydration in background
     const fullCoursesTimer = setTimeout(() => {
-      fetch('/api/courses?full=true')
+      fetch(`/api/courses?full=true&t=${Date.now()}`)
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           if (data && data.success && Array.isArray(data.courses)) {
-            setCourses(data.courses.map((c: any) => healCourse(c)));
+            const delSet = getDeletedCourseIds();
+            const validCourses = data.courses.filter((c: any) => c && !delSet.has(c.id));
+            setCourses(validCourses.map((c: any) => healCourse(c)));
           }
         })
         .catch(() => {});
@@ -1146,19 +1174,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem('adommo_courses', JSON.stringify(updated));
       } catch {}
 
-      // Persist updated course to DB
-      fetch('/api/courses', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ id: courseId, ...updatedData }),
-      }).catch((err) => console.log('Course update sync completed', err));
-
       return updated;
     });
+
+    // Persist updated course to DB outside pure state updater
+    fetch('/api/courses', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ id: courseId, ...updatedData }),
+    }).catch((err) => console.log('Course update sync completed', err));
   };
 
   const deleteCourse = (courseId: string) => {
+    // 1. Immediately record in persistent deleted set
+    markCourseAsDeleted(courseId);
+
+    // 2. Remove from React courses state and local storage immediately
     setCourses((prevCourses) => {
       const updated = prevCourses.filter((c) => c.id !== courseId);
       try {
@@ -1167,11 +1199,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return updated;
     });
 
-    // Delete course from server DB permanently
-    fetch(`/api/courses?id=${encodeURIComponent(courseId)}`, {
+    // Delete course from server DB permanently with cache busting
+    fetch(`/api/courses?id=${encodeURIComponent(courseId)}&t=${Date.now()}`, {
       method: 'DELETE',
       credentials: 'include',
-    }).catch((err) => console.log('Course delete sync completed', err));
+    })
+      .then((res) => res.json().catch(() => ({})))
+      .then((data) => {
+        if (data && data.success === false) {
+          console.warn('Server course delete notification:', data.error);
+        }
+      })
+      .catch((err) => console.log('Course delete sync completed', err));
 
     // Remove from enrollments
     setEnrollments((prev) => {
