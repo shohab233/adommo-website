@@ -1163,7 +1163,9 @@ function detectSubjectAndCourse(sampleText: string, defaultName: string = '', fo
     math_2: 'উচ্চতর গণিত ২য় পত্র',
     biology_1: 'উদ্ভিদবিজ্ঞান (জীববিজ্ঞান ১ম পত্র)',
     biology_2: 'প্রাণিবিজ্ঞান (জীববিজ্ঞান ২য় পত্র)',
-    ict: 'তথ্য ও যোগাযোগ প্রযুক্তি (ICT)'
+    ict: 'তথ্য ও যোগাযোগ প্রযুক্তি (ICT)',
+    bangla_1: 'বাংলা ১ম পত্র (সাহিত্য)',
+    bangla_2: 'বাংলা ২য় পত্র (ব্যাকরণ ও নির্মিতি)'
   };
 
   if (forcedSubject && forcedSubject !== 'auto') {
@@ -1232,6 +1234,17 @@ function detectSubjectAndCourse(sampleText: string, defaultName: string = '', fo
   else if (/\bict\b|তথ্য\s*(?:ও|এবং)?\s*যোগাযোগ|digital\s*device|ডিজিটাল\s*ডিভাইস|c\s*programming|\bhtml\b/i.test(t)) {
     subjectKey = 'ict';
     subjectTitle = 'তথ্য ও যোগাযোগ প্রযুক্তি (ICT)';
+  }
+  // 6. Bangla Detection
+  else if (/(?:বাংলা|bangla|সাহিত্য|গদ্য|পদ্য|উপন্যাস|নাটক|লালসালু|সিরাজউদ্দৌ|ব্যাকরণ|নির্মিতি|সমাস|উচ্চারণ)/i.test(t)) {
+    const isB2 = /(?:2nd|২য়|২য়|\b2\b|paper\s*2|ব্যাকরণ|নির্মিতি|সমাস|উচ্চারণ|প্রত্যয়|প্রত্যয়|বাক্য)/i.test(t);
+    if (isB2) {
+      subjectKey = 'bangla_2';
+      subjectTitle = 'বাংলা ২য় পত্র (ব্যাকরণ ও নির্মিতি)';
+    } else {
+      subjectKey = 'bangla_1';
+      subjectTitle = 'বাংলা ১ম পত্র (সাহিত্য)';
+    }
   } else {
     const inferred = inferSubjectTitleFromContent(t, defaultName || 'সাধারণ বিষয়');
     subjectTitle = inferred;
@@ -1577,8 +1590,13 @@ function parsePastedTelegramText(rawText: string, forcedSubject: string = 'auto'
   const { subjectKey, subjectTitle, courseTitle } = detectSubjectAndCourse(text, 'Telegram Course', forcedSubject);
   const syllabus = MASTER_HSC_SYLLABUS[subjectKey] || {};
 
-  // Split messages on timestamp headers: [date time] ACS27... or double newlines
-  const messageBlocks = text.split(/(?=\[\d{1,2}\/\d{1,2}\/\d{4}[^\]]*\])/g);
+  // Split messages on timestamp headers: [date time] ACS27... or Markdown Class Title blocks
+  let messageBlocks: string[];
+  if (/⚘\s*Class\s*Title|Class\s*Title\s*:/i.test(text)) {
+    messageBlocks = text.split(/(?=⚘\s*Class\s*Title|Class\s*Title\s*:)/i);
+  } else {
+    messageBlocks = text.split(/(?=\[\d{1,2}\/\d{1,2}\/\d{4}[^\]]*\])/g);
+  }
 
   // Dynamic chapter container: Map<number, { customTitle?: string; classes: ParsedClass[]; practiceSheets: string[] }>
   const chaptersMap = new Map<number, {
@@ -1771,15 +1789,28 @@ function parsePastedTelegramText(rawText: string, forcedSubject: string = 'auto'
       title += ' (Last Class)';
     }
 
-    if (videoUrl || slideUrl || lecNum !== null) {
+    // Check if Markdown class title format
+    const mdTitleMatch = b.match(/(?:⚘\s*)?Class\s*Title\s*:\s*([^\n\r]+)/i);
+    if (mdTitleMatch) {
+      title = mdTitleMatch[1].replace(/[।\.\:\;\|\,\-\_\'\"\`]+$/g, '').trim();
+    }
+
+    // Check Markdown practice sheet
+    const mdPractice = b.match(/Practice\s*sheet:\s*\[click here\]\((https?:\/\/[^\s\)]+)\)/i);
+    if (mdPractice) {
+      chaptersMap.get(currentChapter)!.practiceSheets.push(mdPractice[1]);
+    }
+
+    if (videoUrl || slideUrl || lecNum !== null || mdTitleMatch) {
       const currentList = chaptersMap.get(currentChapter)!.classes;
       const classNo = (currentList.length + 1).toString();
       currentList.push({
-        id: `tg_lec_${currentChapter}_${classNo}`,
+        id: `tg_lec_${subjectKey}_${currentChapter}_${classNo}`,
         classNo: classNo,
         title,
         videoUrl: videoUrl || undefined,
         lectureSheetPdf: slideUrl || undefined,
+        practiceSheetPdf: mdPractice ? mdPractice[1] : undefined,
         paperTag: subjectTitle
       });
     }
@@ -1819,7 +1850,7 @@ function parsePastedTelegramText(rawText: string, forcedSubject: string = 'auto'
     }));
 
     parsedChapters.push({
-      id: `tg_chap_${chNum}`,
+      id: `tg_chap_${subjectKey}_${chNum}`,
       title: chTitle,
       classes: classesWithSheets,
       practiceSheets: chData.practiceSheets
@@ -1835,7 +1866,7 @@ function parsePastedTelegramText(rawText: string, forcedSubject: string = 'auto'
     totalClasses: totalClassesCount,
     subjects: [
       {
-        id: 'tg_sub_1',
+        id: `tg_sub_${subjectKey}`,
         title: subjectTitle,
         chapters: parsedChapters
       }
@@ -1952,6 +1983,12 @@ export default function AutomationToolsPage() {
   const [pastedSubjectChoice, setPastedSubjectChoice] = useState<string>('auto');
   const [isProcessingPaste, setIsProcessingPaste] = useState<boolean>(false);
   const [pasteSuccessNotice, setPasteSuccessNotice] = useState<string | null>(null);
+
+  // Multi-Subject Append States (For Telegram Topic Groups / Multi-Subject Courses)
+  const [showAppendModal, setShowAppendModal] = useState<boolean>(false);
+  const [appendSubjectText, setAppendSubjectText] = useState<string>('');
+  const [appendSubjectChoice, setAppendSubjectChoice] = useState<string>('auto');
+  const [isProcessingAppend, setIsProcessingAppend] = useState<boolean>(false);
   
   // ACS Course Details Extractor States
   const [detailsUrl, setDetailsUrl] = useState('');
@@ -2457,6 +2494,98 @@ const CHAPTER_SYNONYMS: Record<string, string> = {
       setErrorMsg(err.message || 'টেক্সট পার্স করতে সমস্যা হয়েছে');
     } finally {
       setIsProcessingPaste(false);
+    }
+  };
+
+  const handleAppendSubjectToCourse = () => {
+    if (!appendSubjectText.trim()) {
+      alert('দয়া করে নতুন বিষয়ের টেক্সট পেস্ট করুন!');
+      return;
+    }
+    try {
+      setIsProcessingAppend(true);
+      const newSubjectParsed = parsePastedTelegramText(appendSubjectText, appendSubjectChoice);
+      const newSubjectList = newSubjectParsed.subjects || [];
+
+      if (newSubjectList.length === 0) {
+        throw new Error('নতুন বিষয় থেকে কোনো ক্লাস বা অধ্যায় খুঁজে পাওয়া যায়নি!');
+      }
+
+      setParsedData(prevCourse => {
+        const existingSubjects = prevCourse?.subjects ? [...prevCourse.subjects] : [];
+        let updatedSubjects = [...existingSubjects];
+
+        newSubjectList.forEach(newSub => {
+          // Check if subject with exact or same title already exists
+          const existingIdx = updatedSubjects.findIndex(s => 
+            s.title.trim().toLowerCase() === newSub.title.trim().toLowerCase() ||
+            s.id === newSub.id
+          );
+
+          if (existingIdx !== -1) {
+            // Append chapters to existing subject
+            const targetSub = updatedSubjects[existingIdx];
+            const mergedChapters = [...(targetSub.chapters || [])];
+            (newSub.chapters || []).forEach(nCh => {
+              const chIdx = mergedChapters.findIndex(c => c.title.trim().toLowerCase() === nCh.title.trim().toLowerCase());
+              if (chIdx !== -1) {
+                mergedChapters[chIdx] = {
+                  ...mergedChapters[chIdx],
+                  classes: [...(mergedChapters[chIdx].classes || []), ...(nCh.classes || [])]
+                };
+              } else {
+                mergedChapters.push(nCh);
+              }
+            });
+            updatedSubjects[existingIdx] = {
+              ...targetSub,
+              chapters: mergedChapters
+            };
+          } else {
+            // Append as completely new subject
+            updatedSubjects.push({
+              ...newSub,
+              id: `sub_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+            });
+          }
+        });
+
+        const totalClasses = updatedSubjects.reduce((acc, s) => acc + (s.chapters?.reduce((cAcc, ch) => cAcc + (ch.classes?.length || 0), 0) || 0), 0);
+
+        return {
+          ...(prevCourse || newSubjectParsed),
+          subjects: updatedSubjects,
+          totalSubjects: updatedSubjects.length,
+          totalClasses: totalClasses
+        };
+      });
+
+      // Update topic filter check
+      setSelectedTopicIds(prev => {
+        const updated = { ...prev };
+        newSubjectList.forEach(s => {
+          updated[s.id] = true;
+        });
+        return updated;
+      });
+
+      // Expand newly added chapters
+      const newExp: Record<string, boolean> = {};
+      newSubjectList.forEach(s => {
+        (s.chapters || []).forEach(ch => {
+          newExp[ch.id] = true;
+        });
+      });
+      setExpandedChapters(prev => ({ ...prev, ...newExp }));
+
+      setAppendSubjectText('');
+      setShowAppendModal(false);
+      setPasteSuccessNotice(`🎉 সফলভাবে নতুন বিষয় যুক্ত হয়েছে! সর্বমোট বিষয়: ${newSubjectList.length} টি অতিরিক্ত বিষয় যোগ হলো।`);
+      setTimeout(() => setPasteSuccessNotice(null), 6000);
+    } catch (err: any) {
+      alert('নতুন বিষয় যোগ করতে সমস্যা হয়েছে: ' + (err.message || 'ত্রুটি'));
+    } finally {
+      setIsProcessingAppend(false);
     }
   };
 
@@ -3412,6 +3541,8 @@ const CHAPTER_SYNONYMS: Record<string, string> = {
                         <option value="biology_1" className="bg-[#121b2a] text-slate-200">🌿 জীববিজ্ঞান ১ম পত্র (উদ্ভিদবিজ্ঞান)</option>
                         <option value="biology_2" className="bg-[#121b2a] text-slate-200">🐾 জীববিজ্ঞান ২য় পত্র (প্রাণিবিজ্ঞান)</option>
                         <option value="ict" className="bg-[#121b2a] text-slate-200">💻 তথ্য ও যোগাযোগ প্রযুক্তি (ICT)</option>
+                        <option value="bangla_1" className="bg-[#121b2a] text-slate-200">📚 বাংলা ১ম পত্র (সাহিত্য)</option>
+                        <option value="bangla_2" className="bg-[#121b2a] text-slate-200">✍️ বাংলা ২য় পত্র (ব্যাকরণ ও নির্মিতি)</option>
                       </select>
                     </div>
 
@@ -3545,6 +3676,15 @@ const CHAPTER_SYNONYMS: Record<string, string> = {
                   <div className="flex items-center gap-2.5 flex-wrap shrink-0">
                     <button
                       type="button"
+                      onClick={() => setShowAppendModal(true)}
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-black flex items-center gap-1.5 transition-all shadow-md shadow-blue-600/20 cursor-pointer active:scale-95"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-blue-200" />
+                      <span>+ নতুন বিষয় যোগ করুন (Append)</span>
+                    </button>
+
+                    <button
+                      type="button"
                       onClick={handleDownloadCleanCourseJson}
                       className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-black flex items-center gap-1.5 transition-all shadow-md shadow-emerald-600/20 cursor-pointer active:scale-95"
                     >
@@ -3675,12 +3815,22 @@ const CHAPTER_SYNONYMS: Record<string, string> = {
                     </span>
                   </button>
                 ))}
+
+                <button
+                  type="button"
+                  onClick={() => setShowAppendModal(true)}
+                  className="px-3.5 py-1.5 rounded-xl text-xs font-black whitespace-nowrap bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+                  title="এই কোর্সে টেলিগ্রামের আরেকটি বিষয়ের টেক্সট যোগ করুন"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>+ নতুন বিষয় যোগ করুন (Append)</span>
+                </button>
               </div>
 
               {/* Hierarchy Tree */}
               <div className="space-y-4">
                 {filteredHierarchy.map((sub, sIdx) => (
-                  <div key={sub.id} className="rounded-3xl bg-[#161b22] border border-slate-800 overflow-hidden shadow-lg">
+                  <div key={`${sub.id}_${sIdx}`} className="rounded-3xl bg-[#161b22] border border-slate-800 overflow-hidden shadow-lg">
                     
                     {/* Subject Header */}
                     <div className="p-4 bg-slate-800/40 border-b border-slate-800 flex items-center justify-between">
@@ -3706,12 +3856,12 @@ const CHAPTER_SYNONYMS: Record<string, string> = {
 
                     {/* Chapters List */}
                     <div className="divide-y divide-slate-800/60">
-                      {sub.chapters?.map((ch) => {
+                      {sub.chapters?.map((ch, cIdx) => {
                         const isExpanded = !!expandedChapters[ch.id];
                         const classes = ch.classes || [];
 
                         return (
-                          <div key={ch.id} className="transition-colors">
+                          <div key={`${sub.id}_chap_${ch.id || cIdx}_${cIdx}`} className="transition-colors">
                             {/* Chapter Bar */}
                             <button
                               type="button"
@@ -3756,7 +3906,7 @@ const CHAPTER_SYNONYMS: Record<string, string> = {
 
                                     return (
                                       <div
-                                        key={cl.id || lIdx}
+                                        key={`${sub.id}_${ch.id}_cls_${cl.id || lIdx}_${lIdx}`}
                                         onClick={() => setSelectedLesson(cl)}
                                         className={`p-3 rounded-2xl border transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
                                           isSelected
@@ -5079,6 +5229,105 @@ const CHAPTER_SYNONYMS: Record<string, string> = {
           </div>
         )}
       </div>
+
+      {/* MULTI-SUBJECT APPEND MODAL (FOR TOPIC GROUPS) */}
+      {showAppendModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-2xl bg-[#121b2a] border border-blue-500/40 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-5 relative">
+            <div className="flex items-center justify-between border-b border-slate-700/60 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-blue-500/20 text-blue-300 border border-blue-500/30 flex items-center justify-center font-black text-lg">
+                  ➕
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-black text-white">
+                    বিদ্যমান কোর্সে নতুন বিষয় যোগ করুন (Append Subject)
+                  </h3>
+                  <p className="text-xs text-slate-300">
+                    টেলিগ্রাম টপিক গ্রুপ থেকে আরেকটি বিষয়ের (যেমন: রসায়ন, গণিত বা পদার্থবিজ্ঞান) মেসেজ কপি করে এখানে যুক্ত করুন।
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAppendModal(false)}
+                className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center text-sm font-bold transition-colors cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <label className="text-xs font-bold text-slate-300">
+                  নতুন বিষয়ের নাম সিলেক্ট করুন:
+                </label>
+                <div className="flex items-center gap-1.5 bg-[#0a121e] border border-slate-700/80 rounded-xl px-3 py-1.5 text-xs">
+                  <span className="text-slate-400 font-medium">বিষয়:</span>
+                  <select
+                    value={appendSubjectChoice}
+                    onChange={(e) => setAppendSubjectChoice(e.target.value)}
+                    className="bg-transparent text-blue-300 font-semibold focus:outline-none cursor-pointer text-xs"
+                  >
+                    <option value="auto" className="bg-[#121b2a] text-slate-200">🤖 স্বয়ংক্রিয় শনাক্তকরণ (Auto Detect)</option>
+                    <option value="math_1" className="bg-[#121b2a] text-slate-200">📐 উচ্চতর গণিত ১ম পত্র</option>
+                    <option value="math_2" className="bg-[#121b2a] text-slate-200">📐 উচ্চতর গণিত ২য় পত্র</option>
+                    <option value="physics_1" className="bg-[#121b2a] text-slate-200">⚛️ পদার্থবিজ্ঞান ১ম পত্র</option>
+                    <option value="physics_2" className="bg-[#121b2a] text-slate-200">⚛️ পদার্থবিজ্ঞান ২য় পত্র</option>
+                    <option value="chemistry_1" className="bg-[#121b2a] text-slate-200">🧪 রসায়ন ১ম পত্র</option>
+                    <option value="chemistry_2" className="bg-[#121b2a] text-slate-200">🧪 রসায়ন ২য় পত্র</option>
+                    <option value="biology_1" className="bg-[#121b2a] text-slate-200">🌿 জীববিজ্ঞান ১ম পত্র (উদ্ভিদবিজ্ঞান)</option>
+                    <option value="biology_2" className="bg-[#121b2a] text-slate-200">🐾 জীববিজ্ঞান ২য় পত্র (প্রাণিবিজ্ঞান)</option>
+                    <option value="ict" className="bg-[#121b2a] text-slate-200">💻 তথ্য ও যোগাযোগ প্রযুক্তি (ICT)</option>
+                    <option value="bangla_1" className="bg-[#121b2a] text-slate-200">📚 বাংলা ১ম পত্র (সাহিত্য)</option>
+                    <option value="bangla_2" className="bg-[#121b2a] text-slate-200">✍️ বাংলা ২য় পত্র (ব্যাকরণ ও নির্মিতি)</option>
+                  </select>
+                </div>
+              </div>
+
+              <textarea
+                value={appendSubjectText}
+                onChange={(e) => setAppendSubjectText(e.target.value)}
+                placeholder="টেলিগ্রামের ওই বিষয়ের টপিক/চ্যানেল থেকে কপি করা সব মেসেজ এখানে পেস্ট করুন (Ctrl + V)..."
+                rows={7}
+                className="w-full bg-[#0a121e] border border-slate-700/80 rounded-2xl p-4 text-xs font-mono text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-400 transition-colors resize-y leading-relaxed"
+              />
+
+              <div className="flex items-center justify-between text-xs text-slate-400 pt-1">
+                <span>{appendSubjectText.trim() ? `✓ ${appendSubjectText.length} অক্ষর পেস্ট হয়েছে` : 'আগের কোনো ডাটা মুছবে না, এটি নতুন বিষয় হিসেবে যুক্ত হবে'}</span>
+                {appendSubjectText.trim() && (
+                  <button
+                    type="button"
+                    onClick={() => setAppendSubjectText('')}
+                    className="text-slate-400 hover:text-white underline cursor-pointer"
+                  >
+                    মুছে ফেলুন
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-700/60">
+              <button
+                type="button"
+                onClick={() => setShowAppendModal(false)}
+                className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-all cursor-pointer"
+              >
+                বাতিল
+              </button>
+              <button
+                type="button"
+                onClick={handleAppendSubjectToCourse}
+                disabled={isProcessingAppend || !appendSubjectText.trim()}
+                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 hover:opacity-95 text-white text-xs sm:text-sm font-black flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30 cursor-pointer disabled:opacity-50 transition-all active:scale-[0.98]"
+              >
+                {isProcessingAppend ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                <span>+ কোর্সে এই বিষয় যুক্ত করুন</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

@@ -1,0 +1,716 @@
+{
+  "courseId": "course_hsc_bangla_combo_mu8crn7g",
+  "courseTitle": "HSC বাংলা পূর্ণাঙ্গ কোর্স (১ম ও ২য় পত্র)",
+  "title": "HSC বাংলা পূর্ণাঙ্গ কোর্স (১ম ও ২য় পত্র)",
+  "name": "HSC বাংলা পূর্ণাঙ্গ কোর্স (১ম ও ২য় পত্র)",
+  "category": "Academic",
+  "level": "এইচএসসি ও আলিম (HSC)",
+  "batch": "কমপ্লিট বাংলা প্রস্তুতি ব্যাচ",
+  "badge": "🔥 মেগা কোর্স",
+  "description": "এইচএসসি বাংলা ১ম পত্র (সাহিত্যকুঞ্জ ও সহপাঠ - নাটক ও উপন্যাস) এবং বাংলা ২য় পত্র (ব্যাকরণ ও নির্মিতি) এর সকল অধ্যায়ভিত্তিক লেকচার ক্লাস, প্র্যাকটিস শিট এবং লেকচার স্লাইড সহ সম্পূর্ণ সমন্বিত কোর্স।",
+  "source": "AyuGram MD Parser & ADOMMO Organizer",
+  "extractedAt": "2026-09-19T12:17:34.781Z",
+  "totalSubjects": 2,
+  "totalClasses": 74,
+  "subjects": [
+    {
+      "id": "tg_sub_bangla_1",
+      "title": "বাংলা ১ম পত্র",
+      "chapters": [
+        {
+          "id": "tg_chap_bangla_1_1",
+          "title": "অধ্যায় ০১: গদ্য (সাহিত্য)",
+          "paperTag": "বাংলা ১ম পত্র",
+          "classes": [
+            {
+              "id": "tg_lec_bangla_1_1_1",
+              "classNo": "1",
+              "title": "বাঙ্গালার নব্য লেখকদিগের প্রতিনিবেদন",
+              "videoUrl": "https://www.youtube.com/watch?v=IIWHw2iE6Ao",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1lj8fItV_mbH5Rm-mrmcBGbm-Ez5qfOJ5&export=download",
+              "paperTag": "বাংলা ১ম পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_1_1_2",
+              "classNo": "2",
+              "title": "অপরিচিতা Class 1",
+              "videoUrl": "https://www.youtube.com/watch?v=3fP7GFTNz_k",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=16lvaoCm2whxeeswEppdyxjDKBQ9w0a1S&export=download",
+              "paperTag": "বাংলা ১ম পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_1_1_3",
+              "classNo": "3",
+              "title": "অপরিচিতা Class 2",
+              "videoUrl": "https://www.youtube.com/watch?v=82f00bOFr7E",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=16lvaoCm2whxeeswEppdyxjDKBQ9w0a1S&export=download",
+              "paperTag": "বাংলা ১ম পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_1_1_4",
+              "classNo": "4",
+              "title": "সাহিত্যে খেলা",
+              "videoUrl": "https://www.youtube.com/watch?v=rSfFg0HJjgA",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1NSdzDeqyEI8S6fSCQ0aCW6eRhLyxt0Tx&export=download",
+              "paperTag": "বাংলা ১ম পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_1_1_5",
+              "classNo": "5",
+              "title": "বিলাসী Class 1",
+              "videoUrl": "https://www.youtube.com/watch?v=E6zZq_vZaVU",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1c5epDyym0ueu_m2OkSUz8BIfftIIwIjn&export=download",
+              "paperTag": "বাংলা ১ম পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_1_1_6",
+              "classNo": "6",
+              "title": "বিলাসী Class 2",
+              "videoUrl": "https://www.youtube.com/watch?v=NlcyRYr7qIo",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1c5epDyym0ueu_m2OkSUz8BIfftIIwIjn&export=download",
+              "paperTag": "বাংলা ১ম পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_1_1_7",
+              "classNo": "7",
+              "title": "অর্ধাঙ্গী Class 1",
+              "videoUrl": "https://www.youtube.com/watch?v=F-kxDvShMR8",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1XjabuMrFNdYuHah4K0jsDL5gf1hFA-22&export=download",
+              "paperTag": "বাংলা ১ম পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_1_1_8",
+              "classNo": "8",
+              "title": "অর্ধাঙ্গী Class 2",
+              "videoUrl": "https://www.youtube.com/watch?v=YposlBFMpFg",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1XjabuMrFNdYuHah4K0jsDL5gf1hFA-22&export=download",
+              "paperTag": "বাংলা ১ম পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_1_1_9",
+              "classNo": "9",
+              "title": "যৌবনের গান",
+              "videoUrl": "https://www.youtube.com/watch?v=DQerFblTJJo",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1lGfKio-CvrpvEdheclJChI5LkInsv2LC&export=download",
+              "paperTag": "বাংলা ১ম পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_1_1_10",
+              "classNo": "10",
+              "title": "জীবন ও বৃক্ষ",
+              "videoUrl": "https://www.youtube.com/watch?v=78cEgru7ViA",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1WiuxcTlUHtRVC2LotG_7H1w1flkOn2tb&export=download",
+              "paperTag": "বাংলা ১ম পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_1_1_11",
+              "classNo": "11",
+              "title": "গন্তব্য কাবুল Class 1",
+              "videoUrl": "https://www.youtube.com/watch?v=_4rhtakLNIs",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1PP-W0b5NNPlqHliZ046Dbe6SDtASonvs&export=download",
+              "paperTag": "বাংলা ১ম পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_1_1_12",
+              "classNo": "12",
+              "title": "গন্তব্য কাবুল Class 2",
+              "videoUrl": "https://www.youtube.com/watch?v=fQCu2lKn6RY",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1PP-W0b5NNPlqHliZ046Dbe6SDtASonvs&export=download",
+              "paperTag": "বাংলা ১ম পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_1_1_13",
+              "classNo": "13",
+              "title": "মাসি-পিসি",
+              "paperTag": "বাংলা ১ম পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_1_1_14",
+              "classNo": "14",
+              "title": "কপিলদাস মুর্মুর শেষ কাজ",
+              "paperTag": "বাংলা ১ম পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_1_1_15",
+              "classNo": "15",
+              "title": "রেইনকোট Class 1",
+              "videoUrl": "https://www.youtube.com/watch?v=O-sdRG4TvQE",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1pm1OZWWHohuW_LmBtg2mITduwuqQxIb4&export=download",
+              "paperTag": "বাংলা ১ম পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_1_1_16",
+              "classNo": "16",
+              "title": "রেইনকোট Class 2",
+              "videoUrl": "https://www.youtube.com/watch?v=gkkxIRk3mls",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1pm1OZWWHohuW_LmBtg2mITduwuqQxIb4&export=download",
+              "paperTag": "বাংলা ১ম পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_1_1_17",
+              "classNo": "17",
+              "title": "নেকলেস",
+              "videoUrl": "https://www.youtube.com/watch?v=RLyibLtKbuU",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1JwWNxwPS3CIUD2cFvEipwqMw-dshzFp1&export=download",
+              "paperTag": "বাংলা ১ম পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_1_1_18",
+              "classNo": "18",
+              "title": "ঋতু-বর্ণন + সৃজনশীল লেখার নিয়িম",
+              "videoUrl": "https://www.youtube.com/watch?v=pAj7vU7tsXk",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1lyGYvfLQx3MUyrEwVRqqLte-w-uGnsIl&export=download",
+              "paperTag": "বাংলা ১ম পত্র"
+            }
+          ]
+        },
+        {
+          "id": "tg_chap_bangla_1_2",
+          "title": "অধ্যায় ০২: কবিতা / পদ্য",
+          "paperTag": "বাংলা ১ম পত্র",
+          "classes": [
+            {
+              "id": "tg_lec_bangla_1_2_1",
+              "classNo": "1",
+              "title": "বিভীষণের প্রতি মেঘনাদ",
+              "videoUrl": "https://www.youtube.com/watch?v=T26PsY6OZuU",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1WfKvE6TG5je5-uq2dRWZLQoqobbgXUmH&export=download",
+              "paperTag": "বাংলা ১ম পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_1_2_2",
+              "classNo": "2",
+              "title": "বিদ্রোহী",
+              "paperTag": "বাংলা ১ম পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_1_2_3",
+              "classNo": "3",
+              "title": "সুচেতনা + প্রতিদান + পদ্মা",
+              "videoUrl": "https://www.youtube.com/watch?v=MPiayNC4N-4",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1jYzr0z-o6dUPIi4TCRK80TIw2e3q5IPV&export=download",
+              "paperTag": "বাংলা ১ম পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_1_2_4",
+              "classNo": "4",
+              "title": "তাহারেই পড়ে মনে",
+              "videoUrl": "https://www.youtube.com/watch?v=w3-xtxE8mjw",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1a8nqy0x-f3eMrNq9Y-y8_QaVokFSph5u&export=download",
+              "paperTag": "বাংলা ১ম পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_1_2_5",
+              "classNo": "5",
+              "title": "আঠারো বছর বয়স + সোনার তরী",
+              "videoUrl": "https://www.youtube.com/watch?v=pYvrOWlZG0c",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1f7tgCWcuNsIobVxFWU4VwJchwb2iczcM&export=download",
+              "paperTag": "বাংলা ১ম পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_1_2_6",
+              "classNo": "6",
+              "title": "ফেব্রুয়ারি ১৯৬৯ + আমি কিংবদন্তির কথা বলছি",
+              "videoUrl": "https://www.youtube.com/watch?v=R2P33ve41cE",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1J0T7armsmQNrPJ_IvM98MAnzxrvuKElb&export=download",
+              "paperTag": "বাংলা ১ম পত্র"
+            }
+          ]
+        },
+        {
+          "id": "tg_chap_bangla_1_3",
+          "title": "অধ্যায় ০৩: সহপাঠ - উপন্যাস (লালসালু)",
+          "paperTag": "বাংলা ১ম পত্র",
+          "classes": [
+            {
+              "id": "tg_lec_bangla_1_3_1",
+              "classNo": "1",
+              "title": "লালসালু ওয়ান শট",
+              "videoUrl": "https://www.youtube.com/watch?v=3LcciF2-saQ",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1U2rFKGVoVkBKA-ckSkXLS1iQ4h_m2BPZ&export=download",
+              "paperTag": "বাংলা ১ম পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_1_3_2",
+              "classNo": "2",
+              "title": "লালসালু Class 1",
+              "videoUrl": "https://www.youtube.com/watch?v=9CeDqcef1Bs",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1U2rFKGVoVkBKA-ckSkXLS1iQ4h_m2BPZ&export=download",
+              "paperTag": "বাংলা ১ম পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_1_3_3",
+              "classNo": "3",
+              "title": "লালসালু Class 2",
+              "videoUrl": "https://www.youtube.com/watch?v=dkA-TXZyQxg",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1U2rFKGVoVkBKA-ckSkXLS1iQ4h_m2BPZ&export=download",
+              "paperTag": "বাংলা ১ম পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_1_3_4",
+              "classNo": "4",
+              "title": "লালসালু Class 3",
+              "videoUrl": "https://www.youtube.com/watch?v=Y75eQx0dmiQ",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1U2rFKGVoVkBKA-ckSkXLS1iQ4h_m2BPZ&export=download",
+              "paperTag": "বাংলা ১ম পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_1_3_5",
+              "classNo": "5",
+              "title": "লালসালু Class 4",
+              "videoUrl": "https://www.youtube.com/watch?v=Jbuyt9uINUA",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1U2rFKGVoVkBKA-ckSkXLS1iQ4h_m2BPZ&export=download",
+              "paperTag": "বাংলা ১ম পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_1_3_6",
+              "classNo": "6",
+              "title": "লালসালু Class 5",
+              "videoUrl": "https://www.youtube.com/watch?v=ajo8FLmHDNM",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1U2rFKGVoVkBKA-ckSkXLS1iQ4h_m2BPZ&export=download",
+              "paperTag": "বাংলা ১ম পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_1_3_7",
+              "classNo": "7",
+              "title": "লালসালু Class 6",
+              "videoUrl": "https://www.youtube.com/watch?v=jU0Afg0gKVo",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1U2rFKGVoVkBKA-ckSkXLS1iQ4h_m2BPZ&export=download",
+              "paperTag": "বাংলা ১ম পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_1_3_8",
+              "classNo": "8",
+              "title": "লালসালু Class 7",
+              "videoUrl": "https://www.youtube.com/watch?v=tdMsOyCG0Sw",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1U2rFKGVoVkBKA-ckSkXLS1iQ4h_m2BPZ&export=download",
+              "paperTag": "বাংলা ১ম পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_1_3_9",
+              "classNo": "9",
+              "title": "লালসালু Class 8",
+              "videoUrl": "https://www.youtube.com/watch?v=Bm7_Rc2BGj8",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1U2rFKGVoVkBKA-ckSkXLS1iQ4h_m2BPZ&export=download",
+              "paperTag": "বাংলা ১ম পত্র"
+            }
+          ]
+        },
+        {
+          "id": "tg_chap_bangla_1_4",
+          "title": "অধ্যায় ০৪: সহপাঠ - নাটক (সিরাজউদ্দৌলা)",
+          "paperTag": "বাংলা ১ম পত্র",
+          "classes": [
+            {
+              "id": "tg_lec_bangla_1_4_1",
+              "classNo": "1",
+              "title": "সিরাজউদ্দৌলা Class 1",
+              "videoUrl": "https://www.youtube.com/watch?v=mvYvwfVCU1k",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1Q_EWkLv50ss0lX4xvqn3e2bukcWzrB9M&export=download",
+              "paperTag": "বাংলা ১ম পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_1_4_2",
+              "classNo": "2",
+              "title": "সিরাজউদ্দৌলা Class 2",
+              "videoUrl": "https://www.youtube.com/watch?v=CRQbVkNsPy4",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1Q_EWkLv50ss0lX4xvqn3e2bukcWzrB9M&export=download",
+              "paperTag": "বাংলা ১ম পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_1_4_3",
+              "classNo": "3",
+              "title": "সিরাজউদ্দৌলা Class 3",
+              "videoUrl": "https://www.youtube.com/watch?v=yqaxDDZmCFQ",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1Q_EWkLv50ss0lX4xvqn3e2bukcWzrB9M&export=download",
+              "paperTag": "বাংলা ১ম পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_1_4_4",
+              "classNo": "4",
+              "title": "সিরাজউদ্দৌলা Class 4",
+              "videoUrl": "https://www.youtube.com/watch?v=2_T55ST9wiw",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1Q_EWkLv50ss0lX4xvqn3e2bukcWzrB9M&export=download",
+              "paperTag": "বাংলা ১ম পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_1_4_5",
+              "classNo": "5",
+              "title": "সিরাজউদ্দৌলা Class 5",
+              "videoUrl": "https://www.youtube.com/watch?v=zjeqqX4X1BQ",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1Q_EWkLv50ss0lX4xvqn3e2bukcWzrB9M&export=download",
+              "paperTag": "বাংলা ১ম পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_1_4_6",
+              "classNo": "6",
+              "title": "সিরাজউদ্দোলা ওয়ান শট",
+              "paperTag": "বাংলা ১ম পত্র"
+            }
+          ]
+        },
+        {
+          "id": "tg_chap_bangla_1_5",
+          "title": "অধ্যায় ০৫: স্পেশাল রিভিশন ও MCQ প্যাটার্ন",
+          "paperTag": "বাংলা ১ম পত্র",
+          "classes": [
+            {
+              "id": "tg_lec_bangla_1_5_1",
+              "classNo": "1",
+              "title": "বাংলা ১ম ওয়ান শট",
+              "videoUrl": "https://www.youtube.com/watch?v=VJmRCniEVqM",
+              "paperTag": "বাংলা ১ম পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_1_5_2",
+              "classNo": "2",
+              "title": "MCQ প্রশ্নের প্যাটার্ন",
+              "videoUrl": "https://www.youtube.com/watch?v=cAeVg3XZDgw",
+              "paperTag": "বাংলা ১ম পত্র"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tg_sub_bangla_2",
+      "title": "বাংলা ২য় পত্র",
+      "chapters": [
+        {
+          "id": "tg_chap_bangla_2_1",
+          "title": "অধ্যায় ০১: বাংলা উচ্চারণের নিয়ম",
+          "paperTag": "বাংলা ২য় পত্র",
+          "classes": [
+            {
+              "id": "tg_lec_bangla_2_1_1",
+              "classNo": "1",
+              "title": "অ ধ্বনির উচ্চারণ",
+              "videoUrl": "https://www.youtube.com/watch?v=QSya5Rb2PMk",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=11Bx2NUenj1SkGMEvb5irCKEW7PYQui8w&export=download",
+              "paperTag": "বাংলা ২য় পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_2_1_2",
+              "classNo": "2",
+              "title": "ব-ম-য ফলা ও এ ধ্বনির উচ্চারণ",
+              "videoUrl": "https://www.youtube.com/watch?v=Md8dVnUThz4",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1iGK_HW3uBmScc5WMuxjXytEO0fjjD5dR&export=download",
+              "paperTag": "বাংলা ২য় পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_2_1_3",
+              "classNo": "3",
+              "title": "উচ্চারণের ভূমিকা",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=11N5ng8iroAk-gaUoIRkvKnDOEtS23u0R&export=download",
+              "practiceSheetPdf": "https://drive.google.com/uc?id=16_05PBgwn5o3OADfdkrZ1Aot9nOmc5cg&export=download",
+              "paperTag": "বাংলা ২য় পত্র"
+            }
+          ]
+        },
+        {
+          "id": "tg_chap_bangla_2_2",
+          "title": "অধ্যায় ০২: বাংলা বানানের নিয়ম ও শুদ্ধীকরণ",
+          "paperTag": "বাংলা ২য় পত্র",
+          "classes": [
+            {
+              "id": "tg_lec_bangla_2_2_1",
+              "classNo": "1",
+              "title": "ণ-ত্ব ও ষ-ত্ব বিধান",
+              "videoUrl": "https://www.youtube.com/watch?v=46BOPqosMz0",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1CA3fjc50ef50C3DJb_RpePZD3hkdRJEU&export=download",
+              "practiceSheetPdf": "https://drive.google.com/uc?id=1A3oAAnW5A6HcMa_6Yl5wHb2VR3-or7fC&export=download",
+              "paperTag": "বাংলা ২য় পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_2_2_2",
+              "classNo": "2",
+              "title": "বাংলা বানানের নিয়ম-০১",
+              "videoUrl": "https://www.youtube.com/watch?v=fIE2LImNLDY",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1OQqlEN7QlI9270-GP3xOjMN-Q95NMFbJ&export=download",
+              "paperTag": "বাংলা ২য় পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_2_2_3",
+              "classNo": "3",
+              "title": "বাংলা বানানের নিয়ম ও শুদ্ধীকরণ-০২",
+              "videoUrl": "https://www.youtube.com/watch?v=ZoJ-KlefTrs",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1OQqlEN7QlI9270-GP3xOjMN-Q95NMFbJ&export=download",
+              "paperTag": "বাংলা ২য় পত্র"
+            }
+          ]
+        },
+        {
+          "id": "tg_chap_bangla_2_3",
+          "title": "অধ্যায় ০৩: ব্যাকরণিক শব্দশ্রেণি ও শব্দ গঠন",
+          "paperTag": "বাংলা ২য় পত্র",
+          "classes": [
+            {
+              "id": "tg_lec_bangla_2_3_1",
+              "classNo": "1",
+              "title": "শব্দের গঠন ও অর্থগত প্রকার",
+              "videoUrl": "https://www.youtube.com/watch?v=dh3-dwz4GAI",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1aEa4tvIDWVcNE74yAEhNCfuWaShLdojC&export=download",
+              "paperTag": "বাংলা ২য় পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_2_3_2",
+              "classNo": "2",
+              "title": "ব্যাকরণিক শব্দশ্রেণি- সংজ্ঞা ও উপসর্গ",
+              "videoUrl": "https://www.youtube.com/watch?v=3GKnHynDL0U",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1X6QlRMO1RHXLNZuuJknnXK335OxhXXGI&export=download",
+              "practiceSheetPdf": "https://drive.google.com/uc?id=1_rJdfw4KelrbSL6oYkLp-LyEFkRTQIZq&export=download",
+              "paperTag": "বাংলা ২য় পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_2_3_3",
+              "classNo": "3",
+              "title": "বিশেষ্য ও বিশেষণ",
+              "videoUrl": "https://www.youtube.com/watch?v=JuODJMKgV_g",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1b362VGgYCtuFaiiKbkwxxj41Xy98LOrC&export=download",
+              "practiceSheetPdf": "https://drive.google.com/uc?id=1_rJdfw4KelrbSL6oYkLp-LyEFkRTQIZq&export=download",
+              "paperTag": "বাংলা ২য় পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_2_3_4",
+              "classNo": "4",
+              "title": "সর্বনাম-ক্রিয়া ও অব্যয় (যোজক-আবেগ)",
+              "videoUrl": "https://www.youtube.com/watch?v=97aibVmmSS4",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1eww6x1BwrvdXfoT05BfEdoTLJOm-p57b&export=download",
+              "paperTag": "বাংলা ২য় পত্র"
+            }
+          ]
+        },
+        {
+          "id": "tg_chap_bangla_2_4",
+          "title": "অধ্যায় ০৪: সমাস",
+          "paperTag": "বাংলা ২য় পত্র",
+          "classes": [
+            {
+              "id": "tg_lec_bangla_2_4_1",
+              "classNo": "1",
+              "title": "সমাসের ভূমিকা",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1f7UWingyt7HXlGxNdQfTg1d53E659YN8&export=download",
+              "practiceSheetPdf": "https://drive.google.com/uc?id=1GqbNoBRWAiiTJ_u9ByRwIAWtxV-65sBs&export=download",
+              "paperTag": "বাংলা ২য় পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_2_4_2",
+              "classNo": "2",
+              "title": "তৎপুরুষ সমাস",
+              "videoUrl": "https://www.youtube.com/watch?v=HwIhsIazVZU",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1EAFqKqloZe6cimBUxZzEjwS-sCQ4Gmwa&export=download",
+              "paperTag": "বাংলা ২য় পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_2_4_3",
+              "classNo": "3",
+              "title": "দ্বন্দ্ব-দ্বিগু ও কর্মধারয় সমাস",
+              "videoUrl": "https://www.youtube.com/watch?v=I8MXcD617cU",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1hN1szanilhjzJr3ktZ3_1vhl_MKfe20u&export=download",
+              "paperTag": "বাংলা ২য় পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_2_4_4",
+              "classNo": "4",
+              "title": "বহুব্রীহি-অব্যয়ীভাব ও অন্যান্য সমাস",
+              "videoUrl": "https://www.youtube.com/watch?v=0EEYtVXziAM",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1nh8uJXiPE4YLytijNLvkWTqxRsLyYceo&export=download",
+              "paperTag": "বাংলা ২য় পত্র"
+            }
+          ]
+        },
+        {
+          "id": "tg_chap_bangla_2_5",
+          "title": "অধ্যায় ০৫: প্রকৃতি ও প্রত্যয়",
+          "paperTag": "বাংলা ২য় পত্র",
+          "classes": [
+            {
+              "id": "tg_lec_bangla_2_5_1",
+              "classNo": "1",
+              "title": "প্রকৃতি প্রত্যয়-০১",
+              "videoUrl": "https://www.youtube.com/watch?v=JIoB9-cWyF4",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1xvtyIYNe6DRBhfKYw9Oi2SVFC9bCR3fq&export=download",
+              "practiceSheetPdf": "https://drive.google.com/uc?id=1oFkvPzIVA5KZegXCORMFtTmgt36RgwPO&export=download",
+              "paperTag": "বাংলা ২য় পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_2_5_2",
+              "classNo": "2",
+              "title": "প্রকৃতি প্রত্যয়-০২",
+              "videoUrl": "https://www.youtube.com/watch?v=aMd3onkFncU",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1xvtyIYNe6DRBhfKYw9Oi2SVFC9bCR3fq&export=download",
+              "practiceSheetPdf": "https://drive.google.com/uc?id=1oFkvPzIVA5KZegXCORMFtTmgt36RgwPO&export=download",
+              "paperTag": "বাংলা ২য় পত্র"
+            }
+          ]
+        },
+        {
+          "id": "tg_chap_bangla_2_6",
+          "title": "অধ্যায় ০৬: বাক্যতত্ত্ব ও প্রয়োগ-অপপ্রয়োগ",
+          "paperTag": "বাংলা ২য় পত্র",
+          "classes": [
+            {
+              "id": "tg_lec_bangla_2_6_1",
+              "classNo": "1",
+              "title": "বাক্য রূপান্তর-১ (সরল-জটিল-যৌগিক বাক্য)",
+              "videoUrl": "https://www.youtube.com/watch?v=YjkVZu2TJrg",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=15tmZhhkP6D_rBNP7vu81invE-1bZ9qbk&export=download",
+              "practiceSheetPdf": "https://drive.google.com/uc?id=1pueYls6unplgaEHoUXo0Iw1nmGWczXHt&export=download",
+              "paperTag": "বাংলা ২য় পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_2_6_2",
+              "classNo": "2",
+              "title": "বাক্য রূপান্তর-২ (বিবৃতিমূলক-প্রশ্নবোধক-অনুজ্ঞা বাক্য)",
+              "videoUrl": "https://www.youtube.com/watch?v=laMq15qIVKY",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=15tmZhhkP6D_rBNP7vu81invE-1bZ9qbk&export=download",
+              "practiceSheetPdf": "https://drive.google.com/uc?id=1pueYls6unplgaEHoUXo0Iw1nmGWczXHt&export=download",
+              "paperTag": "বাংলা ২য় পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_2_6_3",
+              "classNo": "3",
+              "title": "বাক্যের অপপ্রয়োগ-০১",
+              "videoUrl": "https://www.youtube.com/watch?v=1gI5y0Y2-hM",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1R2fmIYt1tc_wEuSS0d1-kyHc8kfJ-TOm&export=download",
+              "paperTag": "বাংলা ২য় পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_2_6_4",
+              "classNo": "4",
+              "title": "বাক্যের অপপ্রয়োগ-২",
+              "videoUrl": "https://www.youtube.com/watch?v=-7LZTch1i78",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1R2fmIYt1tc_wEuSS0d1-kyHc8kfJ-TOm&export=download",
+              "paperTag": "বাংলা ২য় পত্র"
+            }
+          ]
+        },
+        {
+          "id": "tg_chap_bangla_2_7",
+          "title": "অধ্যায় ০৭: নির্মিতি অংশ (রচনামূলক)",
+          "paperTag": "বাংলা ২য় পত্র",
+          "classes": [
+            {
+              "id": "tg_lec_bangla_2_7_1",
+              "classNo": "1",
+              "title": "প্রতিবেদন",
+              "videoUrl": "https://www.youtube.com/watch?v=aTkqhQ-zY-c",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1zpEssWXPzMTrcYv9aGlUdAdfuDEnPHKJ&export=download",
+              "practiceSheetPdf": "https://drive.google.com/uc?id=1AFhCWJOPi6xGvjdY0l-g9mx_PJzJ-7tL&export=download",
+              "paperTag": "বাংলা ২য় পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_2_7_2",
+              "classNo": "2",
+              "title": "বৈদ্যুতিন চিঠি বা ইমেইল",
+              "videoUrl": "https://www.youtube.com/watch?v=U4q5Hjb8Bp8",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1VOG10xID3ruPmGKH_8HyrG9fyLYduyIq&export=download",
+              "practiceSheetPdf": "https://drive.google.com/uc?id=1d6ZOIu6y0hciepqqBs-OpBLbXvBHr-Cw&export=download",
+              "paperTag": "বাংলা ২য় পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_2_7_3",
+              "classNo": "3",
+              "title": "রচনা",
+              "videoUrl": "https://www.youtube.com/watch?v=Jid-ihEj4M0",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1XaoH6VAy4G_v-qIXUKWtAuii5q5Zt2iC&export=download",
+              "practiceSheetPdf": "https://drive.google.com/uc?id=1aJ6rUn3us1ttLDEyh3sOsJSFOdhuXypK&export=download",
+              "paperTag": "বাংলা ২য় পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_2_7_4",
+              "classNo": "4",
+              "title": "অভিজ্ঞতা বর্ণনা",
+              "videoUrl": "https://www.youtube.com/watch?v=9m6Rl7nou9k",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1jQfP67_Are2JAPUFH7DolfH3476GuWcq&export=download",
+              "practiceSheetPdf": "https://drive.google.com/uc?id=1MZQagl8LOrw_zRNZ30JpNyqc3gYJXssO&export=download",
+              "paperTag": "বাংলা ২য় পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_2_7_5",
+              "classNo": "5",
+              "title": "আবেদনপত্র",
+              "videoUrl": "https://www.youtube.com/watch?v=IfSXf2Q8ork",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1y_ONyUAbE3qJIXxZ7rd8u2pevjTSo65p&export=download",
+              "practiceSheetPdf": "https://drive.google.com/uc?id=1RixRuW047FWEMvDs18ViTOV7LypPuxDh&export=download",
+              "paperTag": "বাংলা ২য় পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_2_7_6",
+              "classNo": "6",
+              "title": "খুদে গল্প",
+              "videoUrl": "https://www.youtube.com/watch?v=sDJEHaxD9d4",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1EzQlATrvreH_wV1XCxojbYkgm2SlD_ml&export=download",
+              "practiceSheetPdf": "https://drive.google.com/uc?id=17CZ3Muy4bPupCpvX2d24X0EuJfP5Kjpz&export=download",
+              "paperTag": "বাংলা ২য় পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_2_7_7",
+              "classNo": "7",
+              "title": "দিনলিপি",
+              "videoUrl": "https://www.youtube.com/watch?v=wPDOQ-cFu04",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1-lsYCx3dkB57PPSaDoMg2yKvSeE1-mSP&export=download",
+              "paperTag": "বাংলা ২য় পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_2_7_8",
+              "classNo": "8",
+              "title": "পরিভাষা ও অনুবাদ",
+              "videoUrl": "https://www.youtube.com/watch?v=gdpAxbno8M8",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1BvyrvhraVam1UuhsZnfy_cohzPbKCMNb&export=download",
+              "paperTag": "বাংলা ২য় পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_2_7_9",
+              "classNo": "9",
+              "title": "সংলাপ",
+              "videoUrl": "https://www.youtube.com/watch?v=EE6SP9oSyco",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1qkXaGxwcrZi3XZFidtfHoURdiMg2tCLH&export=download",
+              "practiceSheetPdf": "https://drive.google.com/uc?id=1QUURz1e9uZNppTO-zk4iI0j8SW4f26sm&export=download",
+              "paperTag": "বাংলা ২য় পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_2_7_10",
+              "classNo": "10",
+              "title": "সারাংশ-সারমর্ম ও ভাব সম্প্রসারণ",
+              "videoUrl": "https://www.youtube.com/watch?v=xEh-MJStyiA",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1rGZNX_2oIJvNg0LqRBYwPLmBZm0WEQsB&export=download",
+              "practiceSheetPdf": "https://drive.google.com/uc?id=1MvVkohlbWwjxJmdnc1aisoNs4Lev1-RX&export=download",
+              "paperTag": "বাংলা ২য় পত্র"
+            }
+          ]
+        },
+        {
+          "id": "tg_chap_bangla_2_8",
+          "title": "অধ্যায় ০৮: কুইজ ও ওয়ান শট রিভিশন",
+          "paperTag": "বাংলা ২য় পত্র",
+          "classes": [
+            {
+              "id": "tg_lec_bangla_2_8_1",
+              "classNo": "1",
+              "title": "বাংলা কুইজ",
+              "videoUrl": "https://www.youtube.com/watch?v=ttClmvw981M",
+              "paperTag": "বাংলা ২য় পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_2_8_2",
+              "classNo": "2",
+              "title": "অপরিচিতা, বিলাসী ও উচ্চারণ কুইজ",
+              "videoUrl": "https://www.youtube.com/watch?v=ik5xrreKrYA",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1mbb7caPnyc7M_kAhCrM3KvqwJPLx7eQT&export=download",
+              "paperTag": "বাংলা ২য় পত্র"
+            },
+            {
+              "id": "tg_lec_bangla_2_8_3",
+              "classNo": "3",
+              "title": "বাংলা ২য় পত্র ওয়ান শট ক্লাস",
+              "videoUrl": "https://www.youtube.com/watch?v=LCQ_drK_vYw",
+              "lectureSheetPdf": "https://drive.google.com/uc?id=1Ojy_4q_9CR-Wv1DApjeGltaP0N2tbdS0&export=download",
+              "paperTag": "বাংলা ২য় পত্র"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
