@@ -5,10 +5,11 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const teacherId = searchParams.get('teacherId');
+    const cleanTeacherId = (teacherId || '').trim();
 
-    let payouts = await db.findManyAsync<any>('payouts');
-    if (teacherId) {
-      payouts = payouts.filter((p: any) => p.teacherId === teacherId);
+    let payouts = await db.findManyAsync<any>('payouts') || [];
+    if (cleanTeacherId) {
+      payouts = payouts.filter((p: any) => (p.teacherId || '').trim() === cleanTeacherId);
     }
 
     // Sort newest first
@@ -18,7 +19,14 @@ export async function GET(req: NextRequest) {
       return timeB - timeA;
     });
 
-    return NextResponse.json({ success: true, payouts });
+    return NextResponse.json(
+      { success: true, payouts },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        },
+      }
+    );
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }

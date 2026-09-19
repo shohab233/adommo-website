@@ -63,6 +63,7 @@ export async function PATCH(req: NextRequest) {
         role: updatedUser.role,
         avatar: updatedUser.avatar,
         bio: updatedUser.bio,
+        college: updatedUser.college,
       }
     });
   } catch (err: any) {

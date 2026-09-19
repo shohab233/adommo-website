@@ -119,6 +119,7 @@ export default function TeacherDashboardPage() {
     currentUser,
     loginUser,
     logoutUser,
+    updateCurrentUser,
     notifications,
     sendNotification,
     deleteNotification,
@@ -377,9 +378,32 @@ export default function TeacherDashboardPage() {
   ];
 
   // ==================== SIDEBAR & SUBMENU ROUTING ====================
-  // Active Navigation: activeMenu + activeSubMenu
-  const [activeMenu, setActiveMenu] = useState<string>('dashboard');
-  const [activeSubMenu, setActiveSubMenu] = useState<string>('dashboard_main');
+  // Active Navigation: activeMenu + activeSubMenu (preserved in sessionStorage across page refresh)
+  const [activeMenu, setActiveMenu] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        return sessionStorage.getItem('adommo_teacher_active_menu') || 'dashboard';
+      } catch {}
+    }
+    return 'dashboard';
+  });
+  const [activeSubMenu, setActiveSubMenu] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        return sessionStorage.getItem('adommo_teacher_active_submenu') || 'dashboard_main';
+      } catch {}
+    }
+    return 'dashboard_main';
+  });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        sessionStorage.setItem('adommo_teacher_active_menu', activeMenu);
+        sessionStorage.setItem('adommo_teacher_active_submenu', activeSubMenu);
+      } catch {}
+    }
+  }, [activeMenu, activeSubMenu]);
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({
     dashboard: true,
     courses: true,
@@ -1028,7 +1052,9 @@ export default function TeacherDashboardPage() {
 
   const refreshTeacherPayouts = () => {
     if (!currentUser?.id) return;
-    fetch(`/api/admin/payouts?teacherId=${currentUser.id}`)
+    fetch(`/api/admin/payouts?teacherId=${encodeURIComponent(currentUser.id)}&t=${Date.now()}`, {
+      credentials: 'include',
+    })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data?.success && Array.isArray(data.payouts)) {
@@ -1090,6 +1116,7 @@ export default function TeacherDashboardPage() {
       setIsSubmittingPayout(true);
       const res = await fetch('/api/admin/payouts', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           teacherId: currentUser.id,
@@ -1188,6 +1215,7 @@ export default function TeacherDashboardPage() {
 
       const res = await fetch('/api/teacher/profile', {
         method: 'PATCH',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           teacherId: currentUser.id,
@@ -1202,7 +1230,7 @@ export default function TeacherDashboardPage() {
 
       const data = await res.json();
       if (data.success) {
-        loginUser({
+        updateCurrentUser({
           avatar: profilePhoto,
           bio: profileBio,
           college: profileInstitution,
@@ -2056,6 +2084,23 @@ export default function TeacherDashboardPage() {
       attachedSheetUrl: newLiveSheetUrl || undefined,
     });
 
+    // Automatically send notification to course students about new scheduled live class
+    sendNotification({
+      title: `🔴 নতুন লাইভ ক্লাস শিডিউল: ${newLiveTitle}`,
+      message: `"${targetCourse.title}" কোর্সে নতুন লাইভ ক্লাস শিডিউল করা হয়েছে (${newLiveDate || 'আজকে'}, ${newLiveTime || 'রাত ৮:৩০'})। সময়মতো প্রস্তুত থাকুন!`,
+      category: 'live',
+      priority: 'normal',
+      targetAudience: 'course',
+      targetCourseId: targetCourse.id,
+      targetCourseTitle: targetCourse.title,
+      targetRole: 'student',
+      senderName: currentUser?.name || 'শিক্ষক',
+      senderRole: 'লাইভ ফ্যাকাল্টি',
+      senderAvatar: currentUser?.avatar,
+      actionUrl: newLiveLink || '/classroom',
+      actionLabel: 'ক্লাসের তথ্য দেখুন ➔',
+    });
+
     setNewLiveTitle('');
     setNewLiveDescription('');
     setNewLiveLink('');
@@ -2090,7 +2135,9 @@ export default function TeacherDashboardPage() {
       return;
     }
 
-    const selectedCourse = courses.find((c) => c.id === notifTargetCourseId);
+    const availableCourses = teacherCourses.length > 0 ? teacherCourses : courses;
+    const selectedCourse = (notifTargetCourseId ? courses.find((c) => c.id === notifTargetCourseId) : null) || availableCourses[0];
+    const effectiveCourseId = selectedCourse?.id;
 
     sendNotification({
       title: notifTitle.trim(),
@@ -2098,7 +2145,7 @@ export default function TeacherDashboardPage() {
       category: notifCategory,
       priority: notifPriority,
       targetAudience: notifTargetAudience,
-      targetCourseId: notifTargetAudience === 'course' ? notifTargetCourseId : undefined,
+      targetCourseId: notifTargetAudience === 'course' ? effectiveCourseId : undefined,
       targetCourseTitle: notifTargetAudience === 'course' ? (selectedCourse?.title || 'কোর্স') : undefined,
       senderName: currentUser.name || 'শিক্ষক প্যানেল',
       senderRole: 'অদম্য ফ্যাকাল্টি',
@@ -12055,7 +12102,23 @@ export default function TeacherDashboardPage() {
 
                                 <button
                                   type="button"
-                                  onClick={() => showToast(`🔔 "${lc.title}" ক্লাসের ১৫ মিনিটের রিমাইন্ডার সকল শিক্ষার্থীর কাছে পাঠানো হয়েছে!`)}
+                                  onClick={() => {
+                                    sendNotification({
+                                      title: `🔔 লাইভ ক্লাস রিমাইন্ডার: ${lc.title}`,
+                                      message: `কিছুক্ষণের মধ্যে আপনার "${lc.courseTitle}" কোর্সের লাইভ ক্লাস শুরু হতে যাচ্ছে। সময়মতো ক্লাসে যোগ দিতে প্রস্তুত থাকুন!`,
+                                      category: 'live',
+                                      priority: 'urgent',
+                                      targetAudience: 'course',
+                                      targetCourseId: lc.courseId,
+                                      targetCourseTitle: lc.courseTitle,
+                                      targetRole: 'student',
+                                      senderName: lc.instructorName || currentUser.name || 'শিক্ষক',
+                                      senderRole: 'লাইভ ফ্যাকাল্টি',
+                                      actionUrl: lc.meetingLink || '/classroom',
+                                      actionLabel: 'ক্লাসে যোগ দিন 🔴',
+                                    });
+                                    showToast(`🔔 "${lc.title}" ক্লাসের রিমাইন্ডার সকল শিক্ষার্থীর কাছে পাঠানো হয়েছে!`);
+                                  }}
                                   className="px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors flex items-center gap-1 cursor-pointer"
                                   title="শিক্ষার্থীদের পুশ নোটিফিকেশন পাঠান"
                                 >
@@ -12563,11 +12626,11 @@ export default function TeacherDashboardPage() {
 
                             {notifTargetAudience === 'course' && (
                               <select
-                                value={notifTargetCourseId}
+                                value={notifTargetCourseId || ((teacherCourses.length > 0 ? teacherCourses : courses)[0]?.id || '')}
                                 onChange={(e) => setNotifTargetCourseId(e.target.value)}
                                 className="w-full px-3 py-2 rounded-xl border border-pink-200 bg-pink-50/30 text-xs font-medium focus:ring-2 focus:ring-pink-500/20 focus:outline-none"
                               >
-                                {courses.map((c) => (
+                                {(teacherCourses.length > 0 ? teacherCourses : courses).map((c) => (
                                   <option key={c.id} value={c.id}>
                                     {c.title} ({c.batch || 'Batch'})
                                   </option>

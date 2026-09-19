@@ -22,7 +22,7 @@ interface AppContextType {
   rejectEnrollment: (enrollmentId: string) => void;
   refundEnrollment: (enrollmentId: string) => void;
   deleteEnrollment: (enrollmentId: string) => void;
-  addCourse: (course: Partial<Course>) => void;
+  addCourse: (course: Partial<Course>, skipServerPost?: boolean) => void;
   updateCourse: (courseId: string, updatedData: Partial<Course>) => void;
   deleteCourse: (courseId: string) => void;
   addLectureToCourse: (courseId: string, moduleId: string, lecture: Omit<Lecture, 'id'>) => void;
@@ -61,6 +61,7 @@ interface AppContextType {
   registerUser: (userData: Omit<User, 'id' | 'enrolledCourseIds'>) => void;
   registerWithApi: (userData: { name: string; phone: string; email?: string; password: string; role?: UserRole; college?: string }) => Promise<{ success: boolean; message: string; user?: User }>;
   logoutUser: () => void;
+  updateCurrentUser: (userData: Partial<User>) => void;
   toastMessage: string | null;
   showToast: (msg: string) => void;
   notifications: NotificationItem[];
@@ -334,7 +335,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const healedSummaries = validCourses.map((c: any) => healCourse(c));
           setCourses((prevCourses) => {
             const activePrev = prevCourses.filter((p) => !delSet.has(p.id));
-            return healedSummaries.map((newC: any) => {
+            const serverCourseIds = new Set(healedSummaries.map((c: any) => c.id));
+            const merged = healedSummaries.map((newC: any) => {
               const existing = activePrev.find((p) => p.id === newC.id);
               if (existing) {
                 return {
@@ -350,6 +352,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               }
               return newC;
             });
+            // Keep local draft or teacher courses if server summary hasn't propagated them yet
+            const localOnly = activePrev.filter((p) => !serverCourseIds.has(p.id) && (p.isDraft || Boolean(p.instructorId)));
+            return [...localOnly, ...merged];
           });
         }
       })
@@ -363,7 +368,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           if (data && data.success && Array.isArray(data.courses)) {
             const delSet = getDeletedCourseIds();
             const validCourses = data.courses.filter((c: any) => c && !delSet.has(c.id));
-            setCourses(validCourses.map((c: any) => healCourse(c)));
+            const healedCourses = validCourses.map((c: any) => healCourse(c));
+            setCourses((prevCourses) => {
+              const activePrev = prevCourses.filter((p) => !delSet.has(p.id));
+              const serverCourseIds = new Set(healedCourses.map((c: any) => c.id));
+              const localOnly = activePrev.filter((p) => !serverCourseIds.has(p.id) && (p.isDraft || Boolean(p.instructorId)));
+              return [...localOnly, ...healedCourses];
+            });
           }
         })
         .catch(() => {});
@@ -405,28 +416,48 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       })
       .catch((err) => console.log('Exams sync completed', err));
 
-    // Hydrate live classes from DB
-    fetch('/api/live-classes')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data && data.success && Array.isArray(data.liveClasses) && data.liveClasses.length > 0) {
-          setLiveClasses(data.liveClasses);
-        }
-      })
-      .catch((err) => console.log('Live classes sync completed', err));
+    // Real-time sync for live classes from DB
+    const syncLiveClasses = () => {
+      fetch(`/api/live-classes?t=${Date.now()}`, { credentials: 'include' })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data && data.success && Array.isArray(data.liveClasses)) {
+            setLiveClasses((prev) => {
+              if (JSON.stringify(prev) !== JSON.stringify(data.liveClasses)) {
+                try {
+                  localStorage.setItem('adommo_live_classes', JSON.stringify(data.liveClasses));
+                } catch {}
+                return data.liveClasses;
+              }
+              return prev;
+            });
+          }
+        })
+        .catch(() => {});
+    };
 
-    // Hydrate notifications from DB
-    fetch('/api/notifications')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data && data.success && Array.isArray(data.notifications) && data.notifications.length > 0) {
-          setNotifications(data.notifications);
-        }
-      })
-      .catch((err) => console.log('Notifications sync completed', err));
+    // Real-time sync for notifications from DB
+    const syncNotifications = () => {
+      fetch(`/api/notifications?t=${Date.now()}`, { credentials: 'include' })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data && data.success && Array.isArray(data.notifications)) {
+            setNotifications((prev) => {
+              if (JSON.stringify(prev) !== JSON.stringify(data.notifications)) {
+                try {
+                  localStorage.setItem('adommo_notifications', JSON.stringify(data.notifications));
+                } catch {}
+                return data.notifications;
+              }
+              return prev;
+            });
+          }
+        })
+        .catch(() => {});
+    };
 
     // Hydrate question banks from DB
-    fetch('/api/question-banks')
+    fetch(`/api/question-banks?t=${Date.now()}`, { credentials: 'include' })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data && data.success && Array.isArray(data.questionBanks) && data.questionBanks.length > 0) {
@@ -436,7 +467,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       .catch((err) => console.log('Question banks sync completed', err));
 
     // Hydrate coupons from DB
-    fetch('/api/admin/coupons')
+    fetch(`/api/admin/coupons?t=${Date.now()}`, { credentials: 'include' })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data && data.success && Array.isArray(data.coupons)) {
@@ -470,12 +501,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     // Hydrate real conversations from DB and poll every 3 seconds for real-time two-way chat
     const syncConversations = () => {
-      fetch('/api/messages')
+      fetch(`/api/messages?t=${Date.now()}`, { credentials: 'include' })
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           if (data && data.success && Array.isArray(data.conversations)) {
             setConversations((prev) => {
               if (JSON.stringify(prev) !== JSON.stringify(data.conversations)) {
+                try {
+                  localStorage.setItem('adommo_conversations', JSON.stringify(data.conversations));
+                } catch {}
                 return data.conversations;
               }
               return prev;
@@ -486,7 +520,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
 
     const syncEnrollments = () => {
-      fetch('/api/enrollments')
+      fetch(`/api/enrollments?t=${Date.now()}`, { credentials: 'include' })
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           if (data && data.success && Array.isArray(data.enrollments)) {
@@ -505,7 +539,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
 
     const syncCourses = () => {
-      fetch('/api/courses')
+      fetch(`/api/courses?t=${Date.now()}`, { credentials: 'include' })
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           if (data && data.success && Array.isArray(data.courses)) {
@@ -525,9 +559,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     syncConversations();
     syncEnrollments();
+    syncLiveClasses();
+    syncNotifications();
     const livePollTimer = setInterval(() => {
       syncConversations();
       syncEnrollments();
+      syncLiveClasses();
+      syncNotifications();
     }, 3000);
 
     return () => {
@@ -702,7 +740,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       localStorage.setItem('adommo_user', JSON.stringify(updated));
     } catch {}
-    showToast(`স্বাগতম, ${updated.name}! আপনি সফলভাবে লগইন করেছেন।`);
+  };
+
+  const updateCurrentUser = (userData: Partial<User>) => {
+    setCurrentUser((prev) => {
+      const updated: User = {
+        ...prev,
+        ...userData,
+      };
+      try {
+        localStorage.setItem('adommo_user', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
   };
 
   const loginWithApi = async (credentials: { identifier: string; password: string; role?: UserRole }): Promise<{ success: boolean; message: string; user?: User }> => {
@@ -1067,15 +1117,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return null;
   }, []);
 
-  const addCourse = (newCourseData: Partial<Course>) => {
+  const addCourse = (newCourseData: Partial<Course>, skipServerPost?: boolean) => {
     const regPrice = Number(newCourseData.regularPrice) || 2500;
     const offPrice = Number(newCourseData.offerPrice) || 1200;
     const calcDiscount = regPrice > offPrice ? Math.round(((regPrice - offPrice) / regPrice) * 100) : 0;
 
     const newCourse: Course = {
-      id: `course_${Date.now()}`,
+      id: newCourseData.id || `course_${Date.now()}`,
       title: newCourseData.title || 'নতুন ফিজিক্স স্পেশাল কোর্স',
-      slug: `course-${Date.now()}`,
+      slug: newCourseData.slug || `course-${Date.now()}`,
       category: newCourseData.category || 'Engineering',
       level: newCourseData.level || 'এইচএসসি ও ভর্তি প্রস্তুতি',
       batch: newCourseData.batch || 'নতুন ব্যাচ ২০২৬',
@@ -1083,15 +1133,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       badge: newCourseData.badge || 'ভর্তি চলছে',
       tagline: newCourseData.tagline || 'সহজ ও কার্যকরী উপায়ে বিষয় আয়ত্ত করুন।',
       description: newCourseData.description || 'সম্পূর্ণ কোর্স সিলেবাস কভারেজ ও গাণিতিক প্রস্তুতি।',
-      instructorId: currentUser.id || newCourseData.instructorId || '',
-      teacherEmail: currentUser.email || newCourseData.teacherEmail || '',
-      teacherPhone: currentUser.phone || newCourseData.teacherPhone || '',
-      instructor: {
-        name: currentUser.name || 'কোর্স ইনস্ট্রাক্টর',
-        designation: 'লিড ইনস্ট্রাক্টর',
-        institution: currentUser.college || 'মেন্টর ও শিক্ষক, অদম্য এডটেক',
-        avatar: currentUser.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-      },
       regularPrice: regPrice,
       offerPrice: offPrice,
       discountPercentage: newCourseData.discountPercentage || calcDiscount,
@@ -1106,9 +1147,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       features: newCourseData.features || [],
       faq: newCourseData.faq || [],
       ...newCourseData,
+      // Ensure teacher ownership is strictly maintained and never overwritten by blank/stale JSON values
+      instructorId: currentUser.id || newCourseData.instructorId || '',
+      teacherEmail: currentUser.email || newCourseData.teacherEmail || '',
+      teacherPhone: currentUser.phone || newCourseData.teacherPhone || '',
+      instructor: {
+        name: currentUser.name || newCourseData.instructor?.name || 'কোর্স ইনস্ট্রাক্টর',
+        designation: newCourseData.instructor?.designation || 'লিড ইনস্ট্রাক্টর',
+        institution: currentUser.college || newCourseData.instructor?.institution || 'মেন্টর ও শিক্ষক, অদম্য এডটেক',
+        avatar: currentUser.avatar || newCourseData.instructor?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+      },
     };
 
-    const updatedCourses = [newCourse, ...courses];
+    const updatedCourses = [newCourse, ...courses.filter(c => c.id !== newCourse.id)];
     setCourses(updatedCourses);
     try {
       localStorage.setItem('adommo_courses', JSON.stringify(updatedCourses));
@@ -1116,13 +1167,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       // ignore
     }
 
-    // Persist new course to DB
-    fetch('/api/courses', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(newCourse),
-    }).catch((err) => console.log('Course persist completed', err));
+    // Persist new course to DB only if not already persisted (e.g. from /api/course/import)
+    const isAlreadyImported = Boolean(newCourseData.id && newCourseData.id.startsWith('course_acs_'));
+    if (!isAlreadyImported && !skipServerPost) {
+      fetch('/api/courses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(newCourse),
+      }).catch((err) => console.log('Course persist completed', err));
+    }
 
     // Automatically create a dedicated Batchmate Discussion Group for this course
     const newBatchGroup: ConversationThread = {
@@ -2025,6 +2079,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
     fetch('/api/live-classes', {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newClass),
     }).catch((err) => console.log('Live class persist error:', err));
@@ -2043,6 +2098,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
     fetch('/api/live-classes', {
       method: 'PUT',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, ...updatedData }),
     }).catch((err) => console.log('Live class update error:', err));
@@ -2058,26 +2114,56 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
       return updated;
     });
-    fetch(`/api/live-classes?id=${id}`, {
+    fetch(`/api/live-classes?id=${encodeURIComponent(id)}`, {
       method: 'DELETE',
+      credentials: 'include',
     }).catch((err) => console.log('Live class delete error:', err));
     showToast('লাইভ ক্লাসটি তালিকা থেকে মুছে ফেলা হয়েছে।');
   };
 
   const startLiveClass = (id: string) => {
+    let targetClass: LiveClass | undefined;
     setLiveClasses((prev) => {
-      const updated = prev.map((lc) => (lc.id === id ? { ...lc, status: 'live' as const } : lc));
+      const updated = prev.map((lc) => {
+        if (lc.id === id) {
+          targetClass = { ...lc, status: 'live' as const };
+          return targetClass;
+        }
+        return lc;
+      });
       if (typeof window !== 'undefined') {
         localStorage.setItem('adommo_live_classes', JSON.stringify(updated));
         window.dispatchEvent(new Event('adommo_live_updated'));
       }
       return updated;
     });
+
     fetch('/api/live-classes', {
       method: 'PUT',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, status: 'live' }),
     }).catch((err) => console.log('Live class start error:', err));
+
+    if (targetClass) {
+      sendNotification({
+        title: `🔴 লাইভ ক্লাস শুরু হয়েছে: ${(targetClass as LiveClass).title}`,
+        message: `আপনার "${(targetClass as LiveClass).courseTitle}" কোর্সের লাইভ ক্লাস সম্প্রচার এখনই শুরু হয়েছে। দ্রুত যুক্ত হোন!`,
+        category: 'live',
+        priority: 'urgent',
+        targetAudience: 'course',
+        targetCourseId: (targetClass as LiveClass).courseId,
+        targetCourseTitle: (targetClass as LiveClass).courseTitle,
+        targetRole: 'student',
+        senderName: (targetClass as LiveClass).instructorName || currentUser.name || 'শিক্ষক',
+        senderRole: 'লাইভ ফ্যাকাল্টি',
+        senderAvatar: currentUser.avatar,
+        actionUrl: (targetClass as LiveClass).meetingLink || '/classroom',
+        actionLabel: 'সরাসরি ক্লাসে ঢুকুন 🔴',
+        isPinned: true,
+      });
+    }
+
     showToast('🔴 লাইভ ক্লাস শুরু হয়েছে! সকল শিক্ষার্থীকে লাইভ অ্যালার্ট পাঠানো হয়েছে।');
   };
 
@@ -2097,6 +2183,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
     fetch('/api/live-classes', {
       method: 'PUT',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         id,
@@ -2250,6 +2337,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     saveNotifications(updated);
     fetch('/api/notifications', {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newNotif),
     }).catch((err) => console.log('Notification persist error:', err));
@@ -2268,6 +2356,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     saveNotifications(updated);
     fetch('/api/notifications', {
       method: 'PATCH',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, action: 'mark_read', userId: currentUser.id }),
     }).catch(() => {});
@@ -2285,6 +2374,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     saveNotifications(updated);
     fetch('/api/notifications', {
       method: 'PATCH',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'mark_all_read', userId: currentUser.id }),
     }).catch(() => {});
@@ -2294,8 +2384,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const deleteNotification = (id: string) => {
     const updated = notifications.filter((n) => n.id !== id);
     saveNotifications(updated);
-    fetch(`/api/notifications?id=${id}`, {
+    fetch(`/api/notifications?id=${encodeURIComponent(id)}`, {
       method: 'DELETE',
+      credentials: 'include',
     }).catch((err) => console.log('Notification delete error:', err));
     showToast('🗑️ নোটিফিকেশন মুছে ফেলা হয়েছে');
   };
@@ -2308,6 +2399,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     saveNotifications(updated);
     fetch('/api/notifications', {
       method: 'PATCH',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, action: 'toggle_pin' }),
     }).catch(() => {});
@@ -2906,6 +2998,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         registerUser,
         registerWithApi,
         logoutUser,
+        updateCurrentUser,
         toastMessage,
         showToast,
         notifications,

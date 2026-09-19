@@ -226,11 +226,17 @@ export default function CourseJsonUploadModal({ isOpen, onClose, onEditCourse, o
 
       // AppContext আপডেট করা (যাতে ব্রাউজার রিফ্রেশ ছাড়াই তৎক্ষণাৎ সর্বত্র শো করে)
       if (data.course) {
-        const exists = courses.some(c => c.id === data.course.id);
+        const confirmedCourse = {
+          ...data.course,
+          instructorId: currentUser?.id || data.course.instructorId || '',
+          teacherEmail: currentUser?.email || data.course.teacherEmail || '',
+          teacherPhone: currentUser?.phone || data.course.teacherPhone || '',
+        };
+        const exists = courses.some(c => c.id === confirmedCourse.id);
         if (exists) {
-          updateCourse(data.course.id, data.course);
+          updateCourse(confirmedCourse.id, confirmedCourse);
         } else {
-          addCourse(data.course);
+          addCourse(confirmedCourse);
         }
       }
 

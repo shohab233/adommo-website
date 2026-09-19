@@ -132,9 +132,11 @@ export async function processCourseImport(rawData: any) {
       cleanId = 'frb26';
     }
 
-    const courseSlug = rawData.slug || slugify(courseTitle) || ('acs-course-' + cleanId);
-    const courseId = 'course_acs_' + cleanId;
-    const variableName = 'acsCourse_' + cleanId;
+    const uniqueSuffix = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const baseSlug = rawData.slug || slugify(courseTitle) || ('acs-course-' + cleanId);
+    const courseSlug = rawData.forceNew ? `${baseSlug}-${uniqueSuffix}` : baseSlug;
+    const courseId = rawData.forceNew ? `course_acs_${cleanId}_${uniqueSuffix}` : `course_acs_${cleanId}`;
+    const variableName = 'acsCourse_' + cleanId + (rawData.forceNew ? '_' + uniqueSuffix : '');
 
     const outFileName = courseSlug.replace(/[^a-zA-Z0-9]/g, '_') + '_data.ts';
     const libDir = path.join(process.cwd(), 'src', 'lib');
@@ -460,11 +462,16 @@ export async function processCourseImport(rawData: any) {
 
       // Sync to database
       try {
-        const { db } = await import('@/lib/db');
+        const { db, invalidateCollectionCache } = await import('@/lib/db');
         const updated = await db.updateAsync('courses', finalCourse.id, finalCourse);
         if (!updated) {
           await db.createAsync('courses', finalCourse);
         }
+        try {
+          if (typeof invalidateCollectionCache === 'function') {
+            invalidateCollectionCache('courses');
+          }
+        } catch {}
       } catch (dbErr) {
         console.warn('DB update warning in existing course sync:', dbErr);
       }
@@ -776,13 +783,18 @@ export async function processCourseImport(rawData: any) {
 
     // Save to real database (data/courses.json & MongoDB Atlas)
     try {
-      const { db } = await import('@/lib/db');
+      const { db, invalidateCollectionCache } = await import('@/lib/db');
       const existing = await db.findOneAsync<any>('courses', (c: any) => c.id === finalCourse.id);
       if (existing) {
         await db.updateAsync('courses', finalCourse.id, finalCourse);
       } else {
         await db.createAsync('courses', finalCourse);
       }
+      try {
+        if (typeof invalidateCollectionCache === 'function') {
+          invalidateCollectionCache('courses');
+        }
+      } catch {}
     } catch (dbErr) {
       console.warn('DB save warning in course import:', dbErr);
     }
@@ -811,10 +823,11 @@ export async function POST(request: NextRequest) {
     const token = request.cookies.get('adommo_auth_token')?.value;
     const authPayload = token ? verifyToken<any>(token) : null;
     if (authPayload) {
-      if (!rawData.instructorId) rawData.instructorId = authPayload.id;
-      if (!rawData.teacherEmail) rawData.teacherEmail = authPayload.email;
-      if (!rawData.teacherPhone) rawData.teacherPhone = authPayload.phone;
-      if (!rawData.teacherName) rawData.teacherName = authPayload.name;
+      // Authenticated teacher/admin: override or bind ownership
+      if (rawData.forceNew || !rawData.instructorId) rawData.instructorId = authPayload.id;
+      if (rawData.forceNew || !rawData.teacherEmail) rawData.teacherEmail = authPayload.email;
+      if (rawData.forceNew || !rawData.teacherPhone) rawData.teacherPhone = authPayload.phone;
+      if (rawData.forceNew || !rawData.teacherName) rawData.teacherName = authPayload.name;
     }
     const result = await processCourseImport(rawData);
     return NextResponse.json(result, { status: result.success ? 200 : 400 });
