@@ -1057,6 +1057,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const rejectEnrollment = (enrollmentId: string) => {
+    const target = enrollments.find((e) => e.id === enrollmentId);
     const updated = enrollments.map((e) =>
       e.id === enrollmentId ? { ...e, status: 'rejected' as const } : e
     );
@@ -1065,6 +1066,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('adommo_enrollments', JSON.stringify(updated));
     } catch {
       // ignore
+    }
+
+    // If student previously had access to this course, revoke access
+    if (target && currentUser && Array.isArray(currentUser.enrolledCourseIds) && currentUser.enrolledCourseIds.includes(target.courseId)) {
+      const remaining = currentUser.enrolledCourseIds.filter((cid) => cid !== target.courseId);
+      const updatedUser = { ...currentUser, enrolledCourseIds: remaining };
+      setCurrentUser(updatedUser);
+      try {
+        localStorage.setItem('adommo_user', JSON.stringify(updatedUser));
+      } catch {}
     }
 
     // Live API Call to Admin Enrollments endpoint
@@ -1254,9 +1265,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           0
         );
 
+        const isDraftVal = updatedData.isDraft !== undefined
+          ? updatedData.isDraft
+          : (updatedData.isPublished !== undefined ? !updatedData.isPublished : course.isDraft);
+
+        const isPublishedVal = updatedData.isPublished !== undefined
+          ? updatedData.isPublished
+          : (updatedData.isDraft !== undefined ? !updatedData.isDraft : course.isPublished);
+
         const merged: Course = {
           ...course,
           ...updatedData,
+          isDraft: isDraftVal,
+          isPublished: isPublishedVal,
           regularPrice: regPrice,
           offerPrice: offPrice,
           discountPercentage: updatedData.discountPercentage !== undefined ? updatedData.discountPercentage : calcDiscount,
@@ -2862,115 +2883,119 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const approveTeacherKyc = (applicationId: string, adminNotes?: string) => {
     const target = teacherKycList.find(k => k.applicationId === applicationId);
-    if (!target) return;
+    const resolvedNotes = adminNotes || 'সকল ডকুমেন্টস ও শিক্ষাগত সনদ নির্ভুল। শিক্ষক আইডি অনুমোদিত।';
 
-    const updatedList = teacherKycList.map(k => {
-      if (k.applicationId === applicationId) {
-        return {
-          ...k,
-          status: 'approved' as const,
-          reviewedAt: 'এইমাত্র',
-          adminNotes: adminNotes || 'সকল ডকুমেন্টস ও শিক্ষাগত সনদ নির্ভুল। শিক্ষক আইডি অনুমোদিত।',
+    if (target) {
+      const updatedList = teacherKycList.map(k => {
+        if (k.applicationId === applicationId) {
+          return {
+            ...k,
+            status: 'approved' as const,
+            reviewedAt: 'এইমাত্র',
+            adminNotes: resolvedNotes,
+          };
+        }
+        return k;
+      });
+      saveTeacherKycList(updatedList);
+
+      // If current logged-in user matches this teacher, update their kycStatus
+      if (currentUser.id === target.teacherId || currentUser.email === target.teacherEmail || currentUser.phone === target.teacherPhone) {
+        const updatedUser: User = {
+          ...currentUser,
+          kycStatus: 'approved',
+          kycData: { ...target, status: 'approved', adminNotes: resolvedNotes },
         };
+        setCurrentUser(updatedUser);
+        try {
+          localStorage.setItem('adommo_user', JSON.stringify(updatedUser));
+        } catch {}
       }
-      return k;
-    });
-    saveTeacherKycList(updatedList);
 
-    // If current logged-in user matches this teacher, update their kycStatus
-    if (currentUser.id === target.teacherId || currentUser.email === target.teacherEmail || currentUser.phone === target.teacherPhone) {
-      const updatedUser: User = {
-        ...currentUser,
-        kycStatus: 'approved',
-        kycData: { ...target, status: 'approved', adminNotes },
-      };
-      setCurrentUser(updatedUser);
-      try {
-        localStorage.setItem('adommo_user', JSON.stringify(updatedUser));
-      } catch {}
+      sendNotification({
+        title: '🎉 শিক্ষক KYC ভেরিফিকেশন অনুমোদিত!',
+        message: `অভিনন্দন ${target.fullName}! আপনার শিক্ষক ভেরিফিকেশন আবেদন #${applicationId} সুপার অ্যাডমিন কর্তৃক সফলভাবে অনুমোদিত হয়েছে। এখন আপনি শিক্ষক পোর্টালে সম্পূর্ণ এক্সেস পাবেন।`,
+        category: 'general',
+        priority: 'high',
+        targetAudience: 'user',
+        targetRole: 'teacher',
+        targetUserId: target.teacherId,
+        senderName: 'সুপার অ্যাডমিন',
+        actionLabel: 'শিক্ষক স্টুডিওতে যান',
+        actionUrl: '/teacher',
+      });
     }
 
-    // Live API Call to Admin KYC endpoint
+    // Live API Call to Admin KYC endpoint (always runs)
     fetch('/api/admin/kyc', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         applicationId,
         action: 'approve',
-        adminNotes: adminNotes || 'সকল ডকুমেন্টস ও শিক্ষাগত সনদ নির্ভুল। শিক্ষক আইডি অনুমোদিত।',
+        adminNotes: resolvedNotes,
       }),
     }).catch((err) => console.log('Admin KYC approve completed', err));
 
-    sendNotification({
-      title: '🎉 শিক্ষক KYC ভেরিফিকেশন অনুমোদিত!',
-      message: `অভিনন্দন ${target.fullName}! আপনার শিক্ষক ভেরিফিকেশন আবেদন #${applicationId} সুপার অ্যাডমিন কর্তৃক সফলভাবে অনুমোদিত হয়েছে। এখন আপনি শিক্ষক পোর্টালে সম্পূর্ণ এক্সেস পাবেন।`,
-      category: 'general',
-      priority: 'high',
-      targetAudience: 'user',
-      targetRole: 'teacher',
-      targetUserId: target.teacherId,
-      senderName: 'সুপার অ্যাডমিন',
-      actionLabel: 'শিক্ষক স্টুডিওতে যান',
-      actionUrl: '/teacher',
-    });
-
-    showToast(`🎉 শিক্ষক ${target.fullName}-এর KYC আবেদন #${applicationId} অনুমোদিত হয়েছে!`);
+    showToast(`🎉 শিক্ষক KYC আবেদন #${applicationId} অনুমোদিত হয়েছে!`);
   };
 
   const rejectTeacherKyc = (applicationId: string, reason: string) => {
     const target = teacherKycList.find(k => k.applicationId === applicationId);
-    if (!target) return;
+    const resolvedReason = reason || 'প্রদত্ত তথ্যে অসামঞ্জস্য রয়েছে। সঠিক তথ্য দিয়ে পুনরায় আবেদন করুন।';
 
-    const updatedList = teacherKycList.map(k => {
-      if (k.applicationId === applicationId) {
-        return {
-          ...k,
-          status: 'rejected' as const,
-          reviewedAt: 'এইমাত্র',
-          rejectionReason: reason || 'প্রদত্ত তথ্যে অসামঞ্জস্য রয়েছে। সঠিক তথ্য দিয়ে পুনরায় আবেদন করুন।',
+    if (target) {
+      const updatedList = teacherKycList.map(k => {
+        if (k.applicationId === applicationId) {
+          return {
+            ...k,
+            status: 'rejected' as const,
+            reviewedAt: 'এইমাত্র',
+            rejectionReason: resolvedReason,
+          };
+        }
+        return k;
+      });
+      saveTeacherKycList(updatedList);
+
+      if (currentUser.id === target.teacherId || currentUser.email === target.teacherEmail || currentUser.phone === target.teacherPhone) {
+        const updatedUser: User = {
+          ...currentUser,
+          kycStatus: 'rejected',
+          kycData: { ...target, status: 'rejected', rejectionReason: resolvedReason },
         };
+        setCurrentUser(updatedUser);
+        try {
+          localStorage.setItem('adommo_user', JSON.stringify(updatedUser));
+        } catch {}
       }
-      return k;
-    });
-    saveTeacherKycList(updatedList);
 
-    if (currentUser.id === target.teacherId || currentUser.email === target.teacherEmail || currentUser.phone === target.teacherPhone) {
-      const updatedUser: User = {
-        ...currentUser,
-        kycStatus: 'rejected',
-        kycData: { ...target, status: 'rejected', rejectionReason: reason },
-      };
-      setCurrentUser(updatedUser);
-      try {
-        localStorage.setItem('adommo_user', JSON.stringify(updatedUser));
-      } catch {}
+      sendNotification({
+        title: '⚠️ শিক্ষক KYC আবেদন বাতিল / সংশোধন প্রয়োজন',
+        message: `প্রিয় ${target.fullName}, আপনার KYC আবেদন #${applicationId} পর্যালোচনায় অসঙ্গতি পরিলক্ষিত হয়েছে। কারণ: "${resolvedReason}"। অনুগ্রহ করে সঠিক তথ্য ও ডকুমেন্ট দিয়ে পুনরায় আবেদন করুন।`,
+        category: 'urgent',
+        priority: 'high',
+        targetAudience: 'user',
+        targetRole: 'teacher',
+        targetUserId: target.teacherId,
+        senderName: 'ভেরিফিকেশন টিম',
+        actionLabel: 'পুনরায় আবেদন করুন',
+        actionUrl: '/teacher',
+      });
     }
 
-    // Live API Call to Admin KYC endpoint
+    // Live API Call to Admin KYC endpoint (always runs)
     fetch('/api/admin/kyc', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         applicationId,
         action: 'reject',
-        rejectionReason: reason || 'প্রদত্ত তথ্যে অসামঞ্জস্য রয়েছে। সঠিক তথ্য দিয়ে পুনরায় আবেদন করুন।',
+        rejectionReason: resolvedReason,
       }),
     }).catch((err) => console.log('Admin KYC reject completed', err));
 
-    sendNotification({
-      title: '⚠️ শিক্ষক KYC আবেদন বাতিল / সংশোধন প্রয়োজন',
-      message: `প্রিয় ${target.fullName}, আপনার KYC আবেদন #${applicationId} গৃহীত হয়নি। কারণ: "${reason}"। অনুগ্রহ করে সঠিক তথ্য ও ডকুমেন্ট দিয়ে পুনরায় আবেদন করুন।`,
-      category: 'urgent',
-      priority: 'high',
-      targetAudience: 'user',
-      targetRole: 'teacher',
-      targetUserId: target.teacherId,
-      senderName: 'ভেরিফিকেশন টিম',
-      actionLabel: 'পুনরায় আবেদন করুন',
-      actionUrl: '/teacher',
-    });
-
-    showToast(`⚠️ শিক্ষক ${target.fullName}-এর KYC আবেদন প্রত্যাখ্যাত হয়েছে।`);
+    showToast(`⚠️ শিক্ষক KYC আবেদন #${applicationId} বাতিল করা হয়েছে।`);
   };
 
   return (

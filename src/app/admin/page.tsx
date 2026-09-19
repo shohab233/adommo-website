@@ -122,6 +122,7 @@ type SubMenu =
   | 'courses_reported'
   | 'courses_categories'
   | 'enrollments_all'
+  | 'enrollments_pending'
   | 'enrollments_active'
   | 'enrollments_completed'
   | 'enrollments_cancelled'
@@ -504,6 +505,7 @@ export default function SuperAdminPage() {
         if (teacher) {
           if (!teacher.coursesTaught.includes(c.title)) teacher.coursesTaught.push(c.title);
           if (!teacher.courseIds.includes(c.id)) teacher.courseIds.push(c.id);
+          if (c.slug && !teacher.courseIds.includes(c.slug)) teacher.courseIds.push(c.slug);
           teacher.totalStudents += (c.enrolledCount || 0);
         }
       }
@@ -529,8 +531,7 @@ export default function SuperAdminPage() {
     }
   }, [userStatusOverrides]);
 
-  // 4. Real Users (Guaranteed Unique IDs)
-  // 4. Real Users (Strictly from Live Database)
+  // 4. Real Users (Strictly from Live Database with Status Overrides)
   const allRealUsers = useMemo(() => {
     return dbUsers.map((du) => ({
       id: du.id,
@@ -539,14 +540,17 @@ export default function SuperAdminPage() {
       email: du.email || '—',
       college: du.college || (du.role === 'teacher' ? 'ফ্যাকাল্টি' : 'শিক্ষাপ্রতিষ্ঠান'),
       role: (du.role || 'student') as UserRole,
-      status: du.status || 'active',
+      status: (userStatusOverrides[du.id] || du.status || 'active') as 'active' | 'suspended',
       kycStatus: du.kycStatus,
+      rawCreatedAt: du.createdAt,
       joinedAt: du.createdAt ? new Date(du.createdAt).toLocaleDateString('bn-BD') : 'নিবন্ধিত সদস্য',
-      courses: courses.filter(c => du.enrolledCourseIds?.includes(c.id)).map(c => c.title),
+      courses: courses.filter(c => du.enrolledCourseIds?.includes(c.id) || (c.slug && du.enrolledCourseIds?.includes(c.slug))).map(c => c.title),
     }));
-  }, [dbUsers, courses]);
+  }, [dbUsers, courses, userStatusOverrides]);
 
   const realStudents = useMemo(() => allRealUsers.filter(u => u.role === 'student'), [allRealUsers]);
+  const newUsersCount = useMemo(() => allRealUsers.filter(u => (u as any).status === 'new' || (u.rawCreatedAt && (Date.now() - new Date(u.rawCreatedAt).getTime()) < 14 * 24 * 60 * 60 * 1000)).length, [allRealUsers]);
+  const suspendedUsersCount = useMemo(() => allRealUsers.filter(u => u.status === 'suspended').length, [allRealUsers]);
 
   // 5. Teacher Applications
   const [teacherApplications, setTeacherApplications] = useState<TeacherApplication[]>(() => {
@@ -1331,7 +1335,7 @@ export default function SuperAdminPage() {
     if (activeSubMenu === 'users_students') list = list.filter(u => u.role === 'student');
     else if (activeSubMenu === 'users_teachers') list = list.filter(u => u.role === 'teacher');
     else if (activeSubMenu === 'users_admins') list = list.filter(u => u.role === 'admin');
-    else if (activeSubMenu === 'users_new') list = list.filter(u => u.status === 'new');
+    else if (activeSubMenu === 'users_new') list = list.filter(u => (u as any).status === 'new' || (u.rawCreatedAt && (Date.now() - new Date(u.rawCreatedAt).getTime()) < 14 * 24 * 60 * 60 * 1000));
     else if (activeSubMenu === 'users_suspended') list = list.filter(u => u.status === 'suspended');
 
     if (searchQuery.trim()) {
@@ -1348,7 +1352,8 @@ export default function SuperAdminPage() {
 
   const filteredEnrollments = useMemo(() => {
     let list = enrollments;
-    if (activeSubMenu === 'enrollments_active') list = list.filter(e => e.status === 'approved');
+    if (activeSubMenu === 'enrollments_pending') list = list.filter(e => e.status === 'pending');
+    else if (activeSubMenu === 'enrollments_active') list = list.filter(e => e.status === 'approved');
     else if (activeSubMenu === 'enrollments_completed') list = list.filter(e => e.status === 'approved');
     else if (activeSubMenu === 'enrollments_cancelled') list = list.filter(e => e.status === 'rejected');
 
@@ -1366,9 +1371,9 @@ export default function SuperAdminPage() {
 
   const filteredCourses = useMemo(() => {
     let list = courses;
-    if (activeSubMenu === 'courses_published') list = list.filter(c => !c.isDraft);
-    else if (activeSubMenu === 'courses_draft') list = list.filter(c => c.isDraft);
-    else if (activeSubMenu === 'courses_pending') list = list.filter(c => c.isDraft);
+    if (activeSubMenu === 'courses_published') list = list.filter(c => !c.isDraft && c.isPublished !== false && !c.isArchived);
+    else if (activeSubMenu === 'courses_draft') list = list.filter(c => c.isDraft || c.isPublished === false);
+    else if (activeSubMenu === 'courses_pending') list = list.filter(c => c.isDraft || c.isPublished === false);
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -1592,7 +1597,7 @@ export default function SuperAdminPage() {
           <button
             type="button"
             onClick={() => {
-              navigateTo('enrollments', 'enrollments_all');
+              navigateTo('enrollments', 'enrollments_pending');
               showToast(`${pendingEnrollments.length} টি পেন্ডিং এনরোলমেন্ট রয়েছে`);
             }}
             className="relative p-2 rounded-xl text-slate-600 hover:text-[#ed347d] hover:bg-pink-50/70 transition-all cursor-pointer active:scale-95"
@@ -1723,8 +1728,8 @@ export default function SuperAdminPage() {
                     { id: 'users_students', label: `Students (${realStudents.length})` },
                     { id: 'users_teachers', label: `Teachers (${realTeachers.length})` },
                     { id: 'users_admins', label: 'Admins (১)' },
-                    { id: 'users_new', label: 'New Users' },
-                    { id: 'users_suspended', label: 'Suspended Users' },
+                    { id: 'users_new', label: `New Users (${newUsersCount})` },
+                    { id: 'users_suspended', label: `Suspended Users (${suspendedUsersCount})` },
                   ].map(sub => (
                     <button
                       key={sub.id}
@@ -1838,9 +1843,9 @@ export default function SuperAdminPage() {
                 <div className="pl-6 pr-1 py-1 space-y-0.5 border-l-2 border-pink-200 ml-4 animate-in fade-in duration-150">
                   {[
                     { id: 'courses_all', label: `All Courses (${courses.length})` },
-                    { id: 'courses_pending', label: `Pending Approval (${courses.filter(c => c.isDraft).length})` },
-                    { id: 'courses_published', label: `Published (${courses.filter(c => !c.isDraft).length})` },
-                    { id: 'courses_draft', label: `Draft (${courses.filter(c => c.isDraft).length})` },
+                    { id: 'courses_pending', label: `Pending Approval (${courses.filter(c => c.isDraft || c.isPublished === false).length})` },
+                    { id: 'courses_published', label: `Published (${courses.filter(c => !c.isDraft && c.isPublished !== false && !c.isArchived).length})` },
+                    { id: 'courses_draft', label: `Draft (${courses.filter(c => c.isDraft || c.isPublished === false).length})` },
                     { id: 'courses_reported', label: `Reported (${reportedCourses.filter(r => r.status === 'pending').length})` },
                     { id: 'courses_categories', label: `Categories (${realCategories.length})` },
                   ].map(sub => (
@@ -1897,6 +1902,7 @@ export default function SuperAdminPage() {
                 <div className="pl-6 pr-1 py-1 space-y-0.5 border-l-2 border-pink-200 ml-4 animate-in fade-in duration-150">
                   {[
                     { id: 'enrollments_all', label: `All Enrollments (${enrollments.length})` },
+                    { id: 'enrollments_pending', label: `Pending (${pendingEnrollments.length})` },
                     { id: 'enrollments_active', label: `Active (${approvedEnrollments.length})` },
                     { id: 'enrollments_completed', label: 'Completed' },
                     { id: 'enrollments_cancelled', label: `Cancelled (${rejectedEnrollments.length})` },
@@ -2530,8 +2536,8 @@ export default function SuperAdminPage() {
                   { id: 'users_students', label: `Students (${realStudents.length})` },
                   { id: 'users_teachers', label: `Teachers (${realTeachers.length})` },
                   { id: 'users_admins', label: 'Admins (১)' },
-                  { id: 'users_new', label: 'New Users' },
-                  { id: 'users_suspended', label: 'Suspended Users' },
+                  { id: 'users_new', label: `New Users (${newUsersCount})` },
+                  { id: 'users_suspended', label: `Suspended Users (${suspendedUsersCount})` },
                 ].map(tab => (
                   <button
                     key={tab.id}
@@ -3580,9 +3586,9 @@ export default function SuperAdminPage() {
               <div className="bg-slate-100/70 p-1.5 rounded-2xl flex flex-wrap gap-1 border border-slate-200/60 w-fit">
                 {[
                   { id: 'courses_all', label: `All Courses (${courses.length})` },
-                  { id: 'courses_pending', label: `Pending Approval (${courses.filter(c => c.isDraft).length})` },
-                  { id: 'courses_published', label: `Published (${courses.filter(c => !c.isDraft).length})` },
-                  { id: 'courses_draft', label: `Draft (${courses.filter(c => c.isDraft).length})` },
+                  { id: 'courses_pending', label: `Pending Approval (${courses.filter(c => c.isDraft || c.isPublished === false).length})` },
+                  { id: 'courses_published', label: `Published (${courses.filter(c => !c.isDraft && c.isPublished !== false && !c.isArchived).length})` },
+                  { id: 'courses_draft', label: `Draft (${courses.filter(c => c.isDraft || c.isPublished === false).length})` },
                   { id: 'courses_reported', label: `Reported (${reportedCourses.filter(r => r.status === 'pending').length})` },
                   { id: 'courses_categories', label: `Categories (${realCategories.length})` },
                 ].map(tab => (
@@ -3688,20 +3694,25 @@ export default function SuperAdminPage() {
                           <td className="p-3.5 font-black text-slate-900 font-mono">৳ {c.offerPrice || c.regularPrice}</td>
                           <td className="p-3.5 font-bold text-slate-700">{c.enrolledCount || 0} জন</td>
                           <td className="p-3.5">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                updateCourse(c.id, { isDraft: !c.isDraft });
-                                showToast(`কোর্সটি ${c.isDraft ? 'পাবলিশ' : 'ড্রাফট'} করা হয়েছে!`);
-                              }}
-                              className={`px-3 py-1 rounded-full text-[10px] font-black cursor-pointer transition-all active:scale-95 ${
-                                c.isDraft
-                                  ? 'bg-amber-100 text-amber-800 hover:bg-amber-200'
-                                  : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-                              }`}
-                            >
-                              {c.isDraft ? '⏳ ড্রাফট' : '✓ পাবলিশড'}
-                            </button>
+                            {(() => {
+                              const isCourseDraft = c.isDraft || c.isPublished === false;
+                              return (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    updateCourse(c.id, { isDraft: !isCourseDraft, isPublished: isCourseDraft });
+                                    showToast(`কোর্সটি ${isCourseDraft ? 'পাবলিশ' : 'ড্রাফট'} করা হয়েছে!`);
+                                  }}
+                                  className={`px-3 py-1 rounded-full text-[10px] font-black cursor-pointer transition-all active:scale-95 ${
+                                    isCourseDraft
+                                      ? 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+                                      : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                                  }`}
+                                >
+                                  {isCourseDraft ? '⏳ ড্রাফট' : '✓ পাবলিশড'}
+                                </button>
+                              );
+                            })()}
                           </td>
                           <td className="p-3.5 text-center">
                             <div className="flex items-center justify-center gap-1.5">
@@ -3758,6 +3769,7 @@ export default function SuperAdminPage() {
               <div className="bg-slate-100/70 p-1.5 rounded-2xl flex flex-wrap gap-1 border border-slate-200/60 w-fit">
                 {[
                   { id: 'enrollments_all', label: `All Enrollments (${enrollments.length})` },
+                  { id: 'enrollments_pending', label: `Pending Approval (${pendingEnrollments.length})` },
                   { id: 'enrollments_active', label: `Active (${approvedEnrollments.length})` },
                   { id: 'enrollments_completed', label: 'Completed' },
                   { id: 'enrollments_cancelled', label: `Cancelled (${rejectedEnrollments.length})` },
