@@ -41,7 +41,7 @@ export default function ClassroomPage({
   const resolvedParams = React.use(params);
   const { courses, isEnrolled, exams, currentUser, showToast, questionBanks, examSubmissions, detailedSubmissions, liveClasses, loadFullCourse } = useApp();
   
-  const course = courses.find((c) => c.id === resolvedParams.id);
+  const course = courses.find((c) => c.id === resolvedParams.id || c.slug === resolvedParams.id);
   const hasFullModules = !!(course && course.modules && course.modules.length > 0);
   const [isFetchingCourse, setIsFetchingCourse] = useState(!hasFullModules);
   const fetchedRef = React.useRef<string | null>(null);

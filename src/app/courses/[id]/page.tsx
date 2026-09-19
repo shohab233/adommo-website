@@ -37,7 +37,7 @@ export default function CourseDetailsPage({
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isPlayingTrailer, setIsPlayingTrailer] = useState(false);
 
-  const course = courses.find((c) => c.id === resolvedParams.id);
+  const course = courses.find((c) => c.id === resolvedParams.id || c.slug === resolvedParams.id);
 
   // Dynamic Live Countdown Timer (PhyHunt exact feature with real course data)
   const [timeLeft, setTimeLeft] = useState({

@@ -857,12 +857,40 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!currentUser || !currentUser.id || currentUser.id === 'usr_guest') {
       return false;
     }
-    if (Array.isArray(currentUser.enrolledCourseIds) && currentUser.enrolledCourseIds.includes(courseId)) {
+    // Admins have universal access across all classrooms
+    if (currentUser.role === 'admin' || currentRole === 'admin') {
       return true;
     }
+
+    const matchedCourse = courses.find((c) => c.id === courseId || c.slug === courseId);
+
+    // Course owner teachers have immediate access to their classroom
+    if ((currentUser.role === 'teacher' || currentRole === 'teacher') && matchedCourse) {
+      const currentId = currentUser.id.trim();
+      const currentEmail = (currentUser.email || '').trim().toLowerCase();
+      if (
+        (matchedCourse.instructorId && (matchedCourse.instructorId === currentId || String(matchedCourse.instructorId).trim() === currentId)) ||
+        (matchedCourse.teacherEmail && matchedCourse.teacherEmail.trim().toLowerCase() === currentEmail)
+      ) {
+        return true;
+      }
+    }
+
+    const targetIds = new Set<string>([courseId]);
+    if (matchedCourse) {
+      if (matchedCourse.id) targetIds.add(matchedCourse.id);
+      if (matchedCourse.slug) targetIds.add(matchedCourse.slug);
+    }
+
+    // Direct enrolled list on student profile
+    if (Array.isArray(currentUser.enrolledCourseIds) && currentUser.enrolledCourseIds.some((id) => targetIds.has(id))) {
+      return true;
+    }
+
+    // Approved real enrollments
     const userPhoneClean = (currentUser.phone || '').replace(/\D/g, '');
     return enrollments.some((e) => {
-      if (e.courseId !== courseId || e.status !== 'approved') return false;
+      if (!targetIds.has(e.courseId) || e.status !== 'approved') return false;
       if (currentUser.id && e.studentId === currentUser.id) return true;
       if (userPhoneClean) {
         const p1 = (e.studentPhone || '').replace(/\D/g, '');

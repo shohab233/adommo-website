@@ -24,7 +24,7 @@ export default function CourseQuestionBankPage({
   const [qbankFilterType, setQbankFilterType] = useState<string>('all');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
-  const course = courses.find((c) => c.id === resolvedParams.id);
+  const course = courses.find((c) => c.id === resolvedParams.id || c.slug === resolvedParams.id);
 
   if (!course) {
     return (

@@ -32,7 +32,7 @@ export default function CourseLiveClassPage({
   const [activeFilter, setActiveFilter] = useState<'all' | 'upcoming' | 'completed'>('all');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
-  const course = courses.find((c) => c.id === resolvedParams.id);
+  const course = courses.find((c) => c.id === resolvedParams.id || c.slug === resolvedParams.id);
 
   if (!course) {
     return (
