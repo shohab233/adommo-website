@@ -30,7 +30,7 @@ import {
   Eye,
   FileCheck
 } from 'lucide-react';
-import { CreativeQuestion } from '@/types';
+import { CreativeQuestion, Exam, Question } from '@/types';
 
 export default function ExamPage({
   params,
@@ -41,31 +41,17 @@ export default function ExamPage({
   const { exams, courses, leaderboard, submitExam, submitDetailedExam, currentUser, isEnrolled, showToast, detailedSubmissions } = useApp();
 
   const [isMounted, setIsMounted] = useState(false);
+  const [fetchedExam, setFetchedExam] = useState<Exam | null>(null);
+  const [loadingExam, setLoadingExam] = useState(false);
 
-  const exam = exams.find((e) => e.id === resolvedParams.id);
+  const examFromStore = exams.find((e) => e.id === resolvedParams.id);
+  const exam = examFromStore || fetchedExam;
 
-  if (!exam) {
-    return (
-      <div className="bg-[#f8f9fc] min-h-screen pb-24 pt-12 flex items-center justify-center px-4">
-        <div className="bg-white rounded-3xl p-8 sm:p-12 max-w-md w-full border border-slate-200/80 shadow-lg text-center space-y-4">
-          <div className="w-16 h-16 mx-auto rounded-3xl bg-pink-50 border border-pink-200 flex items-center justify-center text-[#ed347d]">
-            <Award className="w-8 h-8" />
-          </div>
-          <h2 className="text-xl font-bold text-slate-800">পরীক্ষাটি খুঁজে পাওয়া যায়নি</h2>
-          <p className="text-xs text-slate-500">হয়তো পরীক্ষাটি এখনো তৈরি বা পাবলিশ হয়নি অথবা লিংকটি সঠিক নয়।</p>
-          <Link href="/exam" className="inline-block px-6 py-2.5 rounded-full text-xs font-bold text-white ph-btn-pink">
-            সকল পরীক্ষা দেখুন
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  const userEnrolled = exam ? isEnrolled(exam.courseId) : false;
+  const parentCourse = exam ? courses.find((c) => c.id === exam.courseId) : undefined;
 
-  const userEnrolled = isEnrolled(exam.courseId);
-  const parentCourse = courses.find((c) => c.id === exam.courseId);
-
-  const isCombined = exam.examType === 'combined';
-  const isWrittenOnly = exam.examType === 'written';
+  const isCombined = exam?.examType === 'combined';
+  const isWrittenOnly = exam?.examType === 'written';
 
   // Live timer for dynamic schedule checks
   const [currentTimeMs, setCurrentTimeMs] = useState(0);
@@ -76,9 +62,24 @@ export default function ExamPage({
     return () => clearInterval(clock);
   }, []);
 
+  useEffect(() => {
+    if (!examFromStore && resolvedParams.id && !fetchedExam && !loadingExam) {
+      setLoadingExam(true);
+      fetch(`/api/exams?id=${encodeURIComponent(resolvedParams.id)}&t=${Date.now()}`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data && data.success && data.exam) {
+            setFetchedExam(data.exam);
+          }
+        })
+        .catch(() => {})
+        .finally(() => setLoadingExam(false));
+    }
+  }, [examFromStore, resolvedParams.id, fetchedExam, loadingExam]);
+
   // Schedule status using exact numeric timestamps
-  const examStartTimestamp = exam.startTime ? new Date(exam.startTime).getTime() : 0;
-  const examEndTimestamp = exam.endTime ? new Date(exam.endTime).getTime() : 0;
+  const examStartTimestamp = exam?.startTime ? new Date(exam.startTime).getTime() : 0;
+  const examEndTimestamp = exam?.endTime ? new Date(exam.endTime).getTime() : 0;
   const isUpcoming = Boolean(examStartTimestamp && !isNaN(examStartTimestamp) && currentTimeMs > 0 && currentTimeMs < examStartTimestamp);
   const isEnded = Boolean(examEndTimestamp && !isNaN(examEndTimestamp) && currentTimeMs > 0 && currentTimeMs > examEndTimestamp);
 
@@ -89,10 +90,10 @@ export default function ExamPage({
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, number>>({});
   const [flaggedQuestions, setFlaggedQuestions] = useState<Record<string, boolean>>({});
-  const [mcqSecondsRemaining, setMcqSecondsRemaining] = useState((exam.mcqDurationMinutes || exam.durationMinutes || 25) * 60);
+  const [mcqSecondsRemaining, setMcqSecondsRemaining] = useState((exam?.mcqDurationMinutes || exam?.durationMinutes || 25) * 60);
 
   // CQ States
-  const sampleCQs: CreativeQuestion[] = exam.creativeQuestions && exam.creativeQuestions.length > 0 ? exam.creativeQuestions : [
+  const sampleCQs: CreativeQuestion[] = exam?.creativeQuestions && exam.creativeQuestions.length > 0 ? exam.creativeQuestions : [
     {
       id: 'cq_sample_1',
       title: 'সৃজনশীল প্রশ্ন ০১: গতিবিদ্যা ও ভেক্টর বিশ্লেষণ',
@@ -122,7 +123,7 @@ export default function ExamPage({
   const [writtenAnswers, setWrittenAnswers] = useState<Record<string, Record<string, string>>>({});
   const [cqImages, setCqImages] = useState<Record<string, Record<string, string[]>>>({});
   const [previewImageModal, setPreviewImageModal] = useState<string | null>(null);
-  const [cqSecondsRemaining, setCqSecondsRemaining] = useState((exam.cqDurationMinutes || 100) * 60);
+  const [cqSecondsRemaining, setCqSecondsRemaining] = useState((exam?.cqDurationMinutes || 100) * 60);
 
   // Result States
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -132,9 +133,10 @@ export default function ExamPage({
   // Auto-sync with live detailedSubmissions (for batch result publishing and realtime updates)
   const currentDetailedSubmission = submissionResult 
     ? (detailedSubmissions.find((s) => s.id === submissionResult.id) || submissionResult)
-    : detailedSubmissions.find((s) => s.examId === exam.id && s.studentId === currentUser.id) || null;
+    : (exam ? detailedSubmissions.find((s) => s.examId === exam.id && s.studentId === currentUser.id) : null) || null;
 
   useEffect(() => {
+    if (!exam) return;
     if (!submissionResult) {
       const existing = detailedSubmissions.find((s) => s.examId === exam.id && s.studentId === currentUser.id);
       if (existing) {
@@ -142,42 +144,42 @@ export default function ExamPage({
         setIsSubmitted(true);
       }
     }
-  }, [detailedSubmissions, exam.id, currentUser.id, submissionResult]);
+  }, [detailedSubmissions, exam?.id, currentUser.id, submissionResult]);
 
   // Exam Instruction & Start Flow States
   const [isExamStarted, setIsExamStarted] = useState(false);
   const [termsAgreed, setTermsAgreed] = useState(false);
 
   // 100% Real Dynamic Metrics based on Teacher Exam Setup
-  const hasMcq = !isWrittenOnly && Boolean(exam.questions && exam.questions.length > 0);
+  const hasMcq = !isWrittenOnly && Boolean(exam?.questions && exam.questions.length > 0);
   const hasCq = (isCombined || isWrittenOnly) && Boolean(creativeQuestions && creativeQuestions.length > 0);
 
   const mcqMarksTotal = hasMcq
-    ? (isCombined ? (exam.mcqMarks || Math.max(0, exam.totalMarks - (exam.cqMarks || 70)) || 30) : exam.totalMarks)
+    ? (isCombined ? (exam?.mcqMarks || Math.max(0, (exam?.totalMarks || 100) - (exam?.cqMarks || 70)) || 30) : (exam?.totalMarks || 100))
     : 0;
 
   const cqMarksTotal = hasCq
-    ? (isCombined ? (exam.cqMarks || Math.max(0, exam.totalMarks - (exam.mcqMarks || 30)) || 70) : exam.totalMarks)
+    ? (isCombined ? (exam?.cqMarks || Math.max(0, (exam?.totalMarks || 100) - (exam?.mcqMarks || 30)) || 70) : (exam?.totalMarks || 100))
     : 0;
 
-  const totalMarksCalculated = isCombined ? (mcqMarksTotal + cqMarksTotal) : exam.totalMarks;
+  const totalMarksCalculated = isCombined ? (mcqMarksTotal + cqMarksTotal) : (exam?.totalMarks || 100);
 
   const mcqDurationMins = hasMcq
-    ? (isCombined ? (exam.mcqDurationMinutes || 25) : (exam.durationMinutes || 25))
+    ? (isCombined ? (exam?.mcqDurationMinutes || 25) : (exam?.durationMinutes || 25))
     : 0;
 
   const cqDurationMins = hasCq
-    ? (isCombined ? (exam.cqDurationMinutes || 100) : (exam.durationMinutes || 100))
+    ? (isCombined ? (exam?.cqDurationMinutes || 100) : (exam?.durationMinutes || 100))
     : 0;
 
   const totalDurationMins = isCombined ? (mcqDurationMins + cqDurationMins) : (isWrittenOnly ? cqDurationMins : mcqDurationMins);
 
-  const mcqCount = hasMcq ? exam.questions.length : 0;
+  const mcqCount = hasMcq && exam?.questions ? exam.questions.length : 0;
   const cqCount = hasCq ? creativeQuestions.length : 0;
   const totalQuestionsCount = mcqCount + cqCount;
 
   const markPerMcq = mcqCount > 0 ? Number((mcqMarksTotal / mcqCount).toFixed(2)) : 1;
-  const negMark = exam.negativeMarkPerWrong || 0.25;
+  const negMark = exam?.negativeMarkPerWrong || 0.25;
   const negMarkPercent = Math.round((negMark / (markPerMcq || 1)) * 100) || 25;
 
   // Compress uploaded CQ handwritten script images so they fit safely in localStorage and sync smoothly
@@ -264,17 +266,6 @@ export default function ExamPage({
     showToast('🗑️ ছবি মুছে ফেলা হয়েছে');
   };
 
-  // Check if student already completed this exam previously
-  useEffect(() => {
-    const existing = detailedSubmissions.find(
-      (s) => s.examId === exam.id && s.studentId === currentUser.id
-    );
-    if (existing) {
-      setIsSubmitted(true);
-      setSubmissionResult(existing);
-    }
-  }, [detailedSubmissions, exam.id, currentUser.id]);
-
   // MCQ Timer
   useEffect(() => {
     if (!userEnrolled || !isExamStarted || isSubmitted || isUpcoming || currentPhase !== 'mcq') return;
@@ -344,7 +335,7 @@ export default function ExamPage({
     let correct = 0;
     let wrong = 0;
 
-    exam.questions.forEach((q) => {
+    (exam?.questions || []).forEach((q: Question) => {
       const selected = selectedAnswers[q.id];
       if (selected !== undefined && selected !== null) {
         if (selected === q.correctOption) {
@@ -355,8 +346,8 @@ export default function ExamPage({
       }
     });
 
-    const mcqTotal = isCombined ? (exam.mcqMarks || 30) : exam.totalMarks;
-    const rawScore = correct * (mcqTotal / Math.max(1, exam.questions.length)) - wrong * (exam.negativeMarkPerWrong || 0.25);
+    const mcqTotal = isCombined ? (exam?.mcqMarks || 30) : (exam?.totalMarks || 100);
+    const rawScore = correct * (mcqTotal / Math.max(1, exam?.questions?.length || 1)) - wrong * (exam?.negativeMarkPerWrong || 0.25);
     return {
       correct,
       wrong,
@@ -370,6 +361,7 @@ export default function ExamPage({
   };
 
   const handleFinalSubmit = () => {
+    if (!exam) return;
     const { correct, wrong, mcqScore } = calculateMcqScore();
 
     // CQ score calculation: award simulated marks based on student written completion
@@ -424,8 +416,8 @@ export default function ExamPage({
     setWrittenAnswers({});
     setCqImages({});
     setFlaggedQuestions({});
-    setMcqSecondsRemaining((exam.mcqDurationMinutes || exam.durationMinutes || 25) * 60);
-    setCqSecondsRemaining((exam.cqDurationMinutes || 100) * 60);
+    setMcqSecondsRemaining((exam?.mcqDurationMinutes || exam?.durationMinutes || 25) * 60);
+    setCqSecondsRemaining((exam?.cqDurationMinutes || 100) * 60);
     setCurrentPhase(isWrittenOnly ? 'cq' : 'mcq');
   };
 
@@ -436,8 +428,36 @@ export default function ExamPage({
   };
 
   const answeredMcqCount = Object.keys(selectedAnswers).length;
-  const currentQ = exam.questions[currentQuestionIndex];
+  const currentQ = exam?.questions?.[currentQuestionIndex];
   const currentCq = creativeQuestions[currentCqIndex];
+
+  if (!isMounted || (loadingExam && !exam)) {
+    return (
+      <div className="bg-[#f8f9fc] min-h-screen pb-24 pt-12 flex items-center justify-center px-4">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-4 border-[#ed347d] border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-xs text-slate-500 font-bold">পরীক্ষার তথ্য লোড হচ্ছে...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!exam) {
+    return (
+      <div className="bg-[#f8f9fc] min-h-screen pb-24 pt-12 flex items-center justify-center px-4">
+        <div className="bg-white rounded-3xl p-8 sm:p-12 max-w-md w-full border border-slate-200/80 shadow-lg text-center space-y-4">
+          <div className="w-16 h-16 mx-auto rounded-3xl bg-pink-50 border border-pink-200 flex items-center justify-center text-[#ed347d]">
+            <Award className="w-8 h-8" />
+          </div>
+          <h2 className="text-xl font-bold text-slate-800">পরীক্ষাটি খুঁজে পাওয়া যায়নি</h2>
+          <p className="text-xs text-slate-500">হয়তো পরীক্ষাটি এখনো তৈরি বা পাবলিশ হয়নি অথবা লিংকটি সঠিক নয়।</p>
+          <Link href="/exam" className="inline-block px-6 py-2.5 rounded-full text-xs font-bold text-white ph-btn-pink">
+            সকল পরীক্ষা দেখুন
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   // Access check
   if (!userEnrolled) {
@@ -950,7 +970,7 @@ export default function ExamPage({
 
                 {/* All Questions Stacked Vertically (Image 1 exact style) */}
                 <div className="space-y-5">
-                  {exam.questions.map((q, qIndex) => {
+                  {exam.questions.map((q: Question, qIndex: number) => {
                     const optionLetters = ['A', 'B', 'C', 'D'];
                     const chosenOptIdx = selectedAnswers[q.id];
 
@@ -984,7 +1004,7 @@ export default function ExamPage({
 
                         {/* Options List: (A), (B), (C), (D) */}
                         <div className="space-y-2 pt-1">
-                          {q.options.map((opt, optIdx) => {
+                          {q.options.map((opt: string, optIdx: number) => {
                             const isSelected = chosenOptIdx === optIdx;
 
                             return (
@@ -1416,7 +1436,7 @@ export default function ExamPage({
                       <span>📝</span> MCQ অংশের উত্তরমালা ও ব্যাখ্যা
                     </h3>
 
-                    {exam.questions.map((q, idx) => {
+                    {exam.questions.map((q: Question, idx: number) => {
                       const studentAns = selectedAnswers[q.id];
                       const isCorrect = studentAns === q.correctOption;
                       const isUnanswered = studentAns === undefined;
@@ -1446,7 +1466,7 @@ export default function ExamPage({
                           <p className="text-xs sm:text-sm font-bold text-slate-800 mb-2">{q.text}</p>
 
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mb-3">
-                            {q.options.map((opt, oIdx) => (
+                            {q.options.map((opt: string, oIdx: number) => (
                               <div
                                 key={oIdx}
                                 className={`p-2.5 rounded-xl border flex items-center gap-2 ${

@@ -132,6 +132,7 @@ export default function TeacherDashboardPage() {
     teacherKycList,
     loginWithApi,
     registerWithApi,
+    loadFullCourse,
   } = useApp();
   
   // ==================== TEACHER AUTH STATES ====================
@@ -694,7 +695,7 @@ export default function TeacherDashboardPage() {
   const [evalPartMarks, setEvalPartMarks] = useState<Record<string, Record<string, number>>>({});
   const [evalTeacherFeedback, setEvalTeacherFeedback] = useState<string>('');
   const [evalLightboxImage, setEvalLightboxImage] = useState<string | null>(null);
-  const [evaluationTab, setEvaluationTab] = useState<'all' | 'pending' | 'evaluated'>('pending');
+  const [evaluationTab, setEvaluationTab] = useState<'all' | 'pending' | 'evaluated' | 'published'>('pending');
 
   // Question Bank States
   const [qbCourseId, setQbCourseId] = useState(teacherCourses[0]?.id || '');
@@ -846,6 +847,12 @@ export default function TeacherDashboardPage() {
     try {
       localStorage.setItem('adommo_active_teacher_course', courseId);
     } catch {}
+
+    // Eagerly hydrate full lectures, notes, and sections from DB to prevent partial overwrites
+    if (courseId) {
+      loadFullCourse(courseId).catch(() => {});
+    }
+
     const targetCourse = courses.find((c) => c.id === courseId);
     const filterData = getCategorizedCourseData(targetCourse);
 
@@ -10433,8 +10440,8 @@ export default function TeacherDashboardPage() {
                   const selectedExamObj = isAll ? null : allDisplayedExams.find((e) => e.id === targetExamId);
                   const examSubs = isAll ? detailedSubmissions : detailedSubmissions.filter((s) => s.examId === targetExamId);
 
-                  const avgScore = examSubs.length > 0 ? (examSubs.reduce((s, i) => s + i.score, 0) / examSubs.length).toFixed(1) : 0;
-                  const highestScore = examSubs.length > 0 ? Math.max(...examSubs.map((i) => i.score)) : 0;
+                  const avgScore = examSubs.length > 0 ? (examSubs.reduce((s, i) => s + (Number(i.score) || 0), 0) / examSubs.length).toFixed(1) : '0.0';
+                  const highestScore = examSubs.length > 0 ? Math.max(0, ...examSubs.map((i) => Number(i.score) || 0)) : 0;
                   const passedCount = examSubs.filter((i) => i.isPassed).length;
                   const passRate = examSubs.length > 0 ? Math.round((passedCount / examSubs.length) * 100) : 0;
 
@@ -10578,7 +10585,7 @@ export default function TeacherDashboardPage() {
                                         type="button"
                                         onClick={() => {
                                           setEvaluatingSubmission(sub);
-                                          setEvalPartMarks(sub.partMarks || {});
+                                          setEvalPartMarks(sub.partMarks && Object.keys(sub.partMarks).length > 0 ? sub.partMarks : (sub.cqScore ? { general: { total: sub.cqScore } } : {}));
                                           setEvalTeacherFeedback(sub.teacherFeedback || '');
                                         }}
                                         className={`px-3 py-1.5 rounded-xl text-[11px] font-bold inline-flex items-center gap-1.5 transition-all shadow-xs cursor-pointer ${
@@ -10611,13 +10618,16 @@ export default function TeacherDashboardPage() {
                   const cqSubs = detailedSubmissions.filter(
                     (s) => s.examType === 'combined' || s.examType === 'written' || (s.cqImages && Object.keys(s.cqImages).length > 0)
                   );
-                  const pendingSubs = cqSubs.filter((s) => s.status === 'pending_evaluation' || s.status !== 'evaluated');
+                  const pendingSubs = cqSubs.filter((s) => s.status === 'pending_evaluation');
                   const evaluatedSubs = cqSubs.filter((s) => s.status === 'evaluated');
+                  const publishedSubs = cqSubs.filter((s) => s.status === 'published');
 
                   const displayedSubs = evaluationTab === 'pending' 
                     ? pendingSubs 
                     : evaluationTab === 'evaluated' 
                     ? evaluatedSubs 
+                    : evaluationTab === 'published'
+                    ? publishedSubs
                     : cqSubs;
 
                   return (
@@ -10643,6 +10653,7 @@ export default function TeacherDashboardPage() {
                             { id: 'all', label: `সকল (${cqSubs.length})` },
                             { id: 'pending', label: `মূল্যায়ন বাকি (${pendingSubs.length})` },
                             { id: 'evaluated', label: `মূল্যায়িত (${evaluatedSubs.length})` },
+                            { id: 'published', label: `প্রকাশিত (${publishedSubs.length})` },
                           ].map((t) => (
                             <button
                               key={t.id}
@@ -10745,11 +10756,13 @@ export default function TeacherDashboardPage() {
                                   </div>
 
                                   <span className={`px-2.5 py-1 rounded-full text-[10px] font-black shrink-0 ${
-                                    sub.status === 'evaluated'
+                                    sub.status === 'published'
+                                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                      : sub.status === 'evaluated'
                                       ? 'bg-purple-100 text-purple-800 border border-purple-200'
                                       : 'bg-amber-100 text-amber-800 border border-amber-200'
                                   }`}>
-                                    {sub.status === 'evaluated' ? '✓ মূল্যায়িত' : '⏳ মূল্যায়ন বাকি'}
+                                    {sub.status === 'published' ? '🎉 ফলাফল প্রকাশিত' : sub.status === 'evaluated' ? '✓ মূল্যায়িত' : '⏳ মূল্যায়ন বাকি'}
                                   </span>
                                 </div>
 
@@ -10788,7 +10801,7 @@ export default function TeacherDashboardPage() {
                                   type="button"
                                   onClick={() => {
                                     setEvaluatingSubmission(sub);
-                                    setEvalPartMarks(sub.partMarks || {});
+                                    setEvalPartMarks(sub.partMarks && Object.keys(sub.partMarks).length > 0 ? sub.partMarks : (sub.cqScore ? { general: { total: sub.cqScore } } : {}));
                                     setEvalTeacherFeedback(sub.teacherFeedback || '');
                                   }}
                                   className={`w-full py-2.5 rounded-2xl text-xs font-black flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs ${
@@ -11094,16 +11107,20 @@ export default function TeacherDashboardPage() {
               : teacherEnrollments.filter((e) => e.courseId === coursewiseFilterId);
 
             // Filtered submissions for results tab
-            const teacherSubmissions = detailedSubmissions.filter((s) => teacherCourseIds.includes(s.courseId));
+            const teacherSubmissions = detailedSubmissions.filter((s) => {
+              if (s.courseId && teacherCourseIds.includes(s.courseId)) return true;
+              const linkedExam = exams.find((e) => e.id === s.examId);
+              if (linkedExam && teacherCourseIds.includes(linkedExam.courseId)) return true;
+              return false;
+            });
             const filteredStudentResults = teacherSubmissions.filter((s) => {
               if (studentResultsExamFilter !== 'all' && s.examId !== studentResultsExamFilter) return false;
               if (studentResultsSearch.trim()) {
                 const q = studentResultsSearch.toLowerCase().trim();
-                return (
-                  s.studentName.toLowerCase().includes(q) ||
-                  s.examTitle.toLowerCase().includes(q) ||
-                  s.courseTitle.toLowerCase().includes(q)
-                );
+                const sName = (s.studentName || '').toLowerCase();
+                const sExam = (s.examTitle || exams.find((e) => e.id === s.examId)?.title || '').toLowerCase();
+                const sCourse = (s.courseTitle || courses.find((c) => c.id === s.courseId)?.title || '').toLowerCase();
+                return sName.includes(q) || sExam.includes(q) || sCourse.includes(q);
               }
               return true;
             });

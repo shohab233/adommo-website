@@ -391,11 +391,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       .catch((err) => console.log('Enrollments sync completed', err));
 
     // Hydrate real exams from DB
-    fetch('/api/exams')
+    fetch(`/api/exams?t=${Date.now()}`, { credentials: 'include' })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data && data.success && Array.isArray(data.exams)) {
-          setExams(data.exams);
+          setExams((prev) => {
+            const map = new Map<string, Exam>();
+            prev.forEach((e) => map.set(e.id, e));
+            data.exams.forEach((e: Exam) => map.set(e.id, e));
+            return Array.from(map.values());
+          });
         }
       })
       .catch((err) => console.log('Exams sync completed', err));
@@ -444,12 +449,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       .catch((err) => console.log('Coupons sync completed', err));
 
     // Hydrate submissions from DB
-    fetch('/api/exams/submit')
+    fetch(`/api/exams/submit?t=${Date.now()}`, { credentials: 'include' })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data && data.success) {
           if (Array.isArray(data.submissions) && data.submissions.length > 0) {
-            setDetailedSubmissions(data.submissions);
+            setDetailedSubmissions((prev) => {
+              const map = new Map<string, any>();
+              prev.forEach((s) => map.set(s.id, s));
+              data.submissions.forEach((s: any) => map.set(s.id, s));
+              return Array.from(map.values());
+            });
           }
           if (Array.isArray(data.leaderboard) && data.leaderboard.length > 0) {
             setLeaderboard(data.leaderboard);
@@ -1274,7 +1284,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const updateLecture = (courseId: string, moduleId: string, lectureId: string, updatedData: Partial<Lecture>) => {
     setCourses((prevCourses) => {
-      let targetModules: any = null;
+      let targetCourse: Course | undefined;
       const updated = prevCourses.map((course) => {
         if (course.id !== courseId) return course;
 
@@ -1288,21 +1298,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           };
         });
 
-        targetModules = updatedModules;
-        return {
+        targetCourse = {
           ...course,
           modules: updatedModules,
         };
+        return targetCourse;
       });
       try {
         localStorage.setItem('adommo_courses', JSON.stringify(updated));
+        window.dispatchEvent(new Event('adommo_courses_updated'));
       } catch {}
 
-      if (targetModules) {
-        fetch('/api/courses', {
+      if (targetCourse) {
+        fetch(`/api/courses?t=${Date.now()}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: courseId, modules: targetModules }),
+          credentials: 'include',
+          body: JSON.stringify(targetCourse),
         }).catch((err) => console.log('Lecture update sync error', err));
       }
 
@@ -1313,8 +1325,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const deleteLecture = (courseId: string, moduleId: string, lectureId: string) => {
     setCourses((prevCourses) => {
-      let targetModules: any = null;
-      let targetTotalLecs = 0;
+      let targetCourse: Course | undefined;
       const updated = prevCourses.map((course) => {
         if (course.id !== courseId) return course;
 
@@ -1327,24 +1338,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         });
 
         const totalLecs = updatedModules.reduce((sum, m) => sum + (m.lectures?.length || 0), 0);
-        targetModules = updatedModules;
-        targetTotalLecs = totalLecs;
-
-        return {
+        targetCourse = {
           ...course,
           totalLectures: totalLecs,
           modules: updatedModules,
         };
+        return targetCourse;
       });
       try {
         localStorage.setItem('adommo_courses', JSON.stringify(updated));
+        window.dispatchEvent(new Event('adommo_courses_updated'));
       } catch {}
 
-      if (targetModules) {
-        fetch('/api/courses', {
+      if (targetCourse) {
+        fetch(`/api/courses?t=${Date.now()}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: courseId, modules: targetModules, totalLectures: targetTotalLecs }),
+          credentials: 'include',
+          body: JSON.stringify(targetCourse),
         }).catch((err) => console.log('Lecture delete sync error', err));
       }
 
@@ -1419,9 +1430,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       } catch {}
 
       if (targetCourse) {
-        fetch('/api/courses', {
+        fetch(`/api/courses?t=${Date.now()}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify(targetCourse),
         }).catch((err) => console.log('Course lecture sync error:', err));
       }
@@ -1496,9 +1508,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       } catch {}
 
       if (targetCourse) {
-        fetch('/api/courses', {
+        fetch(`/api/courses?t=${Date.now()}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify(targetCourse),
         }).catch((err) => console.log('Course sheet sync error:', err));
       }
@@ -1541,9 +1554,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       } catch {}
 
       if (targetCourse) {
-        fetch('/api/courses', {
+        fetch(`/api/courses?t=${Date.now()}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify(targetCourse),
         }).catch((err) => console.log('Course sheet delete sync error:', err));
       }
@@ -1567,9 +1581,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
 
     // Persist new exam to DB
-    fetch('/api/exams', {
+    fetch(`/api/exams?t=${Date.now()}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify(newExam),
     }).catch((err) => console.log('Exam persist completed', err));
 
@@ -1586,9 +1601,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
 
     // Persist updated exam to DB
-    fetch('/api/exams', {
+    fetch(`/api/exams?t=${Date.now()}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ id: examId, ...updatedData }),
     }).catch((err) => console.log('Exam update completed', err));
 
@@ -1605,8 +1621,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
 
     // Delete exam from DB
-    fetch(`/api/exams?id=${examId}`, {
+    fetch(`/api/exams?id=${examId}&t=${Date.now()}`, {
       method: 'DELETE',
+      credentials: 'include',
     }).catch((err) => console.log('Exam delete completed', err));
 
     showToast('🗑️ পরীক্ষা সফলভাবে মুছে ফেলা হয়েছে!');
@@ -1824,6 +1841,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setLeaderboard((prev) => [newRankEntry, ...prev]);
     }
 
+    // Persist detailed submission to DB & MongoDB Atlas
+    fetch(`/api/exams/submit?t=${Date.now()}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        id: newSubmission.id,
+        examId: newSubmission.examId,
+        studentId: newSubmission.studentId,
+        studentName: newSubmission.studentName,
+        college: newSubmission.studentCollege,
+        score: newSubmission.score,
+        mcqScore: newSubmission.mcqScore,
+        cqScore: newSubmission.cqScore,
+        totalMarks: newSubmission.totalMarks,
+        answers: {},
+        writtenAnswers: newSubmission.writtenAnswers,
+        detailedSubmission: newSubmission,
+        status,
+      }),
+    }).catch((err) => console.log('Detailed exam submit sync error:', err));
+
     return newSubmission;
   };
 
@@ -1863,9 +1902,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return updated;
     });
 
-    fetch('/api/exams/submit', {
+    fetch(`/api/exams/submit?t=${Date.now()}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({
         submissionId,
         cqMarksAwarded,
@@ -1884,9 +1924,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const publishBatchResults = (examId?: string): number => {
     let countPublished = 0;
-    fetch('/api/exams/submit', {
+    fetch(`/api/exams/submit?t=${Date.now()}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({
         action: 'publish_batch',
         examId,

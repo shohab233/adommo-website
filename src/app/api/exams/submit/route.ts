@@ -34,32 +34,56 @@ export async function POST(req: NextRequest) {
       finalScore = Math.max(0, Number(rawScore.toFixed(2)));
     }
 
+    const calculatedScore = body.score !== undefined ? Number(body.score) : finalScore;
+    const isSubjective = exam?.examType === 'written' || exam?.examType === 'combined' || Boolean(exam?.creativeQuestions?.length);
+    const subStatus = body.status || (isSubjective || exam?.resultPublishType === 'later' ? 'pending_evaluation' : 'published');
+
     const submission = await db.createAsync('submissions', {
+      id: body.id || detailedSubmission?.id || undefined,
       examId,
+      examTitle: exam?.title || body.examTitle || 'পরীক্ষা',
+      courseId: exam?.courseId || body.courseId || '',
+      courseTitle: exam?.courseTitle || body.courseTitle || '',
+      examType: exam?.examType || body.examType || 'mcq',
       studentId,
       studentName: studentName || 'শিক্ষার্থী',
       college: college || 'কলেজ',
-      score: finalScore,
+      score: calculatedScore,
+      mcqScore: body.mcqScore !== undefined ? Number(body.mcqScore) : finalScore,
+      cqScore: body.cqScore !== undefined ? Number(body.cqScore) : 0,
+      totalMarks: exam?.totalMarks || body.totalMarks || 100,
       correctAnswers: correct,
       wrongAnswers: wrong,
       unanswered,
-      selectedAnswers: answers || {},
+      selectedAnswers: answers || body.selectedAnswers || {},
+      writtenAnswers: body.writtenAnswers || detailedSubmission?.writtenAnswers || [],
       detailedSubmission: detailedSubmission || null,
+      status: subStatus,
       submittedAt: 'এইমাত্র',
     });
 
-    // Auto calculate Leaderboard rank in MongoDB Atlas
-    const leaderboardEntry = await db.createAsync('leaderboard', {
-      examId,
-      studentName: studentName || 'শিক্ষার্থী',
-      college: college || 'কলেজ',
-      score: finalScore,
-      totalMarks: exam?.totalMarks || 100,
-      accuracy: Math.round((correct / (correct + wrong || 1)) * 100),
-      submittedAt: 'এইমাত্র',
-    });
+    // Auto calculate Leaderboard rank in MongoDB Atlas if published
+    let leaderboardEntry = null;
+    if (subStatus === 'published') {
+      leaderboardEntry = await db.createAsync('leaderboard', {
+        examId,
+        studentName: studentName || 'শিক্ষার্থী',
+        college: college || 'কলেজ',
+        score: calculatedScore,
+        totalMarks: exam?.totalMarks || 100,
+        accuracy: Math.round((correct / Math.max(1, correct + wrong)) * 100),
+        submittedAt: 'এইমাত্র',
+      });
+    }
 
-    return NextResponse.json({ success: true, submission, leaderboardEntry });
+    return NextResponse.json(
+      { success: true, submission, leaderboardEntry },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        },
+      }
+    );
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
@@ -69,7 +93,14 @@ export async function GET(req: NextRequest) {
   try {
     const submissions = await db.findManyAsync<any>('submissions') || [];
     const leaderboard = await db.findManyAsync<any>('leaderboard') || [];
-    return NextResponse.json({ success: true, submissions, leaderboard });
+    return NextResponse.json(
+      { success: true, submissions, leaderboard },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        },
+      }
+    );
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
@@ -91,11 +122,18 @@ export async function PATCH(req: NextRequest) {
           }
         }
       }
-      return NextResponse.json({ success: true, countPublished: count });
+      return NextResponse.json(
+        { success: true, countPublished: count },
+        {
+          headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          },
+        }
+      );
     }
 
     if (submissionId) {
-      const target = await db.findOneAsync<any>('submissions', (s: any) => s.id === submissionId);
+      const target = await db.findOneAsync<any>('submissions', { id: submissionId });
       if (target) {
         const mcq = target.mcqScore || target.score || 0;
         const cq = Number(cqMarksAwarded) || 0;
@@ -108,7 +146,14 @@ export async function PATCH(req: NextRequest) {
           status: publishImmediately ? 'published' : 'evaluated',
           evaluatedAt: new Date().toLocaleDateString('bn-BD'),
         });
-        return NextResponse.json({ success: true, submission: updated });
+        return NextResponse.json(
+          { success: true, submission: updated },
+          {
+            headers: {
+              'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+            },
+          }
+        );
       }
     }
 
