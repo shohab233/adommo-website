@@ -12,6 +12,7 @@ import {
   LayoutDashboard, 
   BookOpen, 
   Layers, 
+  FolderTree,
   GraduationCap, 
   Users, 
   HelpCircle, 
@@ -22,6 +23,7 @@ import {
   PlusCircle, 
   Video, 
   FileText, 
+  FileEdit,
   Award, 
   Eye, 
   EyeOff, 
@@ -532,6 +534,8 @@ export default function TeacherDashboardPage() {
   // Search and filter states for My Courses module
   const [courseSearchQuery, setCourseSearchQuery] = useState<string>('');
   const [courseCategoryFilter, setCourseCategoryFilter] = useState<string>('all');
+  const [actionLoadingCourseId, setActionLoadingCourseId] = useState<string | null>(null);
+  const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
 
   // ==================== FORM STATES FOR ALL 10 MODULES ====================
   // 1. Multi-Step Course Creation Wizard State (7 Steps)
@@ -1250,6 +1254,9 @@ export default function TeacherDashboardPage() {
 
     setActiveMenu('courses');
     setActiveSubMenu('courses_create');
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
     showToast(`✏️ '${c.title.slice(0, 24)}...' কোর্সটি এডিট করার জন্য প্রস্তুত করা হয়েছে।`);
   };
 
@@ -4309,103 +4316,119 @@ export default function TeacherDashboardPage() {
                             </div>
                           </div>
 
-                          <div className="p-5 pt-0 flex gap-2 flex-wrap items-center">
-                            <button
-                              type="button"
-                              onClick={() => startEditingCourse(c)}
-                              className="px-2.5 py-2 rounded-xl text-xs font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 flex items-center gap-1 cursor-pointer transition-colors"
-                              title="কোর্স তথ্য ও মূল্য এডিট করুন"
-                            >
-                              <Edit3 className="w-3.5 h-3.5 text-amber-600" />
-                              <span>এডিট</span>
-                            </button>
-
-                            {c.isDraft || c.isPublished === false ? (
+                          <div className="p-5 pt-0 space-y-2.5">
+                            {/* Primary Action Buttons */}
+                            <div className="grid grid-cols-2 gap-2">
                               <button
                                 type="button"
                                 onClick={() => {
-                                  updateCourse(c.id, { isDraft: false, isPublished: true });
-                                  showToast(`🎉 "${c.title}" কোর্সটি সরাসরি লাইভ পাবলিশ করা হয়েছে!`);
+                                  handleSelectCourse(c.id);
+                                  setActiveMenu('content');
+                                  setActiveSubMenu('content_lectures');
+                                  if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
+                                  showToast(`📚 "${c.title.slice(0, 22)}..." কোর্সের কনটেন্ট ম্যানেজার ওপেন হয়েছে`);
                                 }}
-                                className="px-2.5 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 flex items-center gap-1 cursor-pointer transition-colors shadow-xs"
-                                title="সরাসরি পাবলিশ করুন"
+                                className="py-2.5 px-3 rounded-xl text-xs font-bold text-white ph-btn-pink flex items-center justify-center gap-1.5 shadow-xs hover:shadow transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                                title="কোর্সের ক্লাস, অধ্যায় ও শিট পরিচালনা করুন"
                               >
-                                <CheckCircle2 className="w-3.5 h-3.5" />
-                                <span>পাবলিশ</span>
+                                <FolderTree className="w-3.5 h-3.5" />
+                                <span>কনটেন্ট</span>
                               </button>
-                            ) : (
+
                               <button
                                 type="button"
-                                onClick={() => {
-                                  updateCourse(c.id, { isDraft: true, isPublished: false });
-                                  showToast(`📁 "${c.title}" কোর্সটি ড্রাফট (খসড়া) করা হয়েছে!`);
-                                }}
-                                className="px-2.5 py-2 rounded-xl text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200 flex items-center gap-1 cursor-pointer transition-colors"
-                                title="ড্রাফটে পাঠান"
+                                onClick={() => startEditingCourse(c)}
+                                className="py-2.5 px-3 rounded-xl text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 flex items-center justify-center gap-1.5 transition-all shadow-xs hover:shadow cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                                title="কোর্স তথ্য ও মূল্য এডিট করুন"
                               >
-                                <Bookmark className="w-3.5 h-3.5 text-amber-600" />
-                                <span>ড্রাফট</span>
+                                <Edit3 className="w-3.5 h-3.5 text-amber-700" />
+                                <span>এডিট</span>
                               </button>
-                            )}
+                            </div>
 
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (confirm(`আপনি কি "${c.title}" কোর্সটি আর্কাইভ করতে চান? এটি সক্রিয় তালিকা থেকে লুকিয়ে আর্কাইভ ট্যাবে থাকবে।`)) {
+                            {/* Utility Toolbar Row */}
+                            <div className="flex items-center justify-between gap-1 pt-2 border-t border-slate-100">
+                              {/* Status Toggle (Publish / Draft) */}
+                              {c.isDraft || c.isPublished === false ? (
+                                <button
+                                  type="button"
+                                  disabled={actionLoadingCourseId === c.id}
+                                  onClick={() => {
+                                    setActionLoadingCourseId(c.id);
+                                    updateCourse(c.id, { isDraft: false, isPublished: true });
+                                    showToast(`🎉 "${c.title}" কোর্সটি সরাসরি লাইভ পাবলিশ করা হয়েছে!`);
+                                    setTimeout(() => setActionLoadingCourseId(null), 400);
+                                  }}
+                                  className="flex-1 py-1.5 px-2 rounded-lg text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                                  title="সরাসরি লাইভ পাবলিশ করুন"
+                                >
+                                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                  <span>পাবলিশ</span>
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  disabled={actionLoadingCourseId === c.id}
+                                  onClick={() => {
+                                    setActionLoadingCourseId(c.id);
+                                    updateCourse(c.id, { isDraft: true, isPublished: false });
+                                    showToast(`📁 "${c.title}" ড্রাফট করা হয়েছে! "Draft Courses" ট্যাবে স্থানান্তরিত হয়েছে।`);
+                                    setTimeout(() => setActionLoadingCourseId(null), 400);
+                                  }}
+                                  className="flex-1 py-1.5 px-2 rounded-lg text-[11px] font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                                  title="ড্রাফটে পাঠান"
+                                >
+                                  <Bookmark className="w-3 h-3 text-amber-600" />
+                                  <span>ড্রাফট</span>
+                                </button>
+                              )}
+
+                              {/* Archive Button */}
+                              <button
+                                type="button"
+                                disabled={actionLoadingCourseId === c.id}
+                                onClick={() => {
+                                  setActionLoadingCourseId(c.id);
                                   updateCourse(c.id, { isArchived: true });
-                                  showToast(`📦 "${c.title}" কোর্সটি সফলভাবে আর্কাইভ করা হয়েছে!`);
-                                }
-                              }}
-                              className="px-2.5 py-2 rounded-xl text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 flex items-center gap-1 cursor-pointer transition-colors"
-                              title="কোর্স আর্কাইভ করুন"
-                            >
-                              <Archive className="w-3.5 h-3.5 text-purple-600" />
-                            </button>
+                                  showToast(`📦 "${c.title}" আর্কাইভ করা হয়েছে! "Archived Courses" ট্যাবে পাবেন।`);
+                                  setTimeout(() => setActionLoadingCourseId(null), 400);
+                                }}
+                                className="p-1.5 rounded-lg text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 cursor-pointer transition-colors"
+                                title="কোর্স আর্কাইভ করুন"
+                              >
+                                <Archive className="w-3.5 h-3.5" />
+                              </button>
 
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (confirm(`আপনি কি নিশ্চিত যে "${c.title}" কোর্সটি ডিলিট করতে চান? এর সকল অধ্যায় ও ক্লাস মুছে যাবে।`)) {
-                                  deleteCourse(c.id);
-                                  showToast('🗑️ কোর্সটি সফলভাবে মুছে ফেলা হয়েছে!');
-                                }
-                              }}
-                              className="px-2 py-2 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 flex items-center gap-1 cursor-pointer transition-colors"
-                              title="কোর্স মুছুন"
-                            >
-                              <Trash2 className="w-3.5 h-3.5 text-rose-600" />
-                            </button>
+                              {/* Public Preview */}
+                              <Link
+                                href={`/courses/${c.id}`}
+                                target="_blank"
+                                className="p-1.5 rounded-lg text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
+                                title="কোর্স পেজ প্রিভিউ"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5 text-[#ed347d]" />
+                              </Link>
 
-                            <button
-                              type="button"
-                              onClick={() => {
-                                handleSelectCourse(c.id);
-                                setActiveMenu('content');
-                                setActiveSubMenu('content_lectures');
-                              }}
-                              className="flex-1 py-2 rounded-xl text-xs font-bold text-white ph-btn-pink text-center cursor-pointer shadow-xs"
-                              title="কোর্সের ক্লাস, অধ্যায় ও শিট পরিচালনা করুন"
-                            >
-                              কনটেন্ট
-                            </button>
+                              {/* Classroom Player View */}
+                              <Link
+                                href={`/classroom/${c.id}`}
+                                target="_blank"
+                                className="p-1.5 rounded-lg text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition-colors"
+                                title="শিক্ষার্থী ক্লাসরুম ভিউ"
+                              >
+                                <GraduationCap className="w-3.5 h-3.5 text-indigo-600" />
+                              </Link>
 
-                            <Link
-                              href={`/courses/${c.id}`}
-                              target="_blank"
-                              className="px-2.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 flex items-center gap-1 cursor-pointer transition-colors"
-                              title="কোর্স পেজ প্রিভিউ (শিক্ষার্থীদের জন্য)"
-                            >
-                              <ExternalLink className="w-3.5 h-3.5 text-[#ed347d]" />
-                            </Link>
-
-                            <Link
-                              href={`/classroom/${c.id}`}
-                              target="_blank"
-                              className="px-2.5 py-2 rounded-xl text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 flex items-center gap-1 cursor-pointer transition-colors"
-                              title="লাইভ ক্লাসরুম ভিউ (ভিডিও ও ওএমআর প্লেয়ার)"
-                            >
-                              <GraduationCap className="w-3.5 h-3.5 text-indigo-600" />
-                            </Link>
+                              {/* Delete Button */}
+                              <button
+                                type="button"
+                                onClick={() => setCourseToDelete(c)}
+                                className="p-1.5 rounded-lg text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 cursor-pointer transition-colors"
+                                title="কোর্স ডিলিট করুন"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </div>
                         </div>
                       );
@@ -5863,82 +5886,101 @@ export default function TeacherDashboardPage() {
                                 </div>
                               </div>
 
-                              <div className="p-5 pt-0 flex gap-2 flex-wrap items-center">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    updateCourse(c.id, { isDraft: false, isPublished: true });
-                                    showToast(`🎉 "${c.title}" কোর্সটি সরাসরি লাইভ পাবলিশ করা হয়েছে!`);
-                                  }}
-                                  className="px-2.5 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 flex items-center justify-center gap-1 cursor-pointer transition-colors shadow-xs"
-                                  title="সরাসরি লাইভ পাবলিশ করুন"
-                                >
-                                  <CheckCircle2 className="w-3.5 h-3.5" />
-                                  <span>পাবলিশ</span>
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => startEditingCourse(c)}
-                                  className="px-2.5 py-2 rounded-xl text-xs font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 border border-amber-300 flex items-center justify-center gap-1 cursor-pointer transition-colors"
-                                  title="কোর্স তথ্য ও মূল্য এডিট করুন"
-                                >
-                                  <Edit3 className="w-3.5 h-3.5 text-amber-700" />
-                                  <span>এডিট</span>
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    handleSelectCourse(c.id);
-                                    setActiveMenu('content');
-                                    setActiveSubMenu('content_lectures');
-                                  }}
-                                  className="flex-1 py-2 rounded-xl text-xs font-bold text-white ph-btn-pink text-center cursor-pointer shadow-xs"
-                                  title="ড্রাফট কোর্সের ক্লাস, অধ্যায় ও শিট পরিচালনা করুন"
-                                >
-                                  কনটেন্ট
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    if (confirm(`আপনি কি "${c.title}" ড্রাফট কোর্সটি আর্কাইভ করতে চান?`)) {
+                              <div className="p-5 pt-0 space-y-2.5">
+                                {/* Primary Action Buttons */}
+                                <div className="grid grid-cols-2 gap-2">
+                                  <button
+                                    type="button"
+                                    disabled={actionLoadingCourseId === c.id}
+                                    onClick={() => {
+                                      setActionLoadingCourseId(c.id);
+                                      updateCourse(c.id, { isDraft: false, isPublished: true });
+                                      showToast(`🎉 "${c.title}" লাইভ পাবলিশ হয়েছে! এটি এখন "Published Courses" তালিকায় দৃশ্যমান।`);
+                                      setTimeout(() => setActionLoadingCourseId(null), 400);
+                                    }}
+                                    className="py-2.5 px-3 rounded-xl text-xs font-black text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-sm hover:shadow flex items-center justify-center gap-1.5 transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                                    title="সরাসরি লাইভ পাবলিশ করুন"
+                                  >
+                                    <Sparkles className="w-3.5 h-3.5" />
+                                    <span>লাইভ পাবলিশ</span>
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => startEditingCourse(c)}
+                                    className="py-2.5 px-3 rounded-xl text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 flex items-center justify-center gap-1.5 transition-all shadow-xs hover:shadow cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                                    title="কোর্স তথ্য ও মূল্য এডিট করুন"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5 text-amber-700" />
+                                    <span>এডিট</span>
+                                  </button>
+                                </div>
+
+                                {/* Utility Toolbar Row */}
+                                <div className="flex items-center justify-between gap-1 pt-2 border-t border-slate-100">
+                                  {/* Content Manager Button */}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      handleSelectCourse(c.id);
+                                      setActiveMenu('content');
+                                      setActiveSubMenu('content_lectures');
+                                      if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
+                                      showToast(`📚 "${c.title.slice(0, 22)}..." কোর্সের কনটেন্ট ম্যানেজার ওপেন হয়েছে`);
+                                    }}
+                                    className="flex-1 py-1.5 px-2 rounded-lg text-[11px] font-bold text-pink-700 bg-pink-50 hover:bg-pink-100 border border-pink-200 flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                                    title="ড্রাফট কোর্সের ক্লাস ও শিট পরিচালনা করুন"
+                                  >
+                                    <FolderTree className="w-3 h-3 text-[#ed347d]" />
+                                    <span>কনটেন্ট</span>
+                                  </button>
+
+                                  {/* Archive Button */}
+                                  <button
+                                    type="button"
+                                    disabled={actionLoadingCourseId === c.id}
+                                    onClick={() => {
+                                      setActionLoadingCourseId(c.id);
                                       updateCourse(c.id, { isArchived: true });
-                                      showToast(`📦 "${c.title}" কোর্সটি আর্কাইভে রাখা হয়েছে!`);
-                                    }
-                                  }}
-                                  className="px-2.5 py-2 rounded-xl text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 flex items-center justify-center gap-1 cursor-pointer transition-colors"
-                                  title="আর্কাইভ করুন"
-                                >
-                                  <Archive className="w-3.5 h-3.5 text-purple-600" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    if (confirm(`আপনি কি নিশ্চিত যে "${c.title}" ড্রাফট কোর্সটি মুছে ফেলতে চান?`)) {
-                                      deleteCourse(c.id);
-                                      showToast('🗑️ ড্রাফট কোর্সটি মুছে ফেলা হয়েছে!');
-                                    }
-                                  }}
-                                  className="px-2 py-2 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 flex items-center justify-center gap-1 cursor-pointer transition-colors"
-                                  title="কোর্স মুছুন"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5 text-rose-600" />
-                                </button>
-                                <Link
-                                  href={`/courses/${c.id}`}
-                                  target="_blank"
-                                  className="px-2.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 flex items-center gap-1 cursor-pointer transition-colors"
-                                  title="কোর্স পেজ প্রিভিউ"
-                                >
-                                  <ExternalLink className="w-3.5 h-3.5 text-[#ed347d]" />
-                                </Link>
-                                <Link
-                                  href={`/classroom/${c.id}`}
-                                  target="_blank"
-                                  className="px-2.5 py-2 rounded-xl text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 flex items-center gap-1 cursor-pointer transition-colors"
-                                  title="ক্লাসরুম ভিউ"
-                                >
-                                  <GraduationCap className="w-3.5 h-3.5 text-indigo-600" />
-                                </Link>
+                                      showToast(`📦 "${c.title}" ড্রাফট কোর্সটি আর্কাইভে রাখা হয়েছে!`);
+                                      setTimeout(() => setActionLoadingCourseId(null), 400);
+                                    }}
+                                    className="p-1.5 rounded-lg text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 cursor-pointer transition-colors"
+                                    title="ড্রাফট কোর্সটি আর্কাইভ করুন"
+                                  >
+                                    <Archive className="w-3.5 h-3.5" />
+                                  </button>
+
+                                  {/* Public Preview */}
+                                  <Link
+                                    href={`/courses/${c.id}`}
+                                    target="_blank"
+                                    className="p-1.5 rounded-lg text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
+                                    title="কোর্স পেজ প্রিভিউ"
+                                  >
+                                    <ExternalLink className="w-3.5 h-3.5 text-[#ed347d]" />
+                                  </Link>
+
+                                  {/* Classroom Player View */}
+                                  <Link
+                                    href={`/classroom/${c.id}`}
+                                    target="_blank"
+                                    className="p-1.5 rounded-lg text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition-colors"
+                                    title="শিক্ষার্থী ক্লাসরুম ভিউ"
+                                  >
+                                    <GraduationCap className="w-3.5 h-3.5 text-indigo-600" />
+                                  </Link>
+
+                                  {/* Delete Button */}
+                                  <button
+                                    type="button"
+                                    onClick={() => setCourseToDelete(c)}
+                                    className="p-1.5 rounded-lg text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 cursor-pointer transition-colors"
+                                    title="ড্রাফট কোর্স ডিলিট করুন"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           );
@@ -6016,60 +6058,101 @@ export default function TeacherDashboardPage() {
                                 </div>
                               </div>
 
-                              <div className="p-5 pt-0 flex gap-2 flex-wrap items-center">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    updateCourse(c.id, { isArchived: false, isPublished: true });
-                                    showToast(`📦 "${c.title}" কোর্সটি পুনরায় সক্রিয় ও প্রকাশিত করা হয়েছে!`);
-                                  }}
-                                  className="flex-1 py-2 rounded-xl text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 flex items-center justify-center gap-1 cursor-pointer transition-colors shadow-xs"
-                                >
-                                  <RotateCcw className="w-3.5 h-3.5" />
-                                  <span>পুনরায় সক্রিয় করুন</span>
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => startEditingCourse(c)}
-                                  className="px-2.5 py-2 rounded-xl text-xs font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 flex items-center gap-1 cursor-pointer transition-colors"
-                                  title="কোর্স তথ্য ও মূল্য এডিট করুন"
-                                >
-                                  <Edit3 className="w-3.5 h-3.5 text-amber-600" />
-                                  <span>এডিট</span>
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    handleSelectCourse(c.id);
-                                    setActiveMenu('content');
-                                    setActiveSubMenu('content_lectures');
-                                  }}
-                                  className="px-3 py-2 rounded-xl text-xs font-bold text-white ph-btn-pink text-center cursor-pointer shadow-xs"
-                                  title="আর্কাইভড কোর্সের কনটেন্ট দেখুন"
-                                >
-                                  কনটেন্ট
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    if (confirm(`আপনি কি নিশ্চিত যে "${c.title}" আর্কাইভড কোর্সটি মুছে ফেলতে চান?`)) {
-                                      deleteCourse(c.id);
-                                      showToast('🗑️ কোর্সটি মুছে ফেলা হয়েছে!');
-                                    }
-                                  }}
-                                  className="px-2.5 py-2 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 flex items-center justify-center gap-1 cursor-pointer transition-colors"
-                                  title="কোর্স মুছুন"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5 text-rose-600" />
-                                </button>
-                                <Link
-                                  href={`/courses/${c.id}`}
-                                  target="_blank"
-                                  className="px-2.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 flex items-center gap-1 cursor-pointer transition-colors"
-                                  title="কোর্স পেজ প্রিভিউ"
-                                >
-                                  <ExternalLink className="w-3.5 h-3.5 text-[#ed347d]" />
-                                </Link>
+                              <div className="p-5 pt-0 space-y-2.5">
+                                {/* Primary Actions Row */}
+                                <div className="grid grid-cols-2 gap-2">
+                                  <button
+                                    type="button"
+                                    disabled={actionLoadingCourseId === c.id}
+                                    onClick={() => {
+                                      setActionLoadingCourseId(c.id);
+                                      updateCourse(c.id, { isArchived: false, isPublished: true, isDraft: false });
+                                      showToast(`🚀 "${c.title}" কোর্সটি পুনরায় সরাসরি পাবলিশ ও লাইভ করা হয়েছে!`);
+                                      setTimeout(() => setActionLoadingCourseId(null), 400);
+                                    }}
+                                    className="py-2.5 px-3 rounded-xl text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 flex items-center justify-center gap-1.5 transition-all shadow-xs hover:shadow cursor-pointer hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+                                    title="কোর্সটি পুনরায় প্রকাশ করে লাইভ করুন"
+                                  >
+                                    <RotateCcw className="w-3.5 h-3.5" />
+                                    <span>সক্রিয় করুন</span>
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => startEditingCourse(c)}
+                                    className="py-2.5 px-3 rounded-xl text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 flex items-center justify-center gap-1.5 transition-all shadow-xs hover:shadow cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                                    title="কোর্স তথ্য ও মূল্য এডিট করুন"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5 text-amber-700" />
+                                    <span>এডিট</span>
+                                  </button>
+                                </div>
+
+                                {/* Utility Toolbar Row */}
+                                <div className="flex items-center justify-between gap-1 pt-2 border-t border-slate-100">
+                                  {/* Unarchive to Draft Button */}
+                                  <button
+                                    type="button"
+                                    disabled={actionLoadingCourseId === c.id}
+                                    onClick={() => {
+                                      setActionLoadingCourseId(c.id);
+                                      updateCourse(c.id, { isArchived: false, isPublished: false, isDraft: true });
+                                      showToast(`📁 "${c.title}" কোর্সটি ড্রাফটে নেওয়া হয়েছে!`);
+                                      setTimeout(() => setActionLoadingCourseId(null), 400);
+                                    }}
+                                    className="flex-1 py-1.5 px-2 rounded-lg text-[11px] font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                                    title="আর্কাইভ থেকে ড্রাফট মোডে নিন"
+                                  >
+                                    <FileEdit className="w-3 h-3 text-amber-600" />
+                                    <span>ড্রাফটে নিন</span>
+                                  </button>
+
+                                  {/* Content Manager Button */}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      handleSelectCourse(c.id);
+                                      setActiveMenu('content');
+                                      setActiveSubMenu('content_lectures');
+                                      if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
+                                      showToast(`📚 "${c.title.slice(0, 22)}..." কোর্সের কনটেন্ট ম্যানেজার ওপেন হয়েছে`);
+                                    }}
+                                    className="p-1.5 rounded-lg text-pink-700 bg-pink-50 hover:bg-pink-100 border border-pink-200 cursor-pointer transition-colors"
+                                    title="আর্কাইভড কোর্সের কনটেন্ট দেখুন"
+                                  >
+                                    <FolderTree className="w-3.5 h-3.5 text-[#ed347d]" />
+                                  </button>
+
+                                  {/* Public Preview */}
+                                  <Link
+                                    href={`/courses/${c.id}`}
+                                    target="_blank"
+                                    className="p-1.5 rounded-lg text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
+                                    title="কোর্স পেজ প্রিভিউ"
+                                  >
+                                    <ExternalLink className="w-3.5 h-3.5 text-[#ed347d]" />
+                                  </Link>
+
+                                  {/* Classroom Player View */}
+                                  <Link
+                                    href={`/classroom/${c.id}`}
+                                    target="_blank"
+                                    className="p-1.5 rounded-lg text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition-colors"
+                                    title="শিক্ষার্থী ক্লাসরুম ভিউ"
+                                  >
+                                    <GraduationCap className="w-3.5 h-3.5 text-indigo-600" />
+                                  </Link>
+
+                                  {/* Delete Button */}
+                                  <button
+                                    type="button"
+                                    onClick={() => setCourseToDelete(c)}
+                                    className="p-1.5 rounded-lg text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 cursor-pointer transition-colors"
+                                    title="আর্কাইভড কোর্স ডিলিট করুন"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           );
@@ -6079,6 +6162,44 @@ export default function TeacherDashboardPage() {
                   </div>
                 );
               })()}
+
+              {/* Elegant In-App Delete Confirmation Modal */}
+              {courseToDelete && (
+                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+                  <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-5 animate-scale-up">
+                    <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
+                      <Trash2 className="w-6 h-6" />
+                    </div>
+                    <div className="text-center space-y-2">
+                      <h3 className="text-lg font-black text-slate-900">কোর্সটি মুছে ফেলতে চান?</h3>
+                      <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                        আপনি কি নিশ্চিত যে <span className="font-bold text-slate-900">"{courseToDelete.title}"</span> কোর্সটি স্থায়ীভাবে ডিলিট করতে চান? এই কোর্সের লেকচার, এক্সাম এবং সম্পর্কিত ডেটা মুছে যেতে পারে।
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setCourseToDelete(null)}
+                        className="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
+                      >
+                        বাতিল করুন
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const target = courseToDelete;
+                          setCourseToDelete(null);
+                          deleteCourse(target.id);
+                          showToast(`🗑️ "${target.title}" কোর্সটি স্থায়ীভাবে মুছে ফেলা হয়েছে!`);
+                        }}
+                        className="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 transition-colors shadow-xs cursor-pointer"
+                      >
+                        হ্যাঁ, ডিলিট করুন
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
