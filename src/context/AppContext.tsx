@@ -515,11 +515,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     syncConversations();
     syncEnrollments();
-    syncCourses();
     const livePollTimer = setInterval(() => {
       syncConversations();
       syncEnrollments();
-      syncCourses();
     }, 3000);
 
     return () => {
@@ -1186,13 +1184,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     // Persist updated course to DB outside pure state updater
     const payloadToSend = finalCourseToSave || { id: courseId, ...updatedData };
-    fetch('/api/courses', {
+    fetch(`/api/courses?t=${Date.now()}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify(payloadToSend),
     })
-      .then((res) => (res.ok ? res.json() : null))
+      .then(async (res) => {
+        const data = await res.json().catch(() => null);
+        if (!res.ok || !data?.success) {
+          console.warn('Course update response warning:', data?.error || res.statusText);
+          return null;
+        }
+        return data;
+      })
       .then((data) => {
         if (data && data.success && data.course) {
           setCourses((prev) => {

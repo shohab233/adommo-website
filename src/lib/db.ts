@@ -466,6 +466,9 @@ export const db = {
       const atlas = await getAtlasDb();
       if (atlas) {
         const filter: any = { $or: [{ id: cleanId }, { _id: cleanId }] };
+        if (ObjectId.isValid(cleanId) && cleanId.length === 24) {
+          filter.$or.push({ _id: new ObjectId(cleanId) });
+        }
         const res = await atlas.collection(collection).updateOne(filter, { $set: updateData });
         if (res.matchedCount === 0) {
           await atlas.collection(collection).replaceOne(
@@ -503,6 +506,8 @@ export const db = {
         }
       }
     } catch {}
+
+    invalidateCollectionCache(collection);
 
     return updatedDoc;
   },

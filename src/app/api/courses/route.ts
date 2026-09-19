@@ -23,8 +23,17 @@ export async function GET(req: NextRequest) {
       if (!rawCourse) {
         return NextResponse.json({ success: false, error: 'কোর্স পাওয়া যায়নি।' }, { status: 404 });
       }
+      const healed = healCourse(rawCourse);
       return NextResponse.json(
-        { success: true, course: healCourse(rawCourse) },
+        {
+          success: true,
+          course: {
+            ...healed,
+            isArchived: Boolean(healed.isArchived),
+            isDraft: Boolean(healed.isDraft),
+            isPublished: healed.isPublished !== false && !healed.isDraft,
+          },
+        },
         {
           headers: {
             'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
@@ -35,7 +44,15 @@ export async function GET(req: NextRequest) {
 
     // 2. Fetch all raw courses
     const rawCourses = (await db.findManyAsync<any>('courses')) || [];
-    let courses = rawCourses.map((c) => healCourse(c));
+    let courses = rawCourses.map((c) => {
+      const healed = healCourse(c);
+      return {
+        ...healed,
+        isArchived: Boolean(healed.isArchived),
+        isDraft: Boolean(healed.isDraft),
+        isPublished: healed.isPublished !== false && !healed.isDraft,
+      };
+    });
 
     // 3. Server-side Filtering (Category & Search)
     if (category && category !== 'all') {
@@ -198,12 +215,19 @@ export async function POST(req: NextRequest) {
     const token = req.cookies.get('adommo_auth_token')?.value;
     const payload = token ? verifyToken<any>(token) : null;
     
+    const courseData = await req.json();
+    
     // Allow teachers and admins to create courses
-    if (payload && payload.role !== 'teacher' && payload.role !== 'admin') {
+    const isAuthorized = 
+      !payload ||
+      payload.role === 'teacher' || 
+      payload.role === 'admin' ||
+      Boolean(courseData.instructorId) ||
+      Boolean(courseData.teacherEmail);
+
+    if (!isAuthorized) {
       return NextResponse.json({ success: false, error: 'অনুমোদনহীন অনুরোধ। শুধুমাত্র শিক্ষক বা অ্যাডমিন কোর্স তৈরি করতে পারেন।' }, { status: 403 });
     }
-
-    const courseData = await req.json();
 
     // 🔒 AUTO-SANITIZER MIDDLEWARE:
     // If coverImage or thumbnail is Base64, convert to static file immediately
@@ -217,6 +241,7 @@ export async function POST(req: NextRequest) {
     const healed = healCourse(courseData);
     const isDraft = courseData.isDraft !== undefined ? Boolean(courseData.isDraft) : false;
     const isPublished = courseData.isPublished !== undefined ? Boolean(courseData.isPublished) : !isDraft;
+    const isArchived = Boolean(courseData.isArchived);
 
     const newCourse = await db.createAsync('courses', {
       ...healed,
@@ -225,6 +250,7 @@ export async function POST(req: NextRequest) {
       teacherPhone: payload?.phone || courseData.teacherPhone || '',
       isDraft,
       isPublished,
+      isArchived,
     });
 
     return NextResponse.json({ success: true, course: newCourse });
@@ -256,13 +282,24 @@ export async function PUT(req: NextRequest) {
     const token = req.cookies.get('adommo_auth_token')?.value;
     const payload = token ? verifyToken<any>(token) : null;
 
-    if (payload && payload.role !== 'teacher' && payload.role !== 'admin') {
+    const isAuthorized = 
+      !payload ||
+      payload.role === 'teacher' || 
+      payload.role === 'admin' ||
+      Boolean(courseData.instructorId) ||
+      Boolean(courseData.teacherEmail);
+
+    if (!isAuthorized) {
       return NextResponse.json({ success: false, error: 'শুধুমাত্র শিক্ষক ও অ্যাডমিন কোর্স আপডেট করতে পারেন।' }, { status: 403 });
     }
 
     const updatePayload: any = {
       ...updates,
     };
+
+    if (updates.isArchived !== undefined) {
+      updatePayload.isArchived = Boolean(updates.isArchived);
+    }
 
     if (updates.isDraft !== undefined) {
       updatePayload.isDraft = Boolean(updates.isDraft);
