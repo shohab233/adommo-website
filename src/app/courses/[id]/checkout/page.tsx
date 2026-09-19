@@ -30,7 +30,7 @@ export default function CourseCheckoutPage({
   const router = useRouter();
   const { courses, enrollInCourse, isEnrolled, showToast, currentUser, verifyCoupon, coupons } = useApp();
 
-  const course = courses.find((c) => c.id === resolvedParams.id);
+  const course = courses.find((c) => c.id === resolvedParams.id || c.slug === resolvedParams.id);
   const enrolled = course ? isEnrolled(course.id) : false;
 
   const [paymentMethod, setPaymentMethod] = useState<'bKash' | 'Nagad' | 'Rocket'>('bKash');

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
 import { 
@@ -34,9 +34,14 @@ export default function StudentMessagesPage() {
     createSupportTicket
   } = useApp();
 
+  const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<'doubts' | 'direct' | 'support' | 'batch'>('doubts');
   
-  const isGuest = !currentUser || !currentUser.id || currentUser.id === 'usr_guest';
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isGuest = mounted && (!currentUser || !currentUser.id || currentUser.id === 'usr_guest');
 
   // Strictly filter only enrolled courses for student
   const enrolledCourses = courses.filter((c) => isEnrolled(c.id));
@@ -126,7 +131,7 @@ export default function StudentMessagesPage() {
     if (!doubtQuestion.trim()) return;
 
     const courseIdToUse = selectedCourseId || enrolledCourses[0]?.id || courses[0]?.id || 'course_campus6';
-    const courseObj = courses.find((c) => c.id === courseIdToUse);
+    const courseObj = courses.find((c) => c.id === courseIdToUse || c.slug === courseIdToUse);
     const newThreadId = createDoubtThread({
       courseId: courseIdToUse,
       courseTitle: courseObj ? courseObj.title : 'Campus 6.0',
@@ -142,6 +147,17 @@ export default function StudentMessagesPage() {
     setDoubtImageUrl('');
     setIsDoubtModalOpen(false);
   };
+
+  if (!mounted) {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center p-4">
+        <div className="text-center space-y-3">
+          <div className="w-10 h-10 border-4 border-pink-200 border-t-[#ed347d] rounded-full animate-spin mx-auto" />
+          <p className="text-xs text-slate-500 font-medium">ইনবক্স লোড হচ্ছে...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (isGuest) {
     return (

@@ -481,13 +481,13 @@ export default function CourseDetailsPage({
 
               {/* Price Row */}
               <div className="flex items-baseline justify-between">
-                {course.regularPrice > course.offerPrice && (
+                {(course.regularPrice || 0) > (course.offerPrice || 0) && (
                   <del className="text-sm font-semibold text-slate-400">
-                    ৳{course.regularPrice.toLocaleString()}
+                    ৳{(course.regularPrice || 0).toLocaleString()}
                   </del>
                 )}
                 <span className="text-3xl font-black text-slate-900">
-                  {course.offerPrice === 0 ? 'সম্পূর্ণ ফ্রি' : `৳${course.offerPrice.toLocaleString()}`}
+                  {course.offerPrice === 0 ? 'সম্পূর্ণ ফ্রি' : `৳${(course.offerPrice || 0).toLocaleString()}`}
                 </span>
               </div>
 

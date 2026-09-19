@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
 import { 
@@ -22,12 +22,24 @@ import {
 export default function StudentProfilePage() {
   const { currentUser, courses, enrollments, examSubmissions, exams, isEnrolled, loginUser, showToast } = useApp();
   
-  const isGuest = !currentUser || !currentUser.id || currentUser.id === 'usr_guest';
-
+  const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<'my_courses' | 'exam_history' | 'payments' | 'settings'>('my_courses');
   const [collegeName, setCollegeName] = useState(currentUser.college || '');
-  const [studentName, setStudentName] = useState(currentUser.name);
+  const [studentName, setStudentName] = useState(currentUser.name || '');
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (currentUser?.name && currentUser.id !== 'usr_guest') {
+      setStudentName(currentUser.name);
+      setCollegeName(currentUser.college || '');
+    }
+  }, [currentUser]);
+
+  const isGuest = mounted && (!currentUser || !currentUser.id || currentUser.id === 'usr_guest');
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -444,9 +456,11 @@ export default function StudentProfilePage() {
                           <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
                             enr.status === 'approved' 
                               ? 'bg-emerald-100 text-emerald-700' 
+                              : enr.status === 'rejected'
+                              ? 'bg-rose-100 text-rose-700'
                               : 'bg-amber-100 text-amber-700'
                           }`}>
-                            {enr.status === 'approved' ? 'অনুমোদিত' : 'পেন্ডিং'}
+                            {enr.status === 'approved' ? 'অনুমোদিত' : enr.status === 'rejected' ? 'বাতিল' : 'পেন্ডিং'}
                           </span>
                         </td>
                       </tr>

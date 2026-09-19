@@ -21,8 +21,8 @@ export default function CourseCard({ course }: CourseCardProps) {
   ) || 0;
 
   const discountPercent =
-    course.regularPrice > course.offerPrice
-      ? Math.round(((course.regularPrice - course.offerPrice) / course.regularPrice) * 100)
+    (course.regularPrice || 0) > (course.offerPrice || 0) && (course.regularPrice || 0) > 0
+      ? Math.round((((course.regularPrice || 0) - (course.offerPrice || 0)) / (course.regularPrice || 1)) * 100)
       : 0;
 
   return (
@@ -107,7 +107,7 @@ export default function CourseCard({ course }: CourseCardProps) {
             </div>
             <div className="flex items-center gap-1 leading-none">
               <span className="text-sm sm:text-base font-black text-[#ed347d]">
-                {course.enrolledCount.toLocaleString()}
+                {(course.enrolledCount || 0).toLocaleString()}
               </span>
               <span className="text-[11px] font-bold text-slate-700">
                 জন ভর্তি
@@ -130,13 +130,13 @@ export default function CourseCard({ course }: CourseCardProps) {
               কোর্স ফি
             </span>
             <div className="flex items-baseline gap-2">
-              {course.regularPrice > course.offerPrice && (
+              {(course.regularPrice || 0) > (course.offerPrice || 0) && (
                 <del className="text-slate-400 text-xs sm:text-sm font-semibold">
                   {course.regularPrice}৳
                 </del>
               )}
               <span className="text-2xl sm:text-3xl font-black text-[#f53278]">
-                {course.offerPrice === 0 ? 'ফ্রি' : `${course.offerPrice}৳`}
+                {course.offerPrice === 0 ? 'ফ্রি' : `${course.offerPrice || 0}৳`}
               </span>
             </div>
           </div>

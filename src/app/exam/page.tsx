@@ -232,7 +232,7 @@ export default function ExamDirectoryPage() {
                 const submission = examSubmissions[exam.id];
                 const isCompleted = !!submission;
                 const isUserEnrolledInExam = isEnrolled(exam.courseId);
-                const parentCourse = courses.find((c) => c.id === exam.courseId);
+                const parentCourse = courses.find((c) => c.id === exam.courseId || c.slug === exam.courseId);
 
                 return (
                   <div

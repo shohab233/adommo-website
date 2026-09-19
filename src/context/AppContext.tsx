@@ -2330,7 +2330,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (n.targetAudience === 'course' && n.targetCourseId) {
       if (currentRole === 'admin' || currentUser?.role === 'admin') return true;
       if (currentRole === 'teacher' || currentUser?.role === 'teacher') return true;
-      return enrollments.some((e) => e.courseId === n.targetCourseId && e.status === 'approved');
+      return isEnrolled(n.targetCourseId);
     }
 
     // 5. Default public notice: visible to all

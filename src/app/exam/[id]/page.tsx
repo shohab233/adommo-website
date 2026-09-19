@@ -48,7 +48,7 @@ export default function ExamPage({
   const exam = examFromStore || fetchedExam;
 
   const userEnrolled = exam ? isEnrolled(exam.courseId) : false;
-  const parentCourse = exam ? courses.find((c) => c.id === exam.courseId) : undefined;
+  const parentCourse = exam ? courses.find((c) => c.id === exam.courseId || c.slug === exam.courseId) : undefined;
 
   const isCombined = exam?.examType === 'combined';
   const isWrittenOnly = exam?.examType === 'written';
